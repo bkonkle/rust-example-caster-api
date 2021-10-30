@@ -1,0 +1,9 @@
+{
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/.git": true
+    },
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true,
+    "terraform-ls.rootModules": ["terraform"]
+}
