@@ -1,0 +1,13 @@
+[package]
+name = "caster-api"
+version = "0.1.0"
+authors = ["Brandon Konkle <brandon@konkle.us>"]
+edition = "2018"
+
+[dependencies]
+async-graphql = "2.0"
+async-graphql-warp = "2.0"
+caster-users = { path = "../../libs/users" }
+dotenv = "0.15.0"
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
