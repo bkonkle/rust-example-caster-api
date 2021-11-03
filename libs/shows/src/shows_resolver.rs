@@ -1,14 +1,15 @@
-use async_graphql::{Context, Error, Object, Result};
+use async_graphql::{Context, Object};
 
-pub struct Query;
+#[derive(Default)]
+pub struct ShowsQuery;
 
 #[Object]
-impl Query {
+impl ShowsQuery {
     async fn get_show(
         &self,
-        ctx: &Context<'_>,
-        #[graphql(desc = "The Show id")] id: String,
-    ) -> Vec<String> {
+        _ctx: &Context<'_>,
+        #[graphql(desc = "The Show id")] _id: String,
+    ) -> &str {
         "test"
     }
 }

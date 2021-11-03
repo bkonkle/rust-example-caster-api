@@ -5,9 +5,10 @@ authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2018"
 
 [dependencies]
-async-graphql = "2.0"
-async-graphql-warp = "2.0"
+async-graphql = "2.10.8"
+async-graphql-warp = "2.10.8"
 caster-users = { path = "../../libs/users" }
+caster-shows = { path = "../../libs/shows" }
 dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 warp = "0.3"

@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptyMutation, EmptySubscription, Schema};
+use async_graphql::{EmptyMutation, EmptySubscription, MergedObject, Schema};
 use async_graphql_warp::{BadRequest, Response};
 use dotenv::dotenv;
 use std::convert::Infallible;
@@ -9,7 +9,11 @@ use std::net::SocketAddr;
 use warp::Filter;
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
-use caster_users::users_resolver::Query;
+use caster_shows::shows_resolver::ShowsQuery;
+use caster_users::users_resolver::UsersQuery;
+
+#[derive(MergedObject, Default)]
+struct Query(UsersQuery, ShowsQuery);
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +22,7 @@ async fn main() {
     let port = env::var("PORT").unwrap_or("3000".into());
     let addr = format!("http://localhost:{port}", port = port);
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+    let schema = Schema::new(Query::default(), EmptyMutation, EmptySubscription);
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
         |(schema, request): (
