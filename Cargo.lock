@@ -226,6 +226,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "caster-shows"
+version = "0.1.0"
+dependencies = [
+ "async-graphql",
+ "tokio",
+]
+
+[[package]]
 name = "caster-users"
 version = "0.1.0"
 dependencies = [

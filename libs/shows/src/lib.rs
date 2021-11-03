@@ -1,2 +1,2 @@
 #![forbid(unsafe_code)]
-pub mod users_resolver;
+pub mod shows_resolver;

@@ -9,13 +9,13 @@ use std::net::SocketAddr;
 use warp::Filter;
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
-use caster_users::resolver::Query;
+use caster_users::users_resolver::Query;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
 
-    let port = env::var("PORT").unwrap_or("3000".to_owned());
+    let port = env::var("PORT").unwrap_or("3000".into());
     let addr = format!("http://localhost:{port}", port = port);
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
