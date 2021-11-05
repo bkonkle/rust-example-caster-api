@@ -8,6 +8,20 @@ This is an example app for the upcoming Rust video series by [Brandon Konkle](ht
 
 Install Rust with [rustup](https://rustup.rs/).
 
+## Clippy
+
+For helpful linting rools, install [Clippy](https://github.com/rust-lang/rust-clippy) with `rustup`:
+
+```sh
+rustup component add clippy
+```
+
+Run it with `cargo`:
+
+```sh
+cargo clippy --fix
+```
+
 ### Running the Local Server
 
 Use `cargo` to run the server locally:

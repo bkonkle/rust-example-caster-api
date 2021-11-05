@@ -1,4 +1,6 @@
+//! # A GraphQL server written in Rust
 #![forbid(unsafe_code)]
+
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription, MergedObject, Schema};
 use async_graphql_warp::{BadRequest, Response};
@@ -22,7 +24,7 @@ mod db;
 async fn main() -> Result<(), Error> {
     dotenv().ok();
 
-    let port = env::var("PORT").unwrap_or("3000".into());
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".into());
     let addr = format!("http://localhost:{port}", port = port);
 
     let pg_pool = db::init().await?;
