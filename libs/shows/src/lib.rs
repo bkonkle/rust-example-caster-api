@@ -6,3 +6,6 @@ pub mod shows_resolver;
 
 /// The Shows entity service
 pub mod shows_service;
+
+/// The Show models
+pub mod show_models;

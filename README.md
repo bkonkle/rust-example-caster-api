@@ -8,7 +8,7 @@ This is an example app for the upcoming Rust video series by [Brandon Konkle](ht
 
 Install Rust with [rustup](https://rustup.rs/).
 
-## Clippy
+### Clippy
 
 For helpful linting rools, install [Clippy](https://github.com/rust-lang/rust-clippy) with `rustup`:
 
@@ -20,6 +20,14 @@ Run it with `cargo`:
 
 ```sh
 cargo clippy --fix
+```
+
+Configure the `rust-analyzer` VS Code plugin to use it (in _settings.json_):
+
+```json
+{
+    "rust-analyzer.checkOnSave.command": "clippy"
+}
 ```
 
 ### Running the Local Server

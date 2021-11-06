@@ -15,10 +15,13 @@ use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 use caster_shows::shows_resolver::ShowsQuery;
 use caster_users::users_resolver::UsersQuery;
 
-#[derive(MergedObject, Default)]
-struct Query(UsersQuery, ShowsQuery);
+use services::Services;
 
 mod db;
+mod services;
+
+#[derive(MergedObject, Default)]
+struct Query(UsersQuery, ShowsQuery);
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -28,6 +31,7 @@ async fn main() -> Result<(), Error> {
     let addr = format!("http://localhost:{port}", port = port);
 
     let pg_pool = db::init().await?;
+    let services = Services::new(pg_pool);
 
     let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
         .data(pg_pool)
@@ -66,7 +70,7 @@ async fn main() -> Result<(), Error> {
 
     let socket_addr: SocketAddr = match addr.parse() {
         Ok(file) => file,
-        Err(_) => ([0, 0, 0, 0], 3000).to_string(),
+        Err(_) => ([0, 0, 0, 0], 3000).into(),
     };
 
     warp::serve(routes).run(socket_addr).await;

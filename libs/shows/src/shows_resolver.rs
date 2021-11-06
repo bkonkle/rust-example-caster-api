@@ -1,13 +1,9 @@
 use async_graphql::{Context, Object};
-use sqlx::{Pool, Postgres};
-
-use crate::shows_service::ShowsService;
+use sqlx::postgres::PgPool;
 
 /// The Query segment owned by the Shows library
 #[derive(Default)]
-pub struct ShowsQuery {
-    service: ShowsService,
-}
+pub struct ShowsQuery {}
 
 #[Object]
 impl ShowsQuery {
@@ -16,7 +12,7 @@ impl ShowsQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "The Show id")] _id: String,
     ) -> &str {
-        let _pg_pool = ctx.data::<Pool<Postgres>>();
+        let _pg_pool = ctx.data::<PgPool>();
 
         "test"
     }
