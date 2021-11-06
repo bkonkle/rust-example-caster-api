@@ -1,9 +1,13 @@
 use async_graphql::{Context, Object};
 use sqlx::{Pool, Postgres};
 
+use crate::shows_service::ShowsService;
+
 /// The Query segment owned by the Shows library
 #[derive(Default)]
-pub struct ShowsQuery;
+pub struct ShowsQuery {
+    service: ShowsService,
+}
 
 #[Object]
 impl ShowsQuery {

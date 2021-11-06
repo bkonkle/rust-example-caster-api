@@ -24,7 +24,7 @@ mod db;
 async fn main() -> Result<(), Error> {
     dotenv().ok();
 
-    let port = env::var("PORT").unwrap_or_else(|_| "3000".into());
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("http://localhost:{port}", port = port);
 
     let pg_pool = db::init().await?;
@@ -66,7 +66,7 @@ async fn main() -> Result<(), Error> {
 
     let socket_addr: SocketAddr = match addr.parse() {
         Ok(file) => file,
-        Err(_) => ([0, 0, 0, 0], 3000).into(),
+        Err(_) => ([0, 0, 0, 0], 3000).to_string(),
     };
 
     warp::serve(routes).run(socket_addr).await;
