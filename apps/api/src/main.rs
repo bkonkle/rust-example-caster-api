@@ -5,7 +5,7 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription, MergedObject, Schema};
 use async_graphql_warp::{BadRequest, Response};
 use dotenv::dotenv;
-use sqlx::Error;
+use sqlx::{Error, PgPool};
 use std::convert::Infallible;
 use std::env;
 use std::net::SocketAddr;
@@ -13,12 +13,10 @@ use warp::Filter;
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
 use caster_shows::shows_resolver::ShowsQuery;
+use caster_shows::shows_service::PgShowsService;
 use caster_users::users_resolver::UsersQuery;
 
-use services::Services;
-
 mod db;
-mod services;
 
 #[derive(MergedObject, Default)]
 struct Query(UsersQuery, ShowsQuery);
@@ -31,10 +29,10 @@ async fn main() -> Result<(), Error> {
     let addr = format!("http://localhost:{port}", port = port);
 
     let pg_pool = db::init().await?;
-    let services = Services::new(pg_pool);
+    let shows = PgShowsService::new(pg_pool);
 
     let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
-        .data(pg_pool)
+        .data(shows)
         .finish();
 
     let graphql_post = async_graphql_warp::graphql(schema).and_then(
