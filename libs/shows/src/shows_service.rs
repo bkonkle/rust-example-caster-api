@@ -19,8 +19,10 @@ pub struct PgShowsService {
 
 impl PgShowsService {
     /// Create a new `ShowsService` instance with a `Pool<Postgres>`
-    pub fn new(pg_pool: Arc<PgPool>) -> Self {
-        Self { pg_pool }
+    pub fn new(pg_pool: &Arc<PgPool>) -> Self {
+        Self {
+            pg_pool: pg_pool.clone(),
+        }
     }
 }
 

@@ -30,8 +30,8 @@ async fn main() -> Result<(), Error> {
     let addr = format!("http://localhost:{port}", port = port);
 
     let pg_pool = Arc::new(db::init().await?);
-    let shows = PgShowsService::new(pg_pool.clone());
-    let users = PgUsersService::new(pg_pool.clone());
+    let shows = PgShowsService::new(&pg_pool);
+    let users = PgUsersService::new(&pg_pool);
 
     let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
         .data(shows)
