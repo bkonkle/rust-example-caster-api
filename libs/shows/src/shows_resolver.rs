@@ -1,5 +1,10 @@
+use anyhow;
 use async_graphql::{Context, Object};
-use sqlx::postgres::PgPool;
+
+use crate::{
+    show_models::Show,
+    shows_service::{PgShowsService, ShowsService},
+};
 
 /// The Query segment owned by the Shows library
 #[derive(Default)]
@@ -10,10 +15,10 @@ impl ShowsQuery {
     async fn get_show(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "The Show id")] _id: String,
-    ) -> &str {
-        let _pg_pool = ctx.data::<PgPool>();
+        #[graphql(desc = "The Show id")] id: String,
+    ) -> Result<Option<Show>, anyhow::Error> {
+        let shows = ctx.data_unchecked::<PgShowsService>();
 
-        "test"
+        Ok(shows.get(id).await?)
     }
 }

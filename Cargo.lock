@@ -279,7 +279,10 @@ dependencies = [
 name = "caster-users"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-graphql",
+ "async-trait",
+ "mockall",
  "serde_json",
  "sqlx",
  "tokio",

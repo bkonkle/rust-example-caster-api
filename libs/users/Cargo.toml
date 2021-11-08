@@ -5,8 +5,10 @@ authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0"
 async-graphql = "2.10.8"
-tokio = { version = "1", features = ["full"] }
+async-trait = "0.1.41"
+mockall = "0.8.3"
 serde_json = "1.0.68"
 sqlx = { version = "0.5", features = [
     "runtime-tokio-rustls",
@@ -17,3 +19,4 @@ sqlx = { version = "0.5", features = [
     "chrono",
     "json",
 ] }
+tokio = { version = "1", features = ["full"] }
