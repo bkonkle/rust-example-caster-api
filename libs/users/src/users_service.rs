@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
-use crate::user_models::User;
+use crate::user_model::User;
 
 /// The Users entity service
 #[mockall::automock]
@@ -29,10 +29,10 @@ impl PgUsersService {
 #[async_trait]
 impl UsersService for PgUsersService {
     async fn get(&self, id: String) -> anyhow::Result<Option<User>> {
-        let show = sqlx::query_as!(
+        let user = sqlx::query_as!(
             User,
             r#"
-                SELECT * FROM "User"
+                SELECT * FROM "users"
                     WHERE id = $1
             "#,
             id
@@ -40,6 +40,6 @@ impl UsersService for PgUsersService {
         .fetch_optional(&*self.pg_pool)
         .await?;
 
-        Ok(show)
+        Ok(user)
     }
 }

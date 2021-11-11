@@ -2,7 +2,7 @@ use anyhow;
 use async_graphql::{Context, Object};
 
 use crate::{
-    show_models::Show,
+    show_model::Show,
     shows_service::{PgShowsService, ShowsService},
 };
 

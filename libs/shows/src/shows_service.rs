@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
-use crate::show_models::Show;
+use crate::show_model::Show;
 
 /// The Shows entity service
 #[mockall::automock]
@@ -32,7 +32,7 @@ impl ShowsService for PgShowsService {
         let show = sqlx::query_as!(
             Show,
             r#"
-                SELECT * FROM "Show"
+                SELECT * FROM "shows"
                     WHERE id = $1
             "#,
             id

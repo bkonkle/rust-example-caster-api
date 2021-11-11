@@ -8,4 +8,4 @@ pub mod shows_resolver;
 pub mod shows_service;
 
 /// The Show models
-pub mod show_models;
+pub mod show_model;

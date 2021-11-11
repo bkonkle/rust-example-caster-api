@@ -2,12 +2,13 @@
 name = "caster-shows"
 version = "0.1.0"
 authors = ["Brandon Konkle <brandon@konkle.us>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = "2.10.8"
+async-graphql = { version = "2.10.8", features = ["chrono"] }
 async-trait = "0.1.41"
+chrono = { version = "0.4.19", features = ["serde"] }
 mockall = "0.8.3"
 serde_json = "1.0.68"
 sqlx = { version = "0.5", features = [

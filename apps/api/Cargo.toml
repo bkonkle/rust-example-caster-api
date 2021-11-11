@@ -2,14 +2,14 @@
 name = "caster-api"
 version = "0.1.0"
 authors = ["Brandon Konkle <brandon@konkle.us>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-async-graphql = "2.10.8"
+async-graphql = { version = "2.10.8", features = ["chrono"] }
 async-graphql-warp = "2.10.8"
 caster-shows = { path = "../../libs/shows" }
 caster-users = { path = "../../libs/users" }
-chrono = "0.4"
+chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.68"

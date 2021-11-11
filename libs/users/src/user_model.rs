@@ -1,8 +1,8 @@
-use sqlx::types::chrono;
+use async_graphql::SimpleObject;
+use chrono::NaiveDateTime;
 
 /// The User model
-#[derive(Clone, Eq, PartialEq)]
-#[allow(dead_code, non_snake_case)]
+#[derive(Clone, Eq, PartialEq, SimpleObject)]
 pub struct User {
     /// The User id
     pub id: String,
@@ -11,11 +11,11 @@ pub struct User {
     pub username: String,
 
     /// Whether the User is active or disabled
-    pub isActive: bool,
+    pub is_active: bool,
 
     /// The date the User was created
-    pub createdAt: chrono::NaiveDateTime,
+    pub created_at: NaiveDateTime,
 
     /// The date the User was last updated
-    pub updatedAt: chrono::NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }

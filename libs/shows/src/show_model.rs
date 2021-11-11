@@ -1,9 +1,9 @@
+use async_graphql::SimpleObject;
+use chrono::NaiveDateTime;
 use serde_json;
-use sqlx::types::chrono;
 
 /// The Show model
-#[derive(Clone, Eq, PartialEq)]
-#[allow(dead_code, non_snake_case)]
+#[derive(Clone, Eq, PartialEq, SimpleObject)]
 pub struct Show {
     /// The Show id
     pub id: String,
@@ -21,8 +21,8 @@ pub struct Show {
     pub content: Option<serde_json::Value>,
 
     /// The date the Show was created
-    pub createdAt: chrono::NaiveDateTime,
+    pub created_at: NaiveDateTime,
 
     /// The date the Show was last updated
-    pub updatedAt: chrono::NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }

@@ -7,5 +7,11 @@ pub mod users_resolver;
 /// The Users entity service
 pub mod users_service;
 
-/// The User models
-pub mod user_models;
+/// The User model
+pub mod user_model;
+
+/// The User mutations
+pub mod user_mutations;
+
+/// The Profile model
+pub mod profile_model;
