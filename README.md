@@ -30,6 +30,14 @@ Configure the `rust-analyzer` VS Code plugin to use it (in _settings.json_):
 }
 ```
 
+### Cargo Make
+
+To build scripts from the _Makefile.toml_, install Cargo Make:
+
+```sh
+cargo install cargo-make
+```
+
 ### SQLx CLI
 
 Install the SQLx CLI for running migrations:
@@ -38,17 +46,16 @@ Install the SQLx CLI for running migrations:
 cargo install sqlx-cli --no-default-features --features postgres
 ```
 
-Create a database based on the `DATABASE_URL`, if you haven't already:
+Create a database based on the `DATABASE_URL` in the `.env`, if you haven't already:
 
 ```sh
-sqlx db create
+cargo make db-create
 ```
 
 Run migrations:
 
 ```sh
-cd apps/api
-sqlx migrate run
+cargo make db-migrate
 ```
 
 ### Running the Local Server

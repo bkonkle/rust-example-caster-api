@@ -2,8 +2,8 @@
 #![forbid(unsafe_code)]
 
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptyMutation, EmptySubscription, MergedObject, Schema};
-use async_graphql_warp::{BadRequest, Response};
+use async_graphql::{Data, EmptyMutation, EmptySubscription, MergedObject, Schema};
+use async_graphql_warp::{graphql_subscription_with_data, BadRequest, Response};
 use dotenv::dotenv;
 use sqlx::Error;
 use std::env;
@@ -18,6 +18,8 @@ use caster_users::users_resolver::UsersQuery;
 use caster_users::users_service::PgUsersService;
 
 mod db;
+
+struct AuthToken(String);
 
 #[derive(MergedObject, Default)]
 struct Query(UsersQuery, ShowsQuery);
@@ -38,7 +40,7 @@ async fn main() -> Result<(), Error> {
         .data(users)
         .finish();
 
-    let graphql_post = async_graphql_warp::graphql(schema).and_then(
+    let graphql_post = async_graphql_warp::graphql(schema.clone()).and_then(
         |(schema, request): (
             Schema<Query, EmptyMutation, EmptySubscription>,
             async_graphql::Request,
@@ -51,21 +53,35 @@ async fn main() -> Result<(), Error> {
             .body(playground_source(GraphQLPlaygroundConfig::new("/")))
     });
 
-    let routes = graphql_playground
-        .or(graphql_post)
-        .recover(|err: Rejection| async move {
-            if let Some(BadRequest(err)) = err.find() {
-                return Ok::<_, Infallible>(warp::reply::with_status(
-                    err.to_string(),
-                    StatusCode::BAD_REQUEST,
-                ));
-            }
+    let routes = graphql_subscription_with_data(schema, |value| async {
+        #[derive(serde_derive::Deserialize)]
+        struct Payload {
+            token: String,
+        }
 
-            Ok(warp::reply::with_status(
-                "INTERNAL_SERVER_ERROR".to_string(),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        });
+        if let Ok(payload) = serde_json::from_value::<Payload>(value) {
+            let mut data = Data::default();
+            data.insert(AuthToken(payload.token));
+            Ok(data)
+        } else {
+            Err("An auth token is required".into())
+        }
+    })
+    .or(graphql_playground)
+    .or(graphql_post)
+    .recover(|err: Rejection| async move {
+        if let Some(BadRequest(err)) = err.find() {
+            return Ok::<_, Infallible>(warp::reply::with_status(
+                err.to_string(),
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+
+        Ok(warp::reply::with_status(
+            "INTERNAL_SERVER_ERROR".to_string(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ))
+    });
 
     println!("[Caster] Started at: {addr}", addr = addr);
 

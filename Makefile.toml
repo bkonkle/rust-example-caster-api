@@ -1,0 +1,19 @@
+
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[config]
+main_project_member = "apps/api"
+
+[tasks.db-create]
+workspace = false
+cwd = "./apps/api"
+command = "sqlx"
+args = ["db", "create"]
+
+
+[tasks.db-migrate]
+workspace = false
+cwd = "./apps/api"
+command = "sqlx"
+args = ["migrate", "run"]
