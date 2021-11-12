@@ -6,18 +6,17 @@ use async_graphql::{Data, EmptyMutation, EmptySubscription, MergedObject, Schema
 use async_graphql_warp::{graphql_subscription_with_data, BadRequest, Response};
 use dotenv::dotenv;
 use sqlx::Error;
+use std::convert::Infallible;
 use std::env;
 use std::net::SocketAddr;
-use std::{convert::Infallible, sync::Arc};
 use warp::Filter;
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
+use caster_data::postgres::PostgresPool;
 use caster_shows::shows_resolver::ShowsQuery;
 use caster_shows::shows_service::PgShowsService;
 use caster_users::users_resolver::UsersQuery;
 use caster_users::users_service::PgUsersService;
-
-mod db;
 
 struct AuthToken(String);
 
@@ -28,10 +27,10 @@ struct Query(UsersQuery, ShowsQuery);
 async fn main() -> Result<(), Error> {
     dotenv().ok();
 
-    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| String::from("3000"));
     let addr = format!("http://localhost:{port}", port = port);
 
-    let pg_pool = Arc::new(db::init().await?);
+    let pg_pool = PostgresPool::init().await?;
     let shows = PgShowsService::new(&pg_pool);
     let users = PgUsersService::new(&pg_pool);
 

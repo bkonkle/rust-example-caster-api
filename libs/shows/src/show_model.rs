@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use serde_json;
 
 /// The Show model
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Debug, Eq, PartialEq, SimpleObject)]
 pub struct Show {
     /// The Show id
     pub id: String,

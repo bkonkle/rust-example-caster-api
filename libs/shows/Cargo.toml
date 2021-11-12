@@ -8,6 +8,7 @@ edition = "2021"
 anyhow = "1.0"
 async-graphql = { version = "2.10.8", features = ["chrono"] }
 async-trait = "0.1.41"
+caster-data = { path = "../data" }
 chrono = { version = "0.4.19", features = ["serde"] }
 mockall = "0.8.3"
 serde_json = "1.0.68"
@@ -21,3 +22,7 @@ sqlx = { version = "0.5", features = [
     "json",
 ] }
 tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+jsonpath_lib = "0.3.0"
+testcontainers = "0.12.0"

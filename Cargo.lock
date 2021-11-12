@@ -252,6 +252,7 @@ version = "0.1.0"
 dependencies = [
  "async-graphql",
  "async-graphql-warp",
+ "caster-data",
  "caster-shows",
  "caster-users",
  "chrono",
@@ -265,16 +266,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "caster-data"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "dotenv",
+ "mockall",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "caster-shows"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-graphql",
  "async-trait",
+ "caster-data",
  "chrono",
+ "jsonpath_lib",
  "mockall",
  "serde_json",
  "sqlx",
+ "testcontainers",
  "tokio",
 ]
 
@@ -376,6 +395,16 @@ checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
 dependencies = [
  "cfg-if 1.0.0",
  "lazy_static",
+]
+
+[[package]]
+name = "crypto-mac"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bff07008ec701e8028e2ceb8f83f0e4274ee62bd2dbdc4fefff2e9a91824081a"
+dependencies = [
+ "generic-array 0.14.4",
+ "subtle",
 ]
 
 [[package]]
@@ -736,11 +765,21 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hmac"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1441c6b1e930e2817404b5046f1f989899143a12bf92de603b69f4e0aee1e15"
+dependencies = [
+ "crypto-mac 0.10.1",
+ "digest 0.9.0",
+]
+
+[[package]]
+name = "hmac"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2a2320eb7ec0ebe8da8f744d7812d9fc4cb4d09344ac01898dbcb6a20ae69b"
 dependencies = [
- "crypto-mac",
+ "crypto-mac 0.11.1",
  "digest 0.9.0",
 ]
 
@@ -870,6 +909,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7cc9ffccd38c451a86bf13657df244e9c3f37493cce8e5e21e940963777acc84"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "jsonpath_lib"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eaa63191d68230cccb81c5aa23abd53ed64d83337cacbb25a7b8c7979523774f"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1645,7 +1695,7 @@ dependencies = [
  "futures-util",
  "hashlink",
  "hex",
- "hmac",
+ "hmac 0.11.0",
  "indexmap",
  "itoa",
  "libc",
@@ -1763,6 +1813,21 @@ name = "termtree"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13a4ec180a2de59b57434704ccfad967f789b12737738798fa08798cd5824c16"
+
+[[package]]
+name = "testcontainers"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5e3ed6e3598dbf32cba8cb356b881c085e0adea57597f387723430dd94b4084"
+dependencies = [
+ "hex",
+ "hmac 0.10.1",
+ "log",
+ "rand 0.8.4",
+ "serde",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "thiserror"

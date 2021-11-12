@@ -1,11 +1,12 @@
 use async_trait::async_trait;
+use mockall::automock;
 use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
 use crate::show_model::Show;
 
 /// The Shows entity service
-#[mockall::automock]
+#[automock]
 #[async_trait]
 pub trait ShowsService {
     /// Get an individual Show by id
@@ -43,3 +44,7 @@ impl ShowsService for PgShowsService {
         Ok(show)
     }
 }
+
+#[cfg(test)]
+#[path = "tests/shows_service_tests.rs"]
+mod shows_service_tests;
