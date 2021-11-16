@@ -20,6 +20,7 @@ sqlx = { version = "0.5", features = [
     "json",
 ] }
 tokio = { version = "1", features = ["full"] }
+shaku = "0.6.1"
 
 [dev-dependencies]
 mockall = "0.10.2"

@@ -12,8 +12,8 @@ pub struct ShowsService {
 
 #[cfg_attr(test, automock)]
 impl ShowsService {
-    /// Create a new `ShowsService` instance with a `Pool<Postgres>`
-    pub fn new(repo: &Arc<dyn ShowsRepository + 'static>) -> Self {
+    /// Create a new `ShowsService` instance with a type that implements `ShowsRepository`
+    pub fn new(repo: &Arc<dyn ShowsRepository>) -> Self {
         Self { repo: repo.clone() }
     }
 

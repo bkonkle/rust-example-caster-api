@@ -5,24 +5,24 @@ use std::sync::Arc;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
-use crate::show_model::Show;
+use crate::user_model::User;
 
-/// The Shows entity repository
+/// The Users entity repository
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait ShowsRepository {
-    /// Get an individual Show by id
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>>;
+pub trait UsersRepository {
+    /// Get an individual User by id
+    async fn get(&self, id: String) -> anyhow::Result<Option<User>>;
 }
 
-/// A `ShowsRepository` instance based on Postgres
-pub struct PgShowsRepository {
+/// A `UsersRepository` instance based on Postgres
+pub struct PgUsersRepository {
     /// The Postgres Pool
     pg_pool: Arc<PgPool>,
 }
 
-impl PgShowsRepository {
-    /// Create a new `PgShowsRepository` instance with a `Pool<Postgres>`
+impl PgUsersRepository {
+    /// Create a new `PgUsersRepository` instance with a `Pool<Postgres>`
     pub fn new(pg_pool: &Arc<PgPool>) -> Self {
         Self {
             pg_pool: pg_pool.clone(),
@@ -31,12 +31,12 @@ impl PgShowsRepository {
 }
 
 #[async_trait]
-impl ShowsRepository for PgShowsRepository {
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>> {
+impl UsersRepository for PgUsersRepository {
+    async fn get(&self, id: String) -> anyhow::Result<Option<User>> {
         let show = sqlx::query_as!(
-            Show,
+            User,
             r#"
-                SELECT * FROM "shows"
+                SELECT * FROM "users"
                     WHERE id = $1
             "#,
             id

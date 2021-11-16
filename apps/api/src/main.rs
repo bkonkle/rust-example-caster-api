@@ -14,8 +14,8 @@ use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
 use caster_shows::shows_service::ShowsService;
 use caster_shows::{shows_repository::PgShowsRepository, shows_resolver::ShowsQuery};
-use caster_users::users_resolver::UsersQuery;
-use caster_users::users_service::PgUsersService;
+use caster_users::users_service::UsersService;
+use caster_users::{users_repository::PgUsersRepository, users_resolver::UsersQuery};
 
 mod postgres;
 
@@ -33,8 +33,9 @@ async fn main() -> Result<(), Error> {
 
     let pg_pool = Arc::new(postgres::init().await?);
     let shows_repo = Arc::new(PgShowsRepository::new(&pg_pool));
+    let users_repo = Arc::new(PgUsersRepository::new(&pg_pool));
     let shows = ShowsService::new(&shows_repo);
-    let users = PgUsersService::new(&pg_pool);
+    let users = UsersService::new(&users_repo);
 
     let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription)
         .data(shows)

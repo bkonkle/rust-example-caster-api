@@ -20,7 +20,6 @@ sqlx = { version = "0.5", features = [
     "json",
 ] }
 tokio = { version = "1", features = ["full"] }
-shaku = "0.6.1"
 
 [dev-dependencies]
 jsonpath_lib = "0.3.0"

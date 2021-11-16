@@ -1,47 +1,25 @@
-use async_trait::async_trait;
-use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
-use crate::user_model::User;
+use crate::{user_model::User, users_repository::UsersRepository};
 
-/// The Users entity service
+/// The `User` entity service
+pub struct UsersService {
+    repo: Arc<dyn UsersRepository>,
+}
+
 #[cfg_attr(test, automock)]
-#[async_trait]
-pub trait UsersService {
-    /// Get an individual User by id
-    async fn get(&self, id: String) -> anyhow::Result<Option<User>>;
-}
-
-/// A `UsersServices` instance based on Postgres
-pub struct PgUsersService {
-    pg_pool: Arc<PgPool>,
-}
-
-impl PgUsersService {
-    /// Create a new `UsersService` instance with a `Pool<Postgres>`
-    pub fn new(pg_pool: &Arc<PgPool>) -> Self {
-        Self {
-            pg_pool: pg_pool.clone(),
-        }
+impl UsersService {
+    /// Create a new `UsersService` instance with a type that implements `UsersRepository`
+    pub fn new(repo: &Arc<dyn UsersRepository>) -> Self {
+        Self { repo: repo.clone() }
     }
-}
 
-#[async_trait]
-impl UsersService for PgUsersService {
-    async fn get(&self, id: String) -> anyhow::Result<Option<User>> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
-                SELECT * FROM "users"
-                    WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_optional(&*self.pg_pool)
-        .await?;
+    /// Get an individual User by id
+    pub async fn get(&self, id: String) -> anyhow::Result<Option<User>> {
+        let user = (&*self.repo).get(id).await?;
 
         Ok(user)
     }

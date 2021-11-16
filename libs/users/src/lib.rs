@@ -4,6 +4,9 @@
 /// The GraphQL Resolver
 pub mod users_resolver;
 
+/// The Users entity repository
+pub mod users_repository;
+
 /// The Users entity service
 pub mod users_service;
 
