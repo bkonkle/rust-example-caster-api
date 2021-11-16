@@ -19,12 +19,3 @@ impl ShowsQuery {
         Ok(shows.get(id).await?)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::shows_service::*;
-
-    #[tokio::test]
-    async fn test_get_show() {}
-}

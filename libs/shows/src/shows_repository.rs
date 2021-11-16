@@ -3,7 +3,7 @@ use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
 #[cfg(test)]
-use mockall::{automock, predicate::*};
+use mockall::automock;
 
 use crate::show_model::Show;
 

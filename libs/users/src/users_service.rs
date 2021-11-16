@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 #[cfg(test)]
-use mockall::{automock, predicate::*};
+use mockall::automock;
 
 use crate::{user_model::User, users_repository::UsersRepository};
 

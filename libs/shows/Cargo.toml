@@ -25,3 +25,5 @@ tokio = { version = "1", features = ["full"] }
 jsonpath_lib = "0.3.0"
 testcontainers = "0.12.0"
 mockall = "0.10.2"
+fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
+rand = "0.8"
