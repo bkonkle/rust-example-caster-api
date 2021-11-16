@@ -10,7 +10,7 @@ use crate::show_model::Show;
 /// The Shows entity repository
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait ShowsRepository {
+pub trait ShowsRepository: Sync + Send {
     /// Get an individual Show by id
     async fn get(&self, id: String) -> anyhow::Result<Option<Show>>;
 }

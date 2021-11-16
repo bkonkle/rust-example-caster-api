@@ -10,7 +10,7 @@ use crate::user_model::User;
 /// The Users entity repository
 #[cfg_attr(test, automock)]
 #[async_trait]
-pub trait UsersRepository {
+pub trait UsersRepository: Sync + Send {
     /// Get an individual User by id
     async fn get(&self, id: String) -> anyhow::Result<Option<User>>;
 }

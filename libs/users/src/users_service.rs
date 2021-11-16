@@ -13,7 +13,7 @@ pub struct UsersService {
 #[cfg_attr(test, automock)]
 impl UsersService {
     /// Create a new `UsersService` instance with a type that implements `UsersRepository`
-    pub fn new(repo: &Arc<dyn UsersRepository>) -> Self {
+    pub fn new<T: UsersRepository + 'static>(repo: &Arc<T>) -> Self {
         Self { repo: repo.clone() }
     }
 
