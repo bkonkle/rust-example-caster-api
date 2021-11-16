@@ -1,50 +1,26 @@
-use async_trait::async_trait;
-use mockall::automock;
-use sqlx::postgres::PgPool;
 use std::sync::Arc;
 
-use crate::show_model::Show;
+#[cfg(test)]
+use mockall::{automock, predicate::*};
 
-/// The Shows entity service
-#[automock]
-#[async_trait]
-pub trait ShowsService {
-    /// Get an individual Show by id
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>>;
+use crate::{show_model::Show, shows_repository::ShowsRepository};
+
+/// The `Show` entity service
+pub struct ShowsService {
+    repo: Arc<dyn ShowsRepository>,
 }
 
-/// A `ShowsServices` instance based on Postgres
-pub struct PgShowsService {
-    pg_pool: Arc<PgPool>,
-}
-
-impl PgShowsService {
+#[cfg_attr(test, automock)]
+impl ShowsService {
     /// Create a new `ShowsService` instance with a `Pool<Postgres>`
-    pub fn new(pg_pool: &Arc<PgPool>) -> Self {
-        Self {
-            pg_pool: pg_pool.clone(),
-        }
+    pub fn new(repo: &Arc<dyn ShowsRepository + 'static>) -> Self {
+        Self { repo: repo.clone() }
     }
-}
 
-#[async_trait]
-impl ShowsService for PgShowsService {
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>> {
-        let show = sqlx::query_as!(
-            Show,
-            r#"
-                SELECT * FROM "shows"
-                    WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_optional(&*self.pg_pool)
-        .await?;
+    /// Get an individual Show by id
+    pub async fn get(&self, id: String) -> anyhow::Result<Option<Show>> {
+        let show = (&*self.repo).get(id).await?;
 
         Ok(show)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/shows_service_tests.rs"]
-mod shows_service_tests;

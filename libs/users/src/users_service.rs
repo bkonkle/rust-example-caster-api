@@ -1,12 +1,14 @@
 use async_trait::async_trait;
-use mockall::automock;
 use sqlx::postgres::PgPool;
 use std::sync::Arc;
+
+#[cfg(test)]
+use mockall::{automock, predicate::*};
 
 use crate::user_model::User;
 
 /// The Users entity service
-#[automock]
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UsersService {
     /// Get an individual User by id
