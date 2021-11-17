@@ -4,7 +4,7 @@ use crate::shows_repository::*;
 
 use super::*;
 
-#[path = "./factories/show_model_factory.rs"]
+#[path = "./show_model_factory.rs"]
 mod factory;
 
 #[tokio::test]
