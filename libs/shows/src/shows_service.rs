@@ -3,7 +3,7 @@ use std::sync::Arc;
 #[cfg(test)]
 use mockall::automock;
 
-use crate::{show_model::Show, shows_repository::ShowsRepository};
+use crate::{show_model::Show, shows_repo::ShowsRepository};
 
 /// The `Show` entity service
 pub struct ShowsService {

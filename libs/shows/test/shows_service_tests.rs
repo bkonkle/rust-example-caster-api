@@ -1,6 +1,6 @@
 use mockall::predicate::*;
 
-use crate::shows_repository::*;
+use crate::shows_repo::*;
 
 use super::*;
 

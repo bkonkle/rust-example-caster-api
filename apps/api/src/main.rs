@@ -13,7 +13,7 @@ use warp::Filter;
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 
 use caster_shows::shows_service::ShowsService;
-use caster_shows::{shows_repository::PgShowsRepository, shows_resolver::ShowsQuery};
+use caster_shows::{shows_repo::PgShowsRepository, shows_resolver::ShowsQuery};
 use caster_users::users_service::UsersService;
 use caster_users::{users_repository::PgUsersRepository, users_resolver::UsersQuery};
 
