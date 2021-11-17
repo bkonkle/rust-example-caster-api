@@ -26,48 +26,5 @@ impl ShowsService {
 }
 
 #[cfg(test)]
-mod tests {
-    use fake::{Fake, Faker};
-    use mockall::predicate::*;
-
-    use super::*;
-    use crate::shows_repository::*;
-
-    fn create_show() -> Show {
-        Show {
-            id: String::from("test-show"),
-            title: String::from("Test Show"),
-            summary: Faker.fake(),
-            picture: Faker.fake(),
-            content: None,
-            created_at: Faker.fake(),
-            updated_at: Faker.fake(),
-        }
-    }
-
-    #[tokio::test]
-    async fn test_get_show() {
-        let show = create_show();
-        let response = show.clone();
-
-        let mut shows_repo = MockShowsRepository::new();
-
-        shows_repo
-            .expect_get()
-            .times(1)
-            .with(eq(String::from(&show.id)))
-            .returning(move |_| Ok(Some(response.clone())));
-
-        let service = ShowsService::new(&Arc::new(shows_repo));
-
-        let result = service.get(String::from(&show.id)).await;
-
-        match result {
-            Ok(result_opt) => match result_opt {
-                Some(result_show) => assert_eq!(result_show, show),
-                _ => panic!("Result was None"),
-            },
-            _ => panic!("Result was not Ok"),
-        };
-    }
-}
+#[path = "../test/shows_service_tests.rs"]
+mod shows_service_tests;
