@@ -7,7 +7,7 @@ use mockall::automock;
 
 use crate::show_model::Show;
 
-/// The Shows entity repository
+/// A ShowsRepository provides CRUD data access operations for the Show entity
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ShowsRepository: Sync + Send {
@@ -15,7 +15,7 @@ pub trait ShowsRepository: Sync + Send {
     async fn get(&self, id: String) -> anyhow::Result<Option<Show>>;
 }
 
-/// A `ShowsRepository` instance based on Postgres
+/// The default `ShowsRepository` instance based on Postgres
 pub struct PgShowsRepository {
     /// The Postgres Pool
     pg_pool: Arc<PgPool>,

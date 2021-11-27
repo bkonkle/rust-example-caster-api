@@ -5,7 +5,7 @@
 pub mod shows_resolver;
 
 /// The Shows entity repository
-pub mod shows_repo;
+pub mod shows_repository;
 
 /// The Shows service
 pub mod shows_service;

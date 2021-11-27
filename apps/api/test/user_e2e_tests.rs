@@ -1,23 +1,13 @@
-//! # A GraphQL server written in Rust
-#![forbid(unsafe_code)]
-
 use dotenv::dotenv;
 use sqlx::Error;
 use std::env;
 use std::net::SocketAddr;
-use warp::Filter;
 
-use crate::routes::create_routes;
+use crate::{postgres, routes::create_routes};
 
-#[macro_use]
-extern crate log;
-
-mod graphql;
-mod postgres;
-mod routes;
-
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+#[tokio::test]
+#[ignore]
+async fn test_initial() -> Result<(), Error> {
     dotenv().ok();
     pretty_env_logger::init();
 
@@ -30,13 +20,11 @@ async fn main() -> Result<(), Error> {
     info!("Started at: {addr}", addr = addr);
 
     let socket_addr: SocketAddr = match addr.parse() {
-        Ok(address) => address,
+        Ok(file) => file,
         Err(_) => ([0, 0, 0, 0], 3000).into(),
     };
 
-    warp::serve(filter.with(warp::log("caster_api")))
-        .run(socket_addr)
-        .await;
+    let _server = warp::serve(filter).run(socket_addr);
 
     Ok(())
 }

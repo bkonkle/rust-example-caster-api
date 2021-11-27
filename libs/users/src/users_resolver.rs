@@ -1,15 +1,22 @@
-use async_graphql::{Context, Error, Object, Result};
-use sqlx::{Pool, Postgres};
+use anyhow;
+use async_graphql::{Context, Object};
+use std::sync::Arc;
+
+use crate::{user_model::User, users_service::UsersService};
 
 /// The Query segment owned by the Users library
 #[derive(Default)]
-pub struct UsersQuery;
+pub struct UsersQuery {}
 
 #[Object]
 impl UsersQuery {
-    async fn get_current_user<'ctx>(&self, ctx: &Context<'ctx>) -> Result<&str, Error> {
-        let _pg_pool = ctx.data::<Pool<Postgres>>();
+    async fn get_user(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(desc = "The User id")] id: String,
+    ) -> Result<Option<User>, anyhow::Error> {
+        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
 
-        Ok("test")
+        Ok(users.get(id).await?)
     }
 }

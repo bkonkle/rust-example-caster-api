@@ -1,6 +1,6 @@
 use mockall::predicate::*;
 
-use crate::shows_repo::*;
+use crate::shows_repository::*;
 
 use super::*;
 
@@ -20,7 +20,7 @@ async fn test_get_show() {
         .with(eq(String::from(&show.id)))
         .returning(move |_| Ok(Some(response.clone())));
 
-    let service = ShowsService::new(&Arc::new(shows_repo));
+    let service = DefaultShowsService::new(&Arc::new(shows_repo));
 
     let result = service.get(String::from(&show.id)).await;
 
@@ -29,8 +29,8 @@ async fn test_get_show() {
     match result {
         Ok(result_opt) => match result_opt {
             Some(result_show) => assert_eq!(result_show, show),
-            _ => panic!("Result was None"),
+            None => panic!("Result was None"),
         },
-        _ => panic!("Result was not Ok"),
+        Err(_) => panic!("Result was not Ok"),
     };
 }
