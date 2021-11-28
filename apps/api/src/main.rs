@@ -3,39 +3,35 @@
 
 use dotenv::dotenv;
 use sqlx::Error;
-use std::env;
-use std::net::SocketAddr;
 use warp::Filter;
 
-use crate::routes::create_routes;
+use crate::{router::create_routes, server::get_addr};
 
 #[macro_use]
 extern crate log;
 
 mod graphql;
 mod postgres;
-mod routes;
+mod router;
+mod server;
+
+#[cfg(test)]
+mod tests;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let port = env::var("PORT").unwrap_or_else(|_| String::from("3000"));
-    let addr = format!("http://localhost:{port}", port = port);
-
     let pg_pool = postgres::init().await?;
-    let filter = create_routes(pg_pool);
+    let router = create_routes(pg_pool);
+
+    let addr = get_addr();
 
     info!("Started at: {addr}", addr = addr);
 
-    let socket_addr: SocketAddr = match addr.parse() {
-        Ok(address) => address,
-        Err(_) => ([0, 0, 0, 0], 3000).into(),
-    };
-
-    warp::serve(filter.with(warp::log("caster_api")))
-        .run(socket_addr)
+    warp::serve(router.with(warp::log("caster_api")))
+        .run(addr)
         .await;
 
     Ok(())

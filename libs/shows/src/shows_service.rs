@@ -36,7 +36,3 @@ impl ShowsService for DefaultShowsService {
         Ok(show)
     }
 }
-
-#[cfg(test)]
-#[path = "../test/shows_service_tests.rs"]
-mod shows_service_tests;

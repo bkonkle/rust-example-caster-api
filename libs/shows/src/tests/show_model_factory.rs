@@ -1,6 +1,6 @@
 use fake::{Fake, Faker};
 
-use super::*;
+use crate::show_model::Show;
 
 pub fn create_show() -> Show {
     Show {

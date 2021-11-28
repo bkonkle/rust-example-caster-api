@@ -1,15 +1,13 @@
 use mockall::predicate::*;
+use std::sync::Arc;
 
+use super::show_model_factory;
 use crate::shows_repository::*;
-
-use super::*;
-
-#[path = "./show_model_factory.rs"]
-mod factory;
+use crate::shows_service::*;
 
 #[tokio::test]
 async fn test_get_show() {
-    let show = factory::create_show();
+    let show = show_model_factory::create_show();
     let response = show.clone();
 
     let mut shows_repo = MockShowsRepository::new();

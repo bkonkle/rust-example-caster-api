@@ -12,3 +12,7 @@ pub mod shows_service;
 
 /// The Show models
 pub mod show_model;
+
+/// Show tests
+#[cfg(test)]
+mod tests;

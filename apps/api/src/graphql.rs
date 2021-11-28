@@ -38,7 +38,3 @@ pub fn create_schema(pg_pool: PgPool) -> GraphQLSchema {
         .data(users)
         .finish()
 }
-
-#[cfg(test)]
-#[path = "../test/user_e2e_tests.rs"]
-mod user_e2e_tests;
