@@ -23,4 +23,8 @@ tokio = { version = "1", features = ["full"] }
 shaku = "0.6.1"
 
 [dev-dependencies]
+fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
+jsonpath_lib = "0.3.0"
 mockall = "0.10.2"
+rand = "0.8"
+testcontainers = "0.12.0"
