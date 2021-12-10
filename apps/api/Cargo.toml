@@ -33,7 +33,6 @@ fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 hyper = "0.14"
 hyper-tls = "0.5"
 jsonpath_lib = "0.3.0"
-lazy_static = "=1.4.0"
 mockall = "0.10.2"
 rand = "0.8"
 testcontainers = "0.12.0"

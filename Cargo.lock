@@ -277,7 +277,6 @@ dependencies = [
  "hyper",
  "hyper-tls",
  "jsonpath_lib",
- "lazy_static",
  "log",
  "mockall",
  "pretty_env_logger",
