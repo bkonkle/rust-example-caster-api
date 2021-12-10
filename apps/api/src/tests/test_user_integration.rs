@@ -1,6 +1,6 @@
 use hyper::{body::to_bytes, Body, Method, Request};
 
-use crate::tests::test_utils::{http_client, run_server};
+use crate::tests::utils::{http_client, run_server};
 
 #[tokio::test]
 #[ignore]
