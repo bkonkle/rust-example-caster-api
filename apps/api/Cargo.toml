@@ -5,17 +5,17 @@ authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"
 
 [dependencies]
-async-graphql = { version = "2.10.8", features = ["chrono"] }
-async-graphql-warp = "2.10.8"
+async-graphql = { version = "3.0", features = ["chrono"] }
+async-graphql-warp = "3.0"
 caster-shows = { path = "../../libs/shows" }
 caster-users = { path = "../../libs/users" }
 chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 log = "0.4"
 pretty_env_logger = "0.4"
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"
-serde_json = "1.0.68"
+serde_json = "1.0"
 sqlx = { version = "0.5", features = [
     "runtime-tokio-rustls",
     "postgres",
@@ -33,6 +33,6 @@ fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 hyper = "0.14"
 hyper-tls = "0.5"
 jsonpath_lib = "0.3.0"
-mockall = "0.10.2"
+mockall = "0.11"
 rand = "0.8"
 testcontainers = "0.12.0"
