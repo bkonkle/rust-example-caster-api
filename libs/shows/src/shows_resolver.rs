@@ -1,4 +1,4 @@
-use anyhow;
+use anyhow::Result;
 use async_graphql::{Context, Object};
 use std::sync::Arc;
 
@@ -14,8 +14,10 @@ impl ShowsQuery {
         &self,
         ctx: &Context<'_>,
         #[graphql(desc = "The Show id")] id: String,
-    ) -> Result<Option<Show>, anyhow::Error> {
-        let shows = ctx.data_unchecked::<Arc<dyn ShowsService>>();
+    ) -> Result<Option<Show>> {
+        let shows = ctx
+            .data::<Arc<dyn ShowsService>>()
+            .map_err(|err| anyhow!("ShowsService not found: {}", err.message))?;
 
         Ok(shows.get(id).await?)
     }

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -11,7 +12,7 @@ use crate::{show_model::Show, shows_repository::ShowsRepository};
 #[async_trait]
 pub trait ShowsService: Sync + Send {
     /// Get an individual Show by id
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>>;
+    async fn get(&self, id: String) -> Result<Option<Show>>;
 }
 
 /// The default `ShowsService` struct.
@@ -30,7 +31,7 @@ impl DefaultShowsService {
 
 #[async_trait]
 impl ShowsService for DefaultShowsService {
-    async fn get(&self, id: String) -> anyhow::Result<Option<Show>> {
+    async fn get(&self, id: String) -> Result<Option<Show>> {
         let show = (&*self.repo).get(id).await?;
 
         Ok(show)

@@ -38,6 +38,7 @@ pub async fn run(port: u16) -> (SocketAddr, impl Future<Output = ()>) {
     warp::serve(router.with(warp::log("caster_api"))).bind_ephemeral(([0, 0, 0, 0], port))
 }
 
+/// Run the server and log where to find it
 #[tokio::main]
 async fn main() {
     let (addr, server) = run(get_port()).await;

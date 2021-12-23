@@ -16,3 +16,7 @@ pub mod show_model;
 /// Show tests
 #[cfg(test)]
 mod tests;
+
+/// Error macros
+#[macro_use]
+extern crate anyhow;

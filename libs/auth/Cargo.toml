@@ -1,25 +1,19 @@
 [package]
-name = "caster-shows"
+name = "caster-auth"
 version = "0.1.0"
 authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "3.0", features = ["chrono"] }
-async-trait = "0.1.41"
-chrono = { version = "0.4.19", features = ["serde"] }
+jsonwebtoken = "7.2.0"
+once_cell = "1.9"
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
 serde_json = "1.0"
-sqlx = { version = "0.5", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "migrate",
-    "uuid",
-    "chrono",
-    "json",
-] }
+thiserror = "1.0"
 tokio = { version = "1", features = ["full"] }
+warp = "0.3"
 
 [dev-dependencies]
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }

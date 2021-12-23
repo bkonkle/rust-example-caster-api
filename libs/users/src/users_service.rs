@@ -1,3 +1,4 @@
+use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -11,7 +12,7 @@ use crate::{user_model::User, users_repository::UsersRepository};
 #[async_trait]
 pub trait UsersService: Sync + Send {
     /// Get an individual User by id
-    async fn get(&self, id: String) -> anyhow::Result<Option<User>>;
+    async fn get(&self, id: String) -> Result<Option<User>>;
 }
 
 /// The default `UsersService` struct
@@ -30,7 +31,7 @@ impl DefaultUsersService {
 
 #[async_trait]
 impl UsersService for DefaultUsersService {
-    async fn get(&self, id: String) -> anyhow::Result<Option<User>> {
+    async fn get(&self, id: String) -> Result<Option<User>> {
         let user = (&*self.repo).get(id).await?;
 
         Ok(user)
