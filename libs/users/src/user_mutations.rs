@@ -1,10 +1,10 @@
-use async_graphql::SimpleObject;
+use async_graphql::{InputObject, SimpleObject};
 use serde_json;
 
 use crate::user_model::User;
 
 /// The `CreateUserProfileInput` input type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Eq, PartialEq, InputObject)]
 pub struct CreateUserProfileInput {
     /// The Profile id
     pub id: String,
@@ -20,7 +20,7 @@ pub struct CreateUserProfileInput {
 }
 
 /// The `CreateUserInput` input type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Eq, PartialEq, InputObject)]
 pub struct CreateUserInput {
     /// The User's subscriber id
     pub username: String,
@@ -30,13 +30,13 @@ pub struct CreateUserInput {
 }
 
 /// The `UpdateUserInput` input type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Eq, PartialEq, InputObject)]
 pub struct UpdateUserInput {
     /// The User's subscriber id
     pub username: Option<String>,
 
     /// Whether the User is active or disabled
-    pub is_active: bool,
+    pub is_active: Option<bool>,
 }
 
 /// The `MutateUserResult` input type

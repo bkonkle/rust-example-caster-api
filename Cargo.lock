@@ -347,6 +347,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "async-trait",
+ "caster-auth",
  "chrono",
  "fake",
  "jsonpath_lib",

@@ -26,7 +26,17 @@ pub struct Claims {
 }
 
 /// The token's Subject claim
+#[derive(Clone)]
 pub struct Subject(String);
+
+impl Subject {
+    /// Retrieve the wrapped username
+    pub fn username(&self) -> &String {
+        let Subject(username) = self;
+
+        username
+    }
+}
 
 fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     let header = match headers.get(AUTHORIZATION) {
