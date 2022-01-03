@@ -136,7 +136,9 @@ impl UsersRepository for PgUsersRepository {
             .fetch_one(&*self.pg_pool)
             .await?),
 
-            (None, None) => Err(anyhow!("Not implemented")),
+            (None, None) => Err(anyhow!(
+                "Either a username or an is_active flag must be provided"
+            )),
         }
     }
 }
