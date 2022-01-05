@@ -50,7 +50,7 @@ impl UsersRepository for PgUsersRepository {
         Ok(sqlx::query_as!(
             User,
             r#"
-                SELECT * FROM users
+                SELECT id, username, is_active, created_at, updated_at FROM users
                     WHERE id = $1
             "#,
             id
@@ -63,7 +63,7 @@ impl UsersRepository for PgUsersRepository {
         Ok(sqlx::query_as!(
             User,
             r#"
-                SELECT * FROM users
+                SELECT id, username, is_active, created_at, updated_at FROM users
                     WHERE username = $1
             "#,
             username
@@ -78,7 +78,7 @@ impl UsersRepository for PgUsersRepository {
             r#"
                 INSERT INTO users (username)
                 VALUES ($1)
-                RETURNING *
+                RETURNING id, username, is_active, created_at, updated_at
             "#,
             username
         )
@@ -93,52 +93,25 @@ impl UsersRepository for PgUsersRepository {
         is_active: &Option<bool>,
     ) -> Result<User> {
         match (username, is_active) {
-            (Some(username), Some(is_active)) => Ok(sqlx::query_as!(
-                User,
-                r#"
-                    UPDATE users
-                    SET username = $2, is_active = $3
-                    WHERE id = $1
-                    RETURNING *
-                "#,
-                id,
-                username,
-                is_active,
-            )
-            .fetch_one(&*self.pg_pool)
-            .await?),
-
-            (None, Some(is_active)) => Ok(sqlx::query_as!(
-                User,
-                r#"
-                    UPDATE users
-                    SET is_active = $2
-                    WHERE id = $1
-                    RETURNING *
-                "#,
-                id,
-                is_active,
-            )
-            .fetch_one(&*self.pg_pool)
-            .await?),
-
-            (Some(username), None) => Ok(sqlx::query_as!(
-                User,
-                r#"
-                    UPDATE users
-                    SET username = $2
-                    WHERE id = $1
-                    RETURNING *
-                "#,
-                id,
-                username,
-            )
-            .fetch_one(&*self.pg_pool)
-            .await?),
-
             (None, None) => Err(anyhow!(
                 "Either a username or an is_active flag must be provided"
             )),
+
+            _ => Ok(sqlx::query_as!(
+                User,
+                r#"
+                    UPDATE users
+                    SET username = COALESCE($2, username),
+                        is_active = COALESCE($3, is_active)
+                    WHERE id = $1
+                    RETURNING id, username, is_active, created_at, updated_at
+                "#,
+                id,
+                username as _,
+                is_active as _,
+            )
+            .fetch_one(&*self.pg_pool)
+            .await?),
         }
     }
 }
