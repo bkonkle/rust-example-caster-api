@@ -65,3 +65,18 @@ Use `cargo` to run the server locally:
 ```sh
 cargo run
 ```
+
+### Update Dependencies
+
+First, install the `outdated` command for `cargo`:
+
+```sh
+cargo install --locked cargo-outdated
+```
+
+Then, update and check for any major dependency changes:
+
+```sh
+cargo update
+cargo outdated
+```
