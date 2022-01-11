@@ -11,13 +11,13 @@ async-trait = "0.1.41"
 chrono = { version = "0.4.19", features = ["serde"] }
 serde_json = "1.0"
 sqlx = { version = "0.5", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "migrate",
-    "uuid",
     "chrono",
     "json",
+    "macros",
+    "migrate",
+    "postgres",
+    "runtime-tokio-rustls",
+    "uuid",
 ] }
 tokio = { version = "1", features = ["full"] }
 

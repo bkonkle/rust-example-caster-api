@@ -1,0 +1,23 @@
+version: "3.1"
+
+services:
+    postgres:
+        image: postgres
+        container_name: caster_postgres
+        restart: always
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - ${DATABASE_PORT}:5432
+        environment:
+            POSTGRES_USER: ${DATABASE_USERNAME}
+            POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+            POSTGRES_DB: ${DATABASE_NAME}
+    redis:
+        image: redis
+        container_name: caster_redis
+        ports:
+            - 6379:6379
+
+volumes:
+    postgres_data:

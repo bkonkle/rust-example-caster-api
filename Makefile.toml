@@ -11,9 +11,20 @@ cwd = "./apps/api"
 command = "sqlx"
 args = ["db", "create"]
 
-
 [tasks.db-migrate]
 workspace = false
 cwd = "./apps/api"
 command = "sqlx"
 args = ["migrate", "run"]
+
+[tasks.db-reset]
+workspace = false
+cwd = "./apps/api"
+command = "sqlx"
+args = ["db", "reset"]
+
+[tasks.docker-api]
+workspace = false
+cwd = "./apps/api"
+command = "docker-compose"
+args = ["-f", "docker-compose.yml", "--env-file", "../../.env", "${@}"]

@@ -43,7 +43,7 @@ cargo install cargo-make
 Install the SQLx CLI for running migrations:
 
 ```sh
-cargo install sqlx-cli --no-default-features --features postgres
+cargo install sqlx-cli --no-default-features --features rustls,postgres
 ```
 
 Create a database based on the `DATABASE_URL` in the `.env`, if you haven't already:
@@ -56,6 +56,14 @@ Run migrations:
 
 ```sh
 cargo make db-migrate
+```
+
+### Running Docker
+
+To run the API Docker:
+
+```sh
+cargo make docker-api
 ```
 
 ### Running the Local Server
