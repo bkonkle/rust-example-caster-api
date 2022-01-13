@@ -1,0 +1,26 @@
+env = "development"
+port = 0
+
+[database]
+host = "localhost"
+username = "caster"
+password = "caster"
+name = "caster_rust"
+port = 1701
+url = "postgresql://caster:caster@localhost:1701/caster_rust"
+debug = false
+
+[database.pool]
+
+[redis]
+url = "localhost:6379"
+
+[auth]
+url = "https://caster-api-dev.us.auth0.com"
+audience = "localhost"
+
+[auth.client]
+
+[auth.test.user]
+
+[auth.test.alt]
