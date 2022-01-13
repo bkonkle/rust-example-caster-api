@@ -1,2 +1,2 @@
-/// Utilities for testing with OAuth2 authentication
+/// Utilities for testing with oauth2 authentication
 mod oauth2_utils;
