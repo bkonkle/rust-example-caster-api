@@ -113,7 +113,7 @@ impl Config {
         config.merge(File::with_name("config/local").required(false))?;
 
         // Add in settings from the environment
-        config.merge(Environment::default())?;
+        config.merge(Environment::new().separator("_"))?;
 
         config.try_into()
     }
