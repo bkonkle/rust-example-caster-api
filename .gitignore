@@ -11,5 +11,4 @@ target/
 
 # Application files
 .env
-.env.*
-!.env.example
+config/local.toml

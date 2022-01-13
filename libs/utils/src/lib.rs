@@ -2,8 +2,8 @@
 #![forbid(unsafe_code)]
 
 /// Config utilities based on config-rs
-mod config;
+pub mod config;
 
 /// Test utilities
 #[cfg(test)]
-mod test;
+pub mod test;
