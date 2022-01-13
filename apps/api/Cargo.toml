@@ -10,6 +10,7 @@ async-graphql-warp = "3.0"
 caster-auth = { path = "../../libs/auth" }
 caster-shows = { path = "../../libs/shows" }
 caster-users = { path = "../../libs/users" }
+caster-utils = { path = "../../libs/utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 log = "0.4"

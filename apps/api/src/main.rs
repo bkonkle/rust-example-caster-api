@@ -28,6 +28,7 @@ pub fn get_port() -> u16 {
 /// Start the server and return the bound address and a `Future`.
 pub async fn run(port: u16) -> (SocketAddr, impl Future<Output = ()>) {
     dotenv().ok();
+
     pretty_env_logger::init();
 
     let pg_pool = postgres::init()
