@@ -7,7 +7,7 @@ use tokio::time::sleep;
 use crate::run;
 
 pub async fn run_server() -> SocketAddr {
-    let (addr, server) = run(0).await;
+    let (addr, server) = run().await;
 
     // Spawn the server in the background
     tokio::spawn(server);
