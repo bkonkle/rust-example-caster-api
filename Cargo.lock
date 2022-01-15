@@ -378,6 +378,7 @@ dependencies = [
  "serde 1.0.133",
  "serde_derive",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,12 +1,13 @@
 use anyhow::Result;
 use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request, Response};
-use serde::{de, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use thiserror::Error;
 
 use crate::config::Config;
 
 #[derive(Debug, Serialize)]
-pub struct TokenRequest {
+struct TokenRequest {
     grant_type: &'static str,
     username: String,
     password: String,
@@ -16,8 +17,47 @@ pub struct TokenRequest {
     audience: String,
 }
 #[derive(Debug, Deserialize)]
-pub struct TokenResponse {
+struct TokenResponse {
+    access_token: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct UserInfoResponse {
+    sub: Option<String>,
+    email: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct Credentials {
+    username: String,
+    email: String,
     access_token: String,
+}
+
+#[derive(Debug)]
+pub enum Users {
+    /// The default test user
+    Test,
+    /// The alternate test user
+    Alt,
+}
+
+#[derive(Debug, Error)]
+pub enum OAuth2UtilsError {
+    #[error("No username found in config")]
+    ConfigUsername,
+    #[error("No password found in config")]
+    ConfigPassword,
+    #[error("No client_id found in config")]
+    ConfigClientId,
+    #[error("No client_secret found in config")]
+    ConfigClientSecret,
+    #[error("No access token found on result")]
+    AccessToken,
+    #[error("No sub found on result")]
+    Sub,
+    #[error("No email found on result")]
+    Email,
 }
 
 pub struct OAuth2Utils {
@@ -35,27 +75,31 @@ impl OAuth2Utils {
         })
     }
 
-    async fn get_token(&self, username: String, password: String) -> Result<()> {
+    async fn get_token(&self, username: String, password: String) -> Result<Option<String>> {
+        let client_id = self
+            .config
+            .auth
+            .client
+            .id
+            .as_ref()
+            .ok_or(OAuth2UtilsError::ConfigClientId)?
+            .clone();
+
+        let client_secret = self
+            .config
+            .auth
+            .client
+            .secret
+            .as_ref()
+            .ok_or(OAuth2UtilsError::ConfigClientSecret)?
+            .clone();
+
         let body = serde_json::to_string(&TokenRequest {
             grant_type: "password",
             username,
             password,
-            client_id: self
-                .config
-                .auth
-                .client
-                .id
-                .as_ref()
-                .expect("Auth client id is required")
-                .into(),
-            client_secret: self
-                .config
-                .auth
-                .client
-                .secret
-                .as_ref()
-                .expect("Auth client secret is required")
-                .into(),
+            client_id,
+            client_secret,
             scope: "openid profile email",
             audience: self.config.auth.audience.clone(),
         })?;
@@ -67,63 +111,53 @@ impl OAuth2Utils {
 
         let response = self.client.request(req).await?;
         let body = to_bytes(response.into_body()).await?;
+        let json = serde_json::from_slice::<TokenResponse>(&body)?;
 
-        Ok(())
+        Ok(json.access_token)
     }
 
-    fn get_test_token(&self) -> Result<()> {
-        let username = self
-            .config
-            .auth
-            .test
-            .user
+    async fn get_user_info(&self) -> Result<UserInfoResponse> {
+        let response = self
+            .client
+            .get(format!("{}/userinfo", &self.config.auth.url).parse()?)
+            .await?;
+
+        let body = to_bytes(response.into_body()).await?;
+
+        Ok(serde_json::from_slice::<UserInfoResponse>(&body)?)
+    }
+
+    pub async fn get_credentials(&self, user: Users) -> Result<Credentials> {
+        let user = match user {
+            Users::Test => &self.config.auth.test.user,
+            Users::Alt => &self.config.auth.test.alt,
+        };
+
+        let username = user
             .username
             .as_ref()
-            .expect("A test user username is required")
-            .into();
+            .ok_or(OAuth2UtilsError::ConfigUsername)?
+            .clone();
 
-        let password = self
-            .config
-            .auth
-            .test
-            .user
+        let password = user
             .password
             .as_ref()
-            .expect("A test user password is required")
-            .into();
+            .ok_or(OAuth2UtilsError::ConfigPassword)?
+            .clone();
 
-        self.get_token(username, password)
-    }
+        let access_token = self
+            .get_token(username, password)
+            .await?
+            .ok_or(OAuth2UtilsError::AccessToken)?;
 
-    fn get_alt_token(&self) -> Result<()> {
-        let username = self
-            .config
-            .auth
-            .test
-            .user
-            .username
-            .as_ref()
-            .expect("A test user username is required")
-            .into();
+        let user_info = self.get_user_info().await?;
+        let username = user_info.sub.ok_or(OAuth2UtilsError::Sub)?;
+        let email = user_info.email.ok_or(OAuth2UtilsError::Email)?;
 
-        let password = self
-            .config
-            .auth
-            .test
-            .user
-            .password
-            .as_ref()
-            .expect("A test user password is required")
-            .into();
-
-        self.get_token(username, password)
-    }
-
-    fn get_user_info(&self) -> Result<()> {
-        Ok(())
-    }
-
-    fn get_credentials(&self) -> Result<()> {
-        Ok(())
+        Ok(Credentials {
+            username,
+            email,
+            access_token,
+        })
     }
 }
