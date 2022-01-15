@@ -367,8 +367,11 @@ dependencies = [
 name = "caster-utils"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "config",
  "fake",
+ "hyper",
+ "hyper-tls",
  "jsonpath_lib",
  "mockall",
  "rand",

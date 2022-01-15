@@ -5,6 +5,7 @@ authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0"
 config = "0.11"
 serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"
@@ -15,3 +16,5 @@ fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 jsonpath_lib = "0.3.0"
 mockall = "0.11"
 rand = "0.8"
+hyper = "0.14"
+hyper-tls = "0.5"
