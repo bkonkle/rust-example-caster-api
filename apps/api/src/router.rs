@@ -2,13 +2,13 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
 use async_graphql_warp::{graphql, GraphQLBadRequest, GraphQLResponse};
 use sqlx::PgPool;
-use std::convert::Infallible;
+use std::{convert::Infallible, sync::Arc};
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 use warp::{Filter, Reply};
 
-use caster_auth::with_auth;
-
 use crate::graphql::{create_schema, GraphQLSchema, Query};
+use caster_auth::with_auth;
+use caster_utils::config::Config;
 
 /// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
 pub fn create_filter(
@@ -52,7 +52,8 @@ pub fn create_filter(
 
 /// A convenience wrapper to create a Warp filter from the base `Schema` requirements.
 pub fn create_routes(
-    pg_pool: PgPool,
+    pg_pool: Arc<PgPool>,
+    config: Arc<Config>,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    create_filter(create_schema(pg_pool))
+    create_filter(create_schema(pg_pool, config))
 }

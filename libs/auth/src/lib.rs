@@ -12,6 +12,11 @@ use warp::{
 
 use crate::error::{reject_any, AuthError};
 
+// TODO: ##########################################################
+//   Investigate https://github.com/tazjin/alcoholic_jwt to handle
+//   jwks validation.
+// ################################################################
+
 /// Error Cases
 pub mod error;
 

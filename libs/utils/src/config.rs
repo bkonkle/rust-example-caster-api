@@ -1,6 +1,9 @@
-use config::{ConfigError, Environment, File};
+use anyhow::Result;
+use figment::{
+    providers::{Env, Format, Toml},
+    Figment,
+};
 use serde_derive::Deserialize;
-use std::env;
 
 /// Database pool config
 #[derive(Debug, Deserialize)]
@@ -82,8 +85,8 @@ pub struct Auth {
 /// Application Config
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    /// The application environment
-    pub env: String,
+    /// The application's run mode (typically "development" or "production")
+    pub app_env: String,
     /// The port to bind to
     pub port: u16,
     /// Database config
@@ -96,25 +99,17 @@ pub struct Config {
 
 impl Config {
     /// Create a new Config by merging in various sources
-    pub fn new() -> Result<Self, ConfigError> {
-        let mut config = config::Config::new();
+    pub fn new() -> Result<Self> {
+        let config: Config = Figment::new()
+            .merge(Toml::file("config/default.toml"))
+            .merge(Toml::file("config/local.toml"))
+            .merge(Env::prefixed("APP_"))
+            .merge(Env::prefixed("DATABASE_"))
+            .merge(Env::prefixed("REDIS_"))
+            .merge(Env::prefixed("AUTH_"))
+            .merge(Env::raw().only(&["PORT"]))
+            .extract()?;
 
-        // Start off by merging in the "default" configuration file
-        config.merge(File::with_name("config/default"))?;
-
-        // Add in the current environment-specific config file
-        // Default to 'development' env
-        // Note that this file is _optional_
-        let env = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
-        config.merge(File::with_name(&format!("config/{}", env)).required(false))?;
-
-        // Add in a local configuration file
-        // This file shouldn't be checked in to git
-        config.merge(File::with_name("config/local").required(false))?;
-
-        // Add in settings from the environment
-        config.merge(Environment::new().separator("_"))?;
-
-        config.try_into()
+        Ok(config)
     }
 }

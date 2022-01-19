@@ -60,10 +60,10 @@ cargo make db-migrate
 
 ### Running Docker
 
-To run the API Docker:
+To run the docker-compose formation for the API app:
 
 ```sh
-cargo make docker-api
+cargo make docker-api up -d
 ```
 
 ### Running the Local Server

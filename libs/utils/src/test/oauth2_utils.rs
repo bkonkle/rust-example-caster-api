@@ -1,9 +1,11 @@
 use anyhow::Result;
-use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request, Response};
+use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request};
+use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
+use super::http_utils::http_client;
 use crate::config::Config;
 
 #[derive(Debug, Serialize)]
@@ -27,52 +29,67 @@ struct UserInfoResponse {
     email: Option<String>,
 }
 
+/// Credentials for test users
 #[derive(Debug)]
 pub struct Credentials {
-    username: String,
-    email: String,
-    access_token: String,
+    /// The test user subscriber id
+    pub username: String,
+    /// The test user email
+    pub email: String,
+    /// The access token generated for the test user
+    pub access_token: String,
 }
 
+/// Which user to retrieve a token for
 #[derive(Debug)]
-pub enum Users {
+pub enum User {
     /// The default test user
     Test,
     /// The alternate test user
     Alt,
 }
 
+/// Possible errors during token retrieval
 #[derive(Debug, Error)]
 pub enum OAuth2UtilsError {
+    /// No username found in config
     #[error("No username found in config")]
     ConfigUsername,
+    /// No password found in config
     #[error("No password found in config")]
     ConfigPassword,
+    /// "No client_id found in config"
     #[error("No client_id found in config")]
     ConfigClientId,
+    /// No client_secret found in config
     #[error("No client_secret found in config")]
     ConfigClientSecret,
+    /// No access token found on result
     #[error("No access token found on result")]
     AccessToken,
+    /// No sub found on result
     #[error("No sub found on result")]
     Sub,
+    /// No email found on result
     #[error("No email found on result")]
     Email,
 }
 
+/// Utils for interacting with an `OAuth2` service during integration testing
 pub struct OAuth2Utils {
     config: Arc<Config>,
-    client: Client<HttpConnector>,
+    client: Client<HttpsConnector<HttpConnector>>,
 }
 
 impl OAuth2Utils {
-    pub fn new(config: &Arc<Config>) -> Result<Self> {
-        let client = Client::new();
+    /// Create a new instance of the `OAuth2Utils` with the given config Arc reference
+    pub fn new(config: &Arc<Config>) -> Self {
+        let client = http_client();
 
-        Ok(OAuth2Utils {
+        OAuth2Utils {
             client,
             config: config.clone(),
-        })
+        }
     }
 
     async fn get_token(&self, username: String, password: String) -> Result<Option<String>> {
@@ -107,6 +124,7 @@ impl OAuth2Utils {
         let req = Request::builder()
             .method(Method::POST)
             .uri(format!("{}/oauth/token", &self.config.auth.url))
+            .header("Content-Type", "application/json")
             .body(Body::from(body))?;
 
         let response = self.client.request(req).await?;
@@ -116,21 +134,25 @@ impl OAuth2Utils {
         Ok(json.access_token)
     }
 
-    async fn get_user_info(&self) -> Result<UserInfoResponse> {
-        let response = self
-            .client
-            .get(format!("{}/userinfo", &self.config.auth.url).parse()?)
-            .await?;
+    async fn get_user_info(&self, token: &str) -> Result<UserInfoResponse> {
+        let req = Request::builder()
+            .method(Method::GET)
+            .uri(format!("{}/userinfo", &self.config.auth.url))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())?;
 
+        let response = self.client.request(req).await?;
         let body = to_bytes(response.into_body()).await?;
+        let json = serde_json::from_slice::<UserInfoResponse>(&body)?;
 
-        Ok(serde_json::from_slice::<UserInfoResponse>(&body)?)
+        Ok(json)
     }
 
-    pub async fn get_credentials(&self, user: Users) -> Result<Credentials> {
+    /// Get credentials for one of the test users
+    pub async fn get_credentials(&self, user: User) -> Result<Credentials> {
         let user = match user {
-            Users::Test => &self.config.auth.test.user,
-            Users::Alt => &self.config.auth.test.alt,
+            User::Test => &self.config.auth.test.user,
+            User::Alt => &self.config.auth.test.alt,
         };
 
         let username = user
@@ -150,7 +172,7 @@ impl OAuth2Utils {
             .await?
             .ok_or(OAuth2UtilsError::AccessToken)?;
 
-        let user_info = self.get_user_info().await?;
+        let user_info = self.get_user_info(&access_token).await?;
         let username = user_info.sub.ok_or(OAuth2UtilsError::Sub)?;
         let email = user_info.email.ok_or(OAuth2UtilsError::Email)?;
 

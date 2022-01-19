@@ -1,13 +1,12 @@
-use std::{net::SocketAddr, time::Duration};
-
-use hyper::{client::HttpConnector, Body, Client as HyperClient};
-use hyper_tls::HttpsConnector;
+use anyhow::Result;
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use crate::run;
+use caster_utils::config::Config;
 
-pub async fn run_server() -> SocketAddr {
-    let (addr, server) = run().await;
+pub async fn run_server(config: &Arc<Config>) -> Result<SocketAddr> {
+    let (addr, server) = run(config.clone()).await?;
 
     // Spawn the server in the background
     tokio::spawn(server);
@@ -16,10 +15,5 @@ pub async fn run_server() -> SocketAddr {
     sleep(Duration::from_millis(200)).await;
 
     // Return the bound address
-    addr
-}
-
-pub fn http_client() -> HyperClient<HttpsConnector<HttpConnector>> {
-    let https = HttpsConnector::new();
-    HyperClient::builder().build::<_, Body>(https)
+    Ok(addr)
 }

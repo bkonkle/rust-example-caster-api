@@ -12,6 +12,7 @@ use caster_users::{
     users_resolver::UsersQuery,
     users_service::{DefaultUsersService, UsersService},
 };
+use caster_utils::config::Config;
 
 #[derive(MergedObject, Default)]
 pub struct Query(UsersQuery, ShowsQuery);
@@ -21,9 +22,7 @@ pub type GraphQLSchema = Schema<Query, EmptyMutation, EmptySubscription>;
 
 /// Initialize all necessary dependencies to create a `GraphQLSchema`. Very simple dependency
 /// injection based on async-graphql's `.data()` calls.
-pub fn create_schema(pg_pool: PgPool) -> GraphQLSchema {
-    let pool = Arc::new(pg_pool);
-
+pub fn create_schema(pool: Arc<PgPool>, config: Arc<Config>) -> GraphQLSchema {
     // Service dependencies
     let shows_repo = Arc::new(PgShowsRepository::new(&pool));
     let users_repo = Arc::new(PgUsersRepository::new(&pool));
@@ -34,6 +33,7 @@ pub fn create_schema(pg_pool: PgPool) -> GraphQLSchema {
 
     // Inject the initialized services into the `Schema` instance.
     Schema::build(Query::default(), EmptyMutation, EmptySubscription)
+        .data(config)
         .data(shows)
         .data(users)
         .finish()

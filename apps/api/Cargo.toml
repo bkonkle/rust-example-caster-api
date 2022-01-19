@@ -5,6 +5,7 @@ authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0"
 async-graphql = { version = "3.0", features = ["chrono"] }
 async-graphql-warp = "3.0"
 caster-auth = { path = "../../libs/auth" }
@@ -14,6 +15,7 @@ caster-utils = { path = "../../libs/utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 log = "0.4"
+once_cell = "1.9"
 pretty_env_logger = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"

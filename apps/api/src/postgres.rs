@@ -1,16 +1,10 @@
-use sqlx::postgres::{PgPool, PgPoolOptions};
-use sqlx::Error;
-use std::env;
+// use sqlx::postgres::{PgPool, PgPoolOptions};
+// use sqlx::Error;
+// use std::sync::Arc;
 
-/// Initialize a new Postgres pool
-pub async fn init() -> Result<PgPool, Error> {
-    let database_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| String::from("postgresql://caster:caster@localhost:1701/caster"));
+// use caster_utils::config::Config;
 
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&database_url)
-        .await?;
-
-    Ok(pool)
-}
+// /// Initialize a new Postgres pool
+// pub async fn init(config: &Arc<Config>) -> Result<PgPool, Error> {
+//     Ok(pool)
+// }

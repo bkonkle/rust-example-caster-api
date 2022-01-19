@@ -4,6 +4,8 @@
 /// Config utilities based on config-rs
 pub mod config;
 
-/// Test utilities
-#[cfg(test)]
+/// Test utilities - not for use in Production code
 pub mod test;
+
+#[macro_use]
+extern crate log;
