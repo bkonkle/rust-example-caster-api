@@ -6,7 +6,7 @@ use std::{net::SocketAddr, time::Duration};
 use tokio::time::sleep;
 
 use crate::run;
-use caster_utils::http::http_client;
+use caster_utils::{config::Config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 
@@ -14,8 +14,8 @@ pub fn get_http_client() -> &'static Client<HttpsConnector<HttpConnector>> {
     &HTTP_CLIENT
 }
 
-pub async fn run_server() -> Result<SocketAddr> {
-    let (addr, server) = run().await?;
+pub async fn run_server(config: &'static Config) -> Result<SocketAddr> {
+    let (addr, server) = run(config).await?;
 
     // Spawn the server in the background
     tokio::spawn(server);

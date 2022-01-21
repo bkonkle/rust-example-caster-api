@@ -1,3 +1,5 @@
+use std::fmt;
+
 use anyhow::Result;
 use figment::{
     providers::{Env, Format, Toml},
@@ -89,7 +91,7 @@ pub struct Auth {
 #[derive(Debug, Deserialize)]
 pub struct Config {
     /// The application's run mode (typically "development" or "production")
-    pub app_env: String,
+    pub run_mode: String,
     /// The port to bind to
     pub port: u16,
     /// Database config
@@ -106,11 +108,7 @@ impl Config {
         let config: Config = Figment::new()
             .merge(Toml::file("config/default.toml"))
             .merge(Toml::file("config/local.toml"))
-            .merge(Env::prefixed("APP_"))
-            .merge(Env::prefixed("DATABASE_"))
-            .merge(Env::prefixed("REDIS_"))
-            .merge(Env::prefixed("AUTH_"))
-            .merge(Env::raw().only(&["PORT"]))
+            .merge(Env::raw())
             .extract()?;
 
         Ok(config)

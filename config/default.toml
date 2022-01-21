@@ -1,4 +1,4 @@
-app_env = "development"
+run_mode = "development"
 port = 0
 
 [database]

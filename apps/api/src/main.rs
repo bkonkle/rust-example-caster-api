@@ -9,7 +9,7 @@ use warp::{Filter, Future};
 
 use crate::router::create_routes;
 use caster_auth::jwks::get_jwks;
-use caster_utils::config::get_config;
+use caster_utils::config::{get_config, Config};
 
 mod graphql;
 mod router;
@@ -21,8 +21,7 @@ extern crate log;
 mod tests;
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run() -> Result<(SocketAddr, impl Future<Output = ()>)> {
-    let config = get_config();
+pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Output = ()>)> {
     let port = config.port;
     let jwks = get_jwks(config).await;
 
@@ -40,13 +39,15 @@ pub async fn run() -> Result<(SocketAddr, impl Future<Output = ()>)> {
 /// Run the server and log where to find it
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Load varoables from .env, failing silently
+    // Load variables from .env, failing silently
     dotenv().ok();
 
     // Set RUST_LOG=info (or your desired loglevel) to see logging
     pretty_env_logger::init();
 
-    let (addr, server) = run().await?;
+    let config = get_config();
+
+    let (addr, server) = run(config).await?;
 
     info!("Started at: http://localhost:{port}", port = addr.port());
 
