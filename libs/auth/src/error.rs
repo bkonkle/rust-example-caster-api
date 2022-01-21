@@ -11,9 +11,13 @@ pub enum AuthError {
     #[error("invalid auth header")]
     InvalidAuthHeaderError,
 
-    /// An error occurrend while attempting to decode the token
+    /// An error occurred while attempting to decode the token
     #[error("jwt token not valid")]
-    JWTTokenError(jsonwebtoken::errors::Error),
+    JWTTokenError(biscuit::errors::Error),
+
+    /// An error occured while attempting to identify the key id
+    #[error("jwks key not found by id")]
+    JWKSError,
 }
 
 /// A wrapper for `anyhow::Error` to make it compatible with `warp::Rejection`

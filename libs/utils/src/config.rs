@@ -3,7 +3,10 @@ use figment::{
     providers::{Env, Format, Toml},
     Figment,
 };
+use once_cell::sync::Lazy;
 use serde_derive::Deserialize;
+
+static CONFIG: Lazy<Config> = Lazy::new(|| Config::new().expect("Unable to retrieve config"));
 
 /// Database pool config
 #[derive(Debug, Deserialize)]
@@ -112,4 +115,9 @@ impl Config {
 
         Ok(config)
     }
+}
+
+/// Get the default static `Config`
+pub fn get_config() -> &'static Config {
+    &CONFIG
 }

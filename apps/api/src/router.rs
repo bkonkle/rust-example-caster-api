@@ -6,15 +6,19 @@ use std::{convert::Infallible, sync::Arc};
 use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
 use warp::{Filter, Reply};
 
-use crate::graphql::{create_schema, GraphQLSchema, Query};
-use caster_auth::with_auth;
+use crate::graphql::{create_schema, Query};
+use caster_auth::{jwks::JWKS, with_auth};
 use caster_utils::config::Config;
 
 /// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
-pub fn create_filter(
-    schema: GraphQLSchema,
+pub fn create_routes(
+    pg_pool: Arc<PgPool>,
+    config: &'static Config,
+    jwks: &'static JWKS,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let graphql_post = graphql(schema).and(with_auth()).and_then(
+    let schema = create_schema(pg_pool, config);
+
+    let graphql_post = graphql(schema).and(with_auth(jwks)).and_then(
         |(schema, request): (
             Schema<Query, EmptyMutation, EmptySubscription>,
             async_graphql::Request,
@@ -48,12 +52,4 @@ pub fn create_filter(
             ))
         })
         .boxed()
-}
-
-/// A convenience wrapper to create a Warp filter from the base `Schema` requirements.
-pub fn create_routes(
-    pg_pool: Arc<PgPool>,
-    config: Arc<Config>,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    create_filter(create_schema(pg_pool, config))
 }

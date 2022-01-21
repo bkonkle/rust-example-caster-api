@@ -22,7 +22,7 @@ pub type GraphQLSchema = Schema<Query, EmptyMutation, EmptySubscription>;
 
 /// Initialize all necessary dependencies to create a `GraphQLSchema`. Very simple dependency
 /// injection based on async-graphql's `.data()` calls.
-pub fn create_schema(pool: Arc<PgPool>, config: Arc<Config>) -> GraphQLSchema {
+pub fn create_schema(pool: Arc<PgPool>, config: &'static Config) -> GraphQLSchema {
     // Service dependencies
     let shows_repo = Arc::new(PgShowsRepository::new(&pool));
     let users_repo = Arc::new(PgUsersRepository::new(&pool));

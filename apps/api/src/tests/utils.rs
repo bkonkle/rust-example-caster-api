@@ -1,12 +1,21 @@
 use anyhow::Result;
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use hyper::{client::HttpConnector, Client};
+use hyper_tls::HttpsConnector;
+use once_cell::sync::Lazy;
+use std::{net::SocketAddr, time::Duration};
 use tokio::time::sleep;
 
 use crate::run;
-use caster_utils::config::Config;
+use caster_utils::http::http_client;
 
-pub async fn run_server(config: &Arc<Config>) -> Result<SocketAddr> {
-    let (addr, server) = run(config.clone()).await?;
+static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
+
+pub fn get_http_client() -> &'static Client<HttpsConnector<HttpConnector>> {
+    &HTTP_CLIENT
+}
+
+pub async fn run_server() -> Result<SocketAddr> {
+    let (addr, server) = run().await?;
 
     // Spawn the server in the background
     tokio::spawn(server);

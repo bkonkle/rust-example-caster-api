@@ -1,28 +1,20 @@
 use anyhow::Result;
-use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request};
-use hyper_tls::HttpsConnector;
-use once_cell::sync::Lazy;
-use std::sync::Arc;
+use hyper::{body::to_bytes, Body, Method, Request};
 
-use crate::tests::utils::run_server;
+use crate::tests::utils::{get_http_client, run_server};
 use caster_utils::{
-    config::Config,
-    test::{
-        http_utils::http_client,
-        oauth2_utils::{OAuth2Utils, User},
-    },
+    config::get_config,
+    test::oauth2_utils::{OAuth2Utils, User},
 };
-
-static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 
 #[tokio::test]
 #[ignore]
 async fn test_initial() -> Result<()> {
     pretty_env_logger::init();
-
-    let config = Arc::new(Config::new()?);
-    let oauth = OAuth2Utils::new(&config);
-    let addr = run_server(&config).await?;
+    let http_client = get_http_client();
+    let config = get_config();
+    let oauth = OAuth2Utils::new(config);
+    let addr = run_server().await?;
 
     let token = oauth.get_credentials(User::Test).await?;
 
@@ -47,7 +39,7 @@ async fn test_initial() -> Result<()> {
             ",
         ))?;
 
-    let resp = HTTP_CLIENT.request(req).await?;
+    let resp = http_client.request(req).await?;
     debug!("Response: {:?}", resp);
     assert_eq!(resp.status(), 200);
 

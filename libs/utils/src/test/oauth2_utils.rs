@@ -2,11 +2,10 @@ use anyhow::Result;
 use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use thiserror::Error;
 
-use super::http_utils::http_client;
 use crate::config::Config;
+use crate::http::http_client;
 
 #[derive(Debug, Serialize)]
 struct TokenRequest {
@@ -77,18 +76,16 @@ pub enum OAuth2UtilsError {
 
 /// Utils for interacting with an `OAuth2` service during integration testing
 pub struct OAuth2Utils {
-    config: Arc<Config>,
+    config: &'static Config,
     client: Client<HttpsConnector<HttpConnector>>,
 }
 
 impl OAuth2Utils {
     /// Create a new instance of the `OAuth2Utils` with the given config Arc reference
-    pub fn new(config: &Arc<Config>) -> Self {
-        let client = http_client();
-
+    pub fn new(config: &'static Config) -> Self {
         OAuth2Utils {
-            client,
-            config: config.clone(),
+            client: http_client(),
+            config,
         }
     }
 

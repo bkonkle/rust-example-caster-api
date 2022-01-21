@@ -2,7 +2,8 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
+use biscuit::{jwa::SignatureAlgorithm, jws::Header, Empty, JWT};
+use jwks::JWKS;
 use serde::{Deserialize, Serialize};
 use warp::{
     filters::header::headers_cloned,
@@ -11,17 +12,15 @@ use warp::{
 };
 
 use crate::error::{reject_any, AuthError};
-
-// TODO: ##########################################################
-//   Investigate https://github.com/tazjin/alcoholic_jwt to handle
-//   jwks validation.
-// ################################################################
+use crate::jwks::get_secret_from_key_set;
 
 /// Error Cases
 pub mod error;
 
+/// JWKS well-known key set retrieval
+pub mod jwks;
+
 const BEARER: &str = "Bearer ";
-const JWT_SECRET: &[u8] = b"secret";
 
 /// JWT claims retrieved from the Payload
 #[derive(Debug, Deserialize, Serialize)]
@@ -58,25 +57,46 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<String> {
     Ok(auth_header.trim_start_matches(BEARER).to_owned())
 }
 
-async fn authorize(headers: HeaderMap<HeaderValue>) -> Result<Subject, Rejection> {
+async fn authorize(
+    jwks: &'static JWKS,
+    headers: HeaderMap<HeaderValue>,
+) -> Result<Subject, Rejection> {
     match jwt_from_header(&headers) {
         Ok(jwt) => {
-            let decoded = decode::<Claims>(
-                &jwt,
-                &DecodingKey::from_secret(JWT_SECRET),
-                &Validation::new(Algorithm::HS512),
-            )
-            .map_err(|err| reject::custom(AuthError::JWTTokenError(err)))?;
+            // First extract without verifying the header to locate the key-id (kid)
+            let token = JWT::<Claims, Empty>::new_encoded(&jwt);
 
-            Ok(Subject(decoded.claims.sub))
+            let header: Header<Empty> = token
+                .unverified_header()
+                .map_err(|err| reject::custom(AuthError::JWTTokenError(err)))?;
+
+            let key_id = header
+                .registered
+                .key_id
+                .ok_or_else(|| reject::custom(AuthError::JWKSError))?;
+
+            // Now that we have the key, construct our RSA public key secret
+            let secret = get_secret_from_key_set(jwks, &key_id)
+                .map_err(|_err| reject::custom(AuthError::JWKSError))?;
+
+            // Not fully verify and extract the token with verification
+            let token = token
+                .into_decoded(&secret, SignatureAlgorithm::RS256)
+                .map_err(|err| reject::custom(AuthError::JWTTokenError(err)))?;
+
+            let payload = token
+                .payload()
+                .map_err(|err| reject::custom(AuthError::JWTTokenError(err)))?;
+
+            Ok(Subject(payload.private.sub.clone()))
         }
         Err(e) => Err(reject_any(e)),
     }
 }
 
 /// A Warp Filter to add Authentication context
-pub fn with_auth() -> impl Filter<Extract = (Subject,), Error = Rejection> + Clone {
-    headers_cloned()
-        .map(move |headers: HeaderMap<HeaderValue>| (headers))
-        .and_then(authorize)
+pub fn with_auth(
+    jwks: &'static JWKS,
+) -> impl Filter<Extract = (Subject,), Error = Rejection> + Clone {
+    headers_cloned().and_then(move |headers: HeaderMap<HeaderValue>| authorize(jwks, headers))
 }

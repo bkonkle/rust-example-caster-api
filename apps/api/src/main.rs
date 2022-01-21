@@ -8,7 +8,8 @@ use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
 
 use crate::router::create_routes;
-use caster_utils::config::Config;
+use caster_auth::jwks::get_jwks;
+use caster_utils::config::get_config;
 
 mod graphql;
 mod router;
@@ -20,8 +21,10 @@ extern crate log;
 mod tests;
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(config: Arc<Config>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+pub async fn run() -> Result<(SocketAddr, impl Future<Output = ()>)> {
+    let config = get_config();
     let port = config.port;
+    let jwks = get_jwks(config).await;
 
     let pg_pool = Arc::new(
         PgPoolOptions::new()
@@ -29,7 +32,7 @@ pub async fn run(config: Arc<Config>) -> Result<(SocketAddr, impl Future<Output 
             .connect(&config.database.url)
             .await?,
     );
-    let router = create_routes(pg_pool, config);
+    let router = create_routes(pg_pool, config, jwks);
 
     Ok(warp::serve(router.with(warp::log("caster_api"))).bind_ephemeral(([0, 0, 0, 0], port)))
 }
@@ -43,8 +46,7 @@ async fn main() -> Result<()> {
     // Set RUST_LOG=info (or your desired loglevel) to see logging
     pretty_env_logger::init();
 
-    let config = Arc::new(Config::new()?);
-    let (addr, server) = run(config).await?;
+    let (addr, server) = run().await?;
 
     info!("Started at: http://localhost:{port}", port = addr.port());
 
