@@ -1,14 +1,18 @@
 //! # A GraphQL server written in Rust
 #![forbid(unsafe_code)]
 
+use anyhow::Result;
 use dotenv::dotenv;
-use std::{env, net::SocketAddr};
+use sqlx::postgres::PgPoolOptions;
+use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
 
 use crate::router::create_routes;
+use caster_auth::jwks::get_jwks;
+use caster_utils::config::{get_config, Config};
 
+mod errors;
 mod graphql;
-mod postgres;
 mod router;
 
 #[macro_use]
@@ -17,31 +21,39 @@ extern crate log;
 #[cfg(test)]
 mod tests;
 
-/// Use the current environment to get the port to start on, defaulting to a random port.
-pub fn get_port() -> u16 {
-    env::var("PORT")
-        .unwrap_or_else(|_| String::from("0"))
-        .parse()
-        .unwrap_or(0)
-}
-
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(port: u16) -> (SocketAddr, impl Future<Output = ()>) {
-    dotenv().ok();
-    pretty_env_logger::init();
+pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+    let port = config.port;
+    let jwks = get_jwks(config).await;
 
-    let pg_pool = postgres::init()
-        .await
-        .expect("Unable to initialize Postgres pool.");
-    let router = create_routes(pg_pool);
+    let pg_pool = Arc::new(
+        PgPoolOptions::new()
+            .max_connections(10)
+            .connect(&config.database.url)
+            .await?,
+    );
+    let router = create_routes(pg_pool, config, jwks);
 
-    warp::serve(router.with(warp::log("caster_api"))).bind_ephemeral(([0, 0, 0, 0], port))
+    Ok(warp::serve(
+        router
+            .with(warp::log("caster_api"))
+            .recover(errors::handle_rejection),
+    )
+    .bind_ephemeral(([0, 0, 0, 0], port)))
 }
 
 /// Run the server and log where to find it
 #[tokio::main]
-async fn main() {
-    let (addr, server) = run(get_port()).await;
+async fn main() -> Result<()> {
+    // Load variables from .env, failing silently
+    dotenv().ok();
+
+    // Set RUST_LOG=info (or your desired loglevel) to see logging
+    pretty_env_logger::init();
+
+    let config = get_config();
+
+    let (addr, server) = run(config).await?;
 
     info!("Started at: http://localhost:{port}", port = addr.port());
 
@@ -51,4 +63,6 @@ async fn main() {
     );
 
     server.await;
+
+    Ok(())
 }

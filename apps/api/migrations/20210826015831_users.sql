@@ -1,7 +1,7 @@
 CREATE TABLE "users" (
     "id" TEXT NOT NULL DEFAULT ulid_generate(),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "username" TEXT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
 
@@ -11,7 +11,7 @@ CREATE TABLE "users" (
 CREATE TABLE "profiles" (
     "id" TEXT NOT NULL DEFAULT ulid_generate(),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "email" TEXT NOT NULL,
     "display_name" TEXT,
     "picture" TEXT,
@@ -28,3 +28,7 @@ CREATE UNIQUE INDEX "users.users__username__key" ON "users"("username");
 CREATE UNIQUE INDEX "profiles.profiles__user_id__key" ON "profiles"("user_id");
 
 ALTER TABLE "profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE TRIGGER sync_users_updated_at BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE sync_updated_at();
+
+CREATE TRIGGER sync_profiles_updated_at BEFORE UPDATE ON "profiles" FOR EACH ROW EXECUTE PROCEDURE sync_updated_at();

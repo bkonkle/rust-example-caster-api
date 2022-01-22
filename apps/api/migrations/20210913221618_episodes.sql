@@ -1,7 +1,7 @@
 CREATE TABLE "episodes" (
     "id" TEXT NOT NULL DEFAULT ulid_generate(),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "title" TEXT NOT NULL,
     "summary" TEXT,
     "picture" TEXT,
@@ -12,3 +12,5 @@ CREATE TABLE "episodes" (
 );
 
 ALTER TABLE "episodes" ADD FOREIGN KEY ("show_id") REFERENCES "shows"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TRIGGER sync_episodes_updated_at BEFORE UPDATE ON "episodes" FOR EACH ROW EXECUTE PROCEDURE sync_updated_at();
