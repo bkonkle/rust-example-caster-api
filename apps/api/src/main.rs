@@ -11,6 +11,7 @@ use crate::router::create_routes;
 use caster_auth::jwks::get_jwks;
 use caster_utils::config::{get_config, Config};
 
+mod errors;
 mod graphql;
 mod router;
 
@@ -33,7 +34,12 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     );
     let router = create_routes(pg_pool, config, jwks);
 
-    Ok(warp::serve(router.with(warp::log("caster_api"))).bind_ephemeral(([0, 0, 0, 0], port)))
+    Ok(warp::serve(
+        router
+            .with(warp::log("caster_api"))
+            .recover(errors::handle_rejection),
+    )
+    .bind_ephemeral(([0, 0, 0, 0], port)))
 }
 
 /// Run the server and log where to find it

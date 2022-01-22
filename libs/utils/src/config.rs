@@ -1,5 +1,3 @@
-use std::fmt;
-
 use anyhow::Result;
 use figment::{
     providers::{Env, Format, Toml},

@@ -1,4 +1,3 @@
-use anyhow::Result;
 use biscuit::{
     jwk::{AlgorithmParameters, JWKSet, JWK},
     jws::Secret,
@@ -44,7 +43,7 @@ impl JwksClient {
     }
 
     /// Get a `JWKSet` from the configured Auth url
-    pub async fn get_key_set(&self) -> Result<JWKS> {
+    pub async fn get_key_set(&self) -> anyhow::Result<JWKS> {
         let req = Request::builder()
             .method(Method::GET)
             .uri(format!("{}/.well-known/jwks.json", &self.config.auth.url))
@@ -59,7 +58,7 @@ impl JwksClient {
 }
 
 /// Get a particular key from a key set by id
-pub fn get_key(jwks: &JWKS, key_id: &str) -> Result<JWK<Empty>> {
+pub fn get_key(jwks: &JWKS, key_id: &str) -> Result<JWK<Empty>, JwksClientError> {
     let key = jwks
         .find(key_id)
         .ok_or(JwksClientError::MissingKeyId)?
@@ -69,17 +68,17 @@ pub fn get_key(jwks: &JWKS, key_id: &str) -> Result<JWK<Empty>> {
 }
 
 /// Convert a JWK into a Secret
-pub fn get_secret(jwk: JWK<Empty>) -> Result<Secret> {
+pub fn get_secret(jwk: JWK<Empty>) -> Result<Secret, JwksClientError> {
     let secret = match jwk.algorithm {
         AlgorithmParameters::RSA(rsa_key) => rsa_key.jws_public_key_secret(),
-        _ => return Err(JwksClientError::SecretKeyError.into()),
+        _ => return Err(JwksClientError::SecretKeyError),
     };
 
     Ok(secret)
 }
 
 /// A convenience function to get a particular key from a key set, and convert it into a secret
-pub fn get_secret_from_key_set(jwks: &JWKS, key_id: &str) -> Result<Secret> {
+pub fn get_secret_from_key_set(jwks: &JWKS, key_id: &str) -> Result<Secret, JwksClientError> {
     let jwk = get_key(jwks, key_id)?;
     let secret = get_secret(jwk)?;
 

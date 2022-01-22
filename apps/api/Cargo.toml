@@ -14,6 +14,8 @@ caster-users = { path = "../../libs/users" }
 caster-utils = { path = "../../libs/utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
+hyper = "0.14"
+hyper-tls = "0.5"
 log = "0.4"
 once_cell = "1.9"
 pretty_env_logger = "0.4"

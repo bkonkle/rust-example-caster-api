@@ -1,9 +1,9 @@
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptyMutation, EmptySubscription, Schema};
-use async_graphql_warp::{graphql, GraphQLBadRequest, GraphQLResponse};
+use async_graphql_warp::{graphql, GraphQLResponse};
 use sqlx::PgPool;
 use std::{convert::Infallible, sync::Arc};
-use warp::{http::Response as HttpResponse, http::StatusCode, Rejection};
+use warp::{http::Response as HttpResponse, Rejection};
 use warp::{Filter, Reply};
 
 use crate::graphql::{create_schema, Query};
@@ -36,20 +36,5 @@ pub fn create_routes(
             .body(playground_source(GraphQLPlaygroundConfig::new("/")))
     });
 
-    graphql_playground
-        .or(graphql_post)
-        .recover(|err: Rejection| async move {
-            if let Some(GraphQLBadRequest(err)) = err.find() {
-                return Ok::<_, Infallible>(warp::reply::with_status(
-                    err.to_string(),
-                    StatusCode::BAD_REQUEST,
-                ));
-            }
-
-            Ok(warp::reply::with_status(
-                "INTERNAL_SERVER_ERROR".to_string(),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ))
-        })
-        .boxed()
+    graphql_playground.or(graphql_post)
 }

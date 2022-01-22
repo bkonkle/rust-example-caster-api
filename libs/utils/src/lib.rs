@@ -9,6 +9,3 @@ pub mod http;
 
 /// Test utilities - not for use in Production code
 pub mod test;
-
-#[macro_use]
-extern crate log;

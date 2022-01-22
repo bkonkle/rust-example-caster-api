@@ -337,6 +337,7 @@ dependencies = [
  "hyper-tls",
  "jsonpath_lib",
  "jsonwebtoken",
+ "log",
  "mockall",
  "once_cell",
  "rand",

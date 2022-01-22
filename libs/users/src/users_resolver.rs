@@ -21,7 +21,7 @@ impl UsersQuery {
         let subject = ctx.data::<Subject>().ok();
 
         match subject {
-            Some(subject) => users.get(&Username(subject.username().clone())).await,
+            Some(Subject(Some(username))) => users.get(&Username(username.clone())).await,
             _ => Ok(None),
         }
     }
@@ -35,7 +35,7 @@ impl UsersQuery {
         let subject = ctx.data::<Subject>().ok();
 
         let token_username = match subject {
-            Some(subject) => Ok(subject.username()),
+            Some(Subject(Some(username))) => Ok(username),
             _ => Err(anyhow!("A valid JWT token with a sub is required")),
         }?;
 
@@ -51,7 +51,7 @@ impl UsersQuery {
         let subject = ctx.data::<Subject>().ok();
 
         let existing = match subject {
-            Some(subject) => users.get(&Username(subject.username().clone())).await,
+            Some(Subject(Some(username))) => users.get(&Username(username.clone())).await,
             _ => Err(anyhow!("A valid JWT token with a sub is required")),
         }?;
 
