@@ -22,9 +22,6 @@ pub struct CreateUserProfileInput {
 /// The `CreateUserInput` input type
 #[derive(Clone, Eq, PartialEq, InputObject)]
 pub struct CreateUserInput {
-    /// The User's subscriber id
-    pub username: String,
-
     /// The User's profile
     pub profile: Option<CreateUserProfileInput>,
 }

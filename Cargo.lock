@@ -378,6 +378,7 @@ dependencies = [
  "fake",
  "jsonpath_lib",
  "jsonwebtoken",
+ "log",
  "mockall",
  "once_cell",
  "rand",

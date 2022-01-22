@@ -24,7 +24,7 @@ pub fn from_auth_error(err: &AuthError) -> (String, hyper::StatusCode) {
         AuthError::JWTTokenError(err) => {
             (format!("JWTTokenError: {}", err), StatusCode::BAD_REQUEST)
         }
-        _ => (err.to_string(), StatusCode::BAD_REQUEST),
+        AuthError::InvalidAuthHeaderError => (err.to_string(), StatusCode::BAD_REQUEST),
     }
 }
 

@@ -34,16 +34,12 @@ impl UsersQuery {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data::<Subject>().ok();
 
-        let token_username = match subject {
+        let username = match subject {
             Some(Subject(Some(username))) => Ok(username),
             _ => Err(anyhow!("A valid JWT token with a sub is required")),
         }?;
 
-        if token_username != &input.username {
-            return Err(anyhow!("Username must match JWT token sub"));
-        };
-
-        users.create(&input).await
+        users.create(username, &input).await
     }
 
     async fn update_current_user(&self, ctx: &Context<'_>, input: UpdateUserInput) -> Result<User> {

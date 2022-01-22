@@ -19,6 +19,8 @@ pub mod user_mutations;
 /// The Profile model
 pub mod profile_model;
 
-/// Error macros
 #[macro_use]
 extern crate anyhow;
+
+#[macro_use]
+extern crate log;

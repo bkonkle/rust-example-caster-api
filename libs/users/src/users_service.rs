@@ -12,6 +12,7 @@ use crate::{
 };
 
 /// Unique Criteria for finding a single User
+#[derive(Debug)]
 pub enum Unique {
     /// Find a User based on a String id
     Id(String),
@@ -28,7 +29,7 @@ pub trait UsersService: Sync + Send {
     async fn get(&self, unique: &Unique) -> Result<Option<User>>;
 
     /// Create a `User` with the given username
-    async fn create(&self, input: &CreateUserInput) -> Result<User>;
+    async fn create(&self, username: &str, input: &CreateUserInput) -> Result<User>;
 
     /// Update an existing `User`
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User>;
@@ -59,8 +60,14 @@ impl UsersService for DefaultUsersService {
         Ok(user)
     }
 
-    async fn create(&self, input: &CreateUserInput) -> Result<User> {
-        self.repo.create(&input.username).await
+    async fn create(&self, username: &str, input: &CreateUserInput) -> Result<User> {
+        let user = self.repo.create(username).await?;
+
+        if input.profile.is_some() {
+            debug!("TODO: Create inline profile");
+        }
+
+        Ok(user)
     }
 
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User> {
