@@ -6,6 +6,7 @@ use figment::{
 use once_cell::sync::Lazy;
 use serde_derive::Deserialize;
 
+/// The default `Config` instance
 static CONFIG: Lazy<Config> = Lazy::new(|| Config::new().expect("Unable to retrieve config"));
 
 /// Database pool config

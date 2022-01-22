@@ -17,6 +17,7 @@ struct TokenRequest {
     scope: &'static str,
     audience: String,
 }
+
 #[derive(Debug, Deserialize)]
 struct TokenResponse {
     access_token: Option<String>,

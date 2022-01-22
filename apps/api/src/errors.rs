@@ -28,7 +28,7 @@ pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> 
         message = auth_message;
     } else if let Some(GraphQLBadRequest(err)) = err.find() {
         code = StatusCode::BAD_REQUEST;
-        message = format!("GraphQJBadRequest: {}", err);
+        message = format!("GraphQLBadRequest: {}", err);
     } else {
         debug!("Unhandled Rejection: {:?}", err);
 
