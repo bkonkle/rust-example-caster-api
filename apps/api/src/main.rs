@@ -3,44 +3,12 @@
 
 use anyhow::Result;
 use dotenv::dotenv;
-use sqlx::postgres::PgPoolOptions;
-use std::{net::SocketAddr, sync::Arc};
-use warp::{Filter, Future};
 
-use crate::router::create_routes;
-use caster_auth::jwks::get_jwks;
-use caster_utils::config::{get_config, Config};
-
-mod errors;
-mod graphql;
-mod router;
+use caster_api::run;
+use caster_utils::config::get_config;
 
 #[macro_use]
 extern crate log;
-
-#[cfg(test)]
-mod tests;
-
-/// Start the server and return the bound address and a `Future`.
-pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Output = ()>)> {
-    let port = config.port;
-    let jwks = get_jwks(config).await;
-
-    let pg_pool = Arc::new(
-        PgPoolOptions::new()
-            .max_connections(10)
-            .connect(&config.database.url)
-            .await?,
-    );
-    let router = create_routes(pg_pool, config, jwks);
-
-    Ok(warp::serve(
-        router
-            .with(warp::log("caster_api"))
-            .recover(errors::handle_rejection),
-    )
-    .bind_ephemeral(([0, 0, 0, 0], port)))
-}
 
 /// Run the server and log where to find it
 #[tokio::main]

@@ -6,7 +6,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-use crate::run;
+use caster_api::run;
 use caster_shows::shows_repository::PgShowsRepository;
 use caster_users::users_repository::PgUsersRepository;
 use caster_utils::{

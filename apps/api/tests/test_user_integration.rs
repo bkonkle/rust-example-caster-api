@@ -2,12 +2,14 @@ use anyhow::Result;
 use hyper::body::to_bytes;
 use serde_json::Value;
 
-use super::utils::{init_test, TestUtils};
 use caster_users::{
     user_model::User,
     users_repository::{PgUsersRepository, UsersRepository},
 };
 use caster_utils::test::oauth2::{Credentials, User as TestUser};
+
+mod test_utils;
+use test_utils::{init_test, TestUtils};
 
 async fn create_user(users: &PgUsersRepository, username: &str) -> Result<User> {
     let user = users.get_by_username(username).await?;
