@@ -48,7 +48,7 @@ pub struct TestUtils {
 
 /// Initialize common test utils
 pub async fn init_test() -> Result<TestUtils> {
-    pretty_env_logger::init();
+    let _ = pretty_env_logger::try_init();
 
     let config = get_config();
 

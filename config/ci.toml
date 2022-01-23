@@ -1,7 +1,6 @@
 # CI testing
 
 run_mode = "ci"
-port = 3000
 
 [database]
 name = "caster_rust_test"

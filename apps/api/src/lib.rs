@@ -1,4 +1,6 @@
 //! # A GraphQL server written in Rust
+#![forbid(unsafe_code)]
+
 use anyhow::Result;
 use sqlx::postgres::PgPoolOptions;
 use std::{net::SocketAddr, sync::Arc};

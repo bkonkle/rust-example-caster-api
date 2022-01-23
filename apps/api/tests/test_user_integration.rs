@@ -32,6 +32,21 @@ async fn delete_user(users: &PgUsersRepository, id: &str) -> Result<()> {
     Ok(())
 }
 
+/***
+ * Query: `getCurrentUser`
+ */
+
+static GET_CURRENT_USER: &str = "
+    query GetCurrentUser {
+        getCurrentUser {
+            id
+            username
+            isActive
+        }
+    }
+";
+
+/// It retrieves the currently authenticated user
 #[tokio::test]
 #[ignore]
 async fn test_get_current_user() -> Result<()> {
@@ -52,19 +67,7 @@ async fn test_get_current_user() -> Result<()> {
     // Create a user with this username if one doesn't already exist
     let user = create_user(&users, username).await?;
 
-    let req = graphql.query(
-        "
-            query GetCurrentUser {
-                getCurrentUser {
-                id
-                username
-                isActive
-                }
-            }
-        "
-        .to_string(),
-        token,
-    )?;
+    let req = graphql.query(GET_CURRENT_USER, token)?;
 
     let resp = http_client.request(req).await?;
     let status = resp.status();
@@ -81,3 +84,112 @@ async fn test_get_current_user() -> Result<()> {
 
     Ok(())
 }
+
+/// It returns null when no user is found
+#[tokio::test]
+#[ignore]
+async fn test_get_current_user_no_user() -> Result<()> {
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ..
+    } = init_test().await?;
+
+    let Credentials {
+        access_token: token,
+        ..
+    } = oauth.get_credentials(TestUser::Test).await;
+
+    let req = graphql.query(GET_CURRENT_USER, token)?;
+
+    let resp = http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["data"]["getCurrentUser"], Value::Null);
+    assert_eq!(json["errors"], Value::Null);
+
+    Ok(())
+}
+
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_get_current_user_no_authn() -> Result<()> {
+    let TestUtils {
+        http_client,
+        graphql,
+        ..
+    } = init_test().await?;
+
+    let req = graphql.anon_query(GET_CURRENT_USER)?;
+
+    let resp = http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "A valid JWT token is required"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    Ok(())
+}
+
+/***
+ * Mutation: `getOrCreateCurrentUser`
+ */
+
+#[allow(dead_code)]
+static GET_OR_CREATE_CURRENT_USER: &str = "
+    mutation GetOrCreateCurrentUser($input: CreateUserInput!) {
+        getOrCreateCurrentUser(input: $input) {
+            user {
+                id
+                username
+                isActive
+                profile {
+                    id
+                    email
+                }
+            }
+        }
+    }
+";
+
+// It retrieves the currently authenticated user
+
+// It uses the input to create one when no user is found
+
+// It requires authentication
+
+/***
+ * Query: `updateCurrentUser`
+ */
+
+#[allow(dead_code)]
+static UPDATE_CURRENT_USER: &str = "
+    mutation UpdateCurrentUser($input: UpdateUserInput!) {
+        updateCurrentUser(input: $input) {
+            user {
+                id
+                username
+                isActive
+            }
+        }
+    }
+";
+
+// It updates the currently authenticated user
+
+// It requires authentication
+
+// It requires a valid user record

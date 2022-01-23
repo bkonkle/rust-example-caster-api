@@ -9,3 +9,9 @@ pub mod http;
 
 /// Test utilities - not for use in Production code
 pub mod test;
+
+/// Error helpers for GraphQL
+pub mod errors;
+
+#[macro_use]
+extern crate anyhow;

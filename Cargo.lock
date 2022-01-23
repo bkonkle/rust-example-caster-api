@@ -374,8 +374,10 @@ dependencies = [
  "async-graphql",
  "async-trait",
  "caster-auth",
+ "caster-utils",
  "chrono",
  "fake",
+ "hyper",
  "jsonpath_lib",
  "jsonwebtoken",
  "log",
@@ -394,6 +396,7 @@ name = "caster-utils"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-graphql",
  "fake",
  "figment",
  "hyper",

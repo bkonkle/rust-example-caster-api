@@ -1,14 +1,14 @@
-use anyhow::Result;
-use async_graphql::{Context, Object};
+use async_graphql::{Context, ErrorExtensions, Object, Result};
+use hyper::StatusCode;
 use std::sync::Arc;
-
-use caster_auth::Subject;
 
 use crate::{
     user_model::User,
     user_mutations::{CreateUserInput, UpdateUserInput},
     users_service::{Unique::Username, UsersService},
 };
+use caster_auth::Subject;
+use caster_utils::errors::{as_graphql_error, graphql_error};
 
 /// The Query segment owned by the Users library
 #[derive(Default)]
@@ -21,8 +21,19 @@ impl UsersQuery {
         let subject = ctx.data::<Subject>().ok();
 
         match subject {
-            Some(Subject(Some(username))) => users.get(&Username(username.clone())).await,
-            _ => Ok(None),
+            Some(Subject(Some(username))) => {
+                users
+                    .get(&Username(username.clone()))
+                    .await
+                    .map_err(as_graphql_error(
+                        "Error while retrieving User",
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                    ))
+            }
+            _ => Err(graphql_error(
+                "A valid JWT token is required",
+                StatusCode::UNAUTHORIZED,
+            )),
         }
     }
 
@@ -36,24 +47,43 @@ impl UsersQuery {
 
         let username = match subject {
             Some(Subject(Some(username))) => Ok(username),
-            _ => Err(anyhow!("A valid JWT token with a sub is required")),
+            _ => Err(graphql_error(
+                "A valid JWT token is required",
+                StatusCode::UNAUTHORIZED,
+            )),
         }?;
 
-        users.create(username, &input).await
+        users.create(username, &input).await.map_err(|e| e.into())
     }
 
     async fn update_current_user(&self, ctx: &Context<'_>, input: UpdateUserInput) -> Result<User> {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data::<Subject>().ok();
 
-        let existing = match subject {
-            Some(Subject(Some(username))) => users.get(&Username(username.clone())).await,
-            _ => Err(anyhow!("A valid JWT token with a sub is required")),
-        }?;
+        let existing =
+            match subject {
+                Some(Subject(Some(username))) => users
+                    .get(&Username(username.clone()))
+                    .await
+                    .map_err(as_graphql_error(
+                        "Error while retrieving existing User",
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                    )),
+                _ => Err(anyhow!("Unauthorized").extend_with(|_err, e| e.set("code", 401))),
+            }?;
 
         match existing {
-            Some(existing) => users.update(&existing.id, &input).await,
-            _ => Err(anyhow!("No existing User found for the current JWT token")),
+            Some(existing) => users
+                .update(&existing.id, &input)
+                .await
+                .map_err(as_graphql_error(
+                    "Error while updating User",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                )),
+            _ => Err(graphql_error(
+                "No existing User found for the current JWT token",
+                StatusCode::BAD_REQUEST,
+            )),
         }
     }
 }
