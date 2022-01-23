@@ -28,3 +28,15 @@ workspace = false
 cwd = "./apps/api"
 command = "docker-compose"
 args = ["-f", "docker-compose.yml", "--env-file", "../../.env", "${@}"]
+
+[tasks.integration]
+workspace = false
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info", "RUST_BACKTRACE" = 0 }
+command = "cargo"
+args = ["test", "--", "--nocapture", "--ignored"]
+
+[tasks.integration-ci]
+workspace = false
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info" }
+command = "cargo"
+args = ["test", "--", "--nocapture", "--ignored"]

@@ -27,6 +27,9 @@ pub trait UsersRepository: Sync + Send {
         username: &Option<String>,
         is_active: &Option<bool>,
     ) -> Result<User>;
+
+    /// Remove an existing `User` by id
+    async fn delete(&self, id: &str) -> Result<()>;
 }
 
 /// A `UsersRepository` instance based on Postgres
@@ -113,5 +116,13 @@ impl UsersRepository for PgUsersRepository {
             .fetch_one(&*self.pg_pool)
             .await?),
         }
+    }
+
+    async fn delete(&self, id: &str) -> Result<()> {
+        sqlx::query!(r#"DELETE FROM users WHERE id = $1"#, id)
+            .fetch_optional(&*self.pg_pool)
+            .await?;
+
+        Ok(())
     }
 }

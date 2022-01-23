@@ -66,7 +66,7 @@ async fn authorize(
                 .key_id
                 .ok_or_else(|| reject::custom(JWKSError))?;
 
-            debug!("Found key id: {:?}", key_id);
+            debug!("Fetching signing key for '{:?}'", key_id);
 
             // Now that we have the key, construct our RSA public key secret
             let secret =

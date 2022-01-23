@@ -5,6 +5,7 @@ use figment::{
 };
 use once_cell::sync::Lazy;
 use serde_derive::Deserialize;
+use std::env;
 
 /// The default `Config` instance
 static CONFIG: Lazy<Config> = Lazy::new(|| Config::new().expect("Unable to retrieve config"));
@@ -104,10 +105,18 @@ pub struct Config {
 impl Config {
     /// Create a new Config by merging in various sources
     pub fn new() -> Result<Self> {
+        let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
+
         let config: Config = Figment::new()
+            // Load defaults
             .merge(Toml::file("config/default.toml"))
+            // Load local overrides
             .merge(Toml::file("config/local.toml"))
+            // Load run mode overrides
+            .merge(Toml::file(format!("config/{}.toml", run_mode)))
+            // Load environment variables
             .merge(Env::raw())
+            // Serialize and freeze
             .extract()?;
 
         Ok(config)

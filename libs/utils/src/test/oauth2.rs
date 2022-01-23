@@ -2,10 +2,13 @@ use anyhow::Result;
 use hyper::{body::to_bytes, client::HttpConnector, Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+use tokio::sync::OnceCell;
 
 use crate::config::Config;
 use crate::http::http_client;
+
+static TEST_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
+static ALT_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
 
 #[derive(Debug, Serialize)]
 struct TokenRequest {
@@ -49,32 +52,6 @@ pub enum User {
     Alt,
 }
 
-/// Possible errors during token retrieval
-#[derive(Debug, Error)]
-pub enum OAuth2UtilsError {
-    /// No username found in config
-    #[error("No username found in config")]
-    ConfigUsername,
-    /// No password found in config
-    #[error("No password found in config")]
-    ConfigPassword,
-    /// "No client_id found in config"
-    #[error("No client_id found in config")]
-    ConfigClientId,
-    /// No client_secret found in config
-    #[error("No client_secret found in config")]
-    ConfigClientSecret,
-    /// No access token found on result
-    #[error("No access token found on result")]
-    AccessToken,
-    /// No sub found on result
-    #[error("No sub found on result")]
-    Sub,
-    /// No email found on result
-    #[error("No email found on result")]
-    Email,
-}
-
 /// Utils for interacting with an `OAuth2` service during integration testing
 pub struct OAuth2Utils {
     config: &'static Config,
@@ -97,7 +74,7 @@ impl OAuth2Utils {
             .client
             .id
             .as_ref()
-            .ok_or(OAuth2UtilsError::ConfigClientId)?
+            .expect("No client_id found in config")
             .clone();
 
         let client_secret = self
@@ -106,7 +83,7 @@ impl OAuth2Utils {
             .client
             .secret
             .as_ref()
-            .ok_or(OAuth2UtilsError::ConfigClientSecret)?
+            .expect("No client_secret found in config")
             .clone();
 
         let body = serde_json::to_string(&TokenRequest {
@@ -147,37 +124,44 @@ impl OAuth2Utils {
     }
 
     /// Get credentials for one of the test users
-    pub async fn get_credentials(&self, user: User) -> Result<Credentials> {
-        let user = match user {
-            User::Test => &self.config.auth.test.user,
-            User::Alt => &self.config.auth.test.alt,
+    pub async fn get_credentials(&self, user: User) -> &'static Credentials {
+        // Pick the user settings and OnceCell reference to use
+        let (test_user, cell) = match user {
+            User::Test => (&self.config.auth.test.user, &TEST_CREDENTIALS),
+            User::Alt => (&self.config.auth.test.alt, &ALT_CREDENTIALS),
         };
 
-        let username = user
-            .username
-            .as_ref()
-            .ok_or(OAuth2UtilsError::ConfigUsername)?
-            .clone();
+        // Retrieve the requested credentials if not yet present
+        cell.get_or_init(|| async {
+            let username = test_user
+                .username
+                .as_ref()
+                .unwrap_or_else(|| panic!("No username found for: {:?}", user))
+                .to_string();
+            let password = test_user
+                .password
+                .as_ref()
+                .unwrap_or_else(|| panic!("No password found for: {:?}", user))
+                .to_string();
+            let access_token = self
+                .get_token(username, password)
+                .await
+                .expect("Unable to get an access token")
+                .expect("No access token returned");
 
-        let password = user
-            .password
-            .as_ref()
-            .ok_or(OAuth2UtilsError::ConfigPassword)?
-            .clone();
+            let user_info = self
+                .get_user_info(&access_token)
+                .await
+                .expect("Unable to get user info");
+            let username = user_info.sub.expect("No subject/username found");
+            let email = user_info.email.expect("No email address found");
 
-        let access_token = self
-            .get_token(username, password)
-            .await?
-            .ok_or(OAuth2UtilsError::AccessToken)?;
-
-        let user_info = self.get_user_info(&access_token).await?;
-        let username = user_info.sub.ok_or(OAuth2UtilsError::Sub)?;
-        let email = user_info.email.ok_or(OAuth2UtilsError::Email)?;
-
-        Ok(Credentials {
-            username,
-            email,
-            access_token,
+            Credentials {
+                username,
+                email,
+                access_token,
+            }
         })
+        .await
     }
 }

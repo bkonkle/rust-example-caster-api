@@ -2,10 +2,13 @@ use anyhow::Result;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
-use std::{net::SocketAddr, time::Duration};
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use crate::run;
+use caster_shows::shows_repository::PgShowsRepository;
+use caster_users::users_repository::PgUsersRepository;
 use caster_utils::{
     config::{get_config, Config},
     http::http_client,
@@ -38,6 +41,9 @@ pub struct TestUtils {
     pub http_client: &'static Client<HttpsConnector<HttpConnector>>,
     pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
+    pub pool: Arc<PgPool>,
+    pub users: PgUsersRepository,
+    pub shows: PgShowsRepository,
 }
 
 /// Initialize common test utils
@@ -56,10 +62,23 @@ pub async fn init_test() -> Result<TestUtils> {
         port = addr.port()
     ));
 
+    let pool = Arc::new(
+        PgPoolOptions::new()
+            .max_connections(10)
+            .connect(&config.database.url)
+            .await?,
+    );
+
+    let shows = PgShowsRepository::new(&pool);
+    let users = PgUsersRepository::new(&pool);
+
     Ok(TestUtils {
         config,
         http_client,
         oauth,
         graphql,
+        pool,
+        users,
+        shows,
     })
 }

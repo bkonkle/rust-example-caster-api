@@ -44,9 +44,13 @@ impl JwksClient {
 
     /// Get a `JWKSet` from the configured Auth url
     pub async fn get_key_set(&self) -> anyhow::Result<JWKS> {
+        let url = format!("{}/.well-known/jwks.json", &self.config.auth.url);
+
+        debug!("Fetching keys from '{}'", url);
+
         let req = Request::builder()
             .method(Method::GET)
-            .uri(format!("{}/.well-known/jwks.json", &self.config.auth.url))
+            .uri(url)
             .body(Body::empty())?;
 
         let response = self.client.request(req).await?;

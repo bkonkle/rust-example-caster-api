@@ -12,3 +12,4 @@ target/
 # Application files
 .env
 config/local.toml
+config/test.toml
