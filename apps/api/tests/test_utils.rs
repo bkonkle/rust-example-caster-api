@@ -62,6 +62,8 @@ pub async fn init_test() -> Result<TestUtils> {
         port = addr.port()
     ));
 
+    // This needs to be created anew each time because it can't be shared when the Tokio runtime
+    // is being stopped and re-started between tests
     let pool = Arc::new(
         PgPoolOptions::new()
             .max_connections(10)

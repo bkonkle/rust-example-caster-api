@@ -31,12 +31,12 @@ args = ["-f", "docker-compose.yml", "--env-file", "../../.env", "${@}"]
 
 [tasks.integration]
 workspace = false
-env = { "RUN_MODE" = "test", "RUST_LOG" = "info", "RUST_BACKTRACE" = 0 }
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
 command = "cargo"
 args = ["test", "--", "--nocapture", "--ignored"]
 
 [tasks.integration-ci]
 workspace = false
-env = { "RUN_MODE" = "ci", "RUST_LOG" = "info" }
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1 }
 command = "cargo"
 args = ["test", "--", "--nocapture", "--ignored"]

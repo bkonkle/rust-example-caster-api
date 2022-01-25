@@ -4,32 +4,27 @@ use async_trait::async_trait;
 use mockall::automock;
 use std::sync::Arc;
 
-use self::{Unique::Id, Unique::Username};
 use crate::{
     user_model::User,
     user_mutations::{CreateUserInput, UpdateUserInput},
     users_repository::UsersRepository,
 };
 
-/// Unique Criteria for finding a single User
-#[derive(Debug)]
-pub enum Unique {
-    /// Find a User based on a String id
-    Id(String),
-
-    /// Find a User based on a Subject as username
-    Username(String),
-}
-
 /// A UsersService appliies business logic to a dynamic UsersRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait UsersService: Sync + Send {
-    /// Get an individual `User` by a `Unique` criteria
-    async fn get(&self, unique: &Unique) -> Result<Option<User>>;
+    /// Get an individual `User` by id
+    async fn get(&self, id: &str) -> Result<Option<User>>;
+
+    /// Get an individual `User` by username
+    async fn get_by_username(&self, username: &str) -> Result<Option<User>>;
 
     /// Create a `User` with the given username
     async fn create(&self, username: &str, input: &CreateUserInput) -> Result<User>;
+
+    /// Create a `User` with the given username if one doesn't exist
+    async fn get_or_create(&self, username: &str, input: &CreateUserInput) -> Result<User>;
 
     /// Update an existing `User`
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User>;
@@ -51,11 +46,14 @@ impl DefaultUsersService {
 
 #[async_trait]
 impl UsersService for DefaultUsersService {
-    async fn get(&self, unique: &Unique) -> Result<Option<User>> {
-        let user = match unique {
-            Id(id) => self.repo.get(id).await?,
-            Username(username) => self.repo.get_by_username(username).await?,
-        };
+    async fn get(&self, id: &str) -> Result<Option<User>> {
+        let user = self.repo.get(id).await?;
+
+        Ok(user)
+    }
+
+    async fn get_by_username(&self, username: &str) -> Result<Option<User>> {
+        let user = self.repo.get_by_username(username).await?;
 
         Ok(user)
     }
@@ -68,6 +66,16 @@ impl UsersService for DefaultUsersService {
         }
 
         Ok(user)
+    }
+
+    async fn get_or_create(&self, username: &str, input: &CreateUserInput) -> Result<User> {
+        let user = self.get_by_username(username).await?;
+
+        if let Some(user) = user {
+            return Ok(user);
+        }
+
+        self.create(username, input).await
     }
 
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User> {

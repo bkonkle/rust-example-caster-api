@@ -22,13 +22,14 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let port = config.port;
     let jwks = get_jwks(config).await;
 
-    let pg_pool = Arc::new(
+    let pool = Arc::new(
         PgPoolOptions::new()
             .max_connections(10)
             .connect(&config.database.url)
             .await?,
     );
-    let router = create_routes(pg_pool, config, jwks);
+
+    let router = create_routes(&pool, config, jwks);
 
     Ok(warp::serve(
         router

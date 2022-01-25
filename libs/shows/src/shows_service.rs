@@ -32,7 +32,7 @@ impl DefaultShowsService {
 #[async_trait]
 impl ShowsService for DefaultShowsService {
     async fn get(&self, id: String) -> Result<Option<Show>> {
-        let show = (&*self.repo).get(id).await?;
+        let show = self.repo.get(id).await?;
 
         Ok(show)
     }
