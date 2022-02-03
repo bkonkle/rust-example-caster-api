@@ -1,7 +1,7 @@
 //! # The Users Library
 #![forbid(unsafe_code)]
 
-/// The GraphQL Resolver
+/// The GraphQL Users Resolver
 pub mod users_resolver;
 
 /// The Users entity repository
@@ -15,6 +15,9 @@ pub mod user_model;
 
 /// The User mutations
 pub mod user_mutations;
+
+/// The GraphQL Profiles Resolver
+pub mod profiles_resolver;
 
 /// The Profile mutations
 pub mod profiles_repository;

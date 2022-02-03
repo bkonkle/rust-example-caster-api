@@ -52,19 +52,37 @@ pub struct ProfileDB {
     pub updated_at: NaiveDateTime,
 }
 
+impl Profile {
+    /// If not authorized, censor the Profile email
+    pub fn censor(&self, current_user_id: Option<String>) -> Self {
+        let mut profile = self.clone();
+
+        let same_user = match current_user_id {
+            Some(user_id) => self.user_id == Some(user_id),
+            _ => false,
+        };
+
+        // If not same user, censor the email
+        // TODO: Allow users with an admin role to read this regardless
+        profile.email = if same_user { self.email.clone() } else { None };
+
+        profile
+    }
+}
+
 impl From<ProfileDB> for Profile {
-    fn from(item: ProfileDB) -> Self {
-        Profile {
-            id: item.id,
-            email: Some(item.email),
-            display_name: item.display_name,
-            picture: item.picture,
-            content: item.content,
-            city: item.city,
-            state_province: item.state_province,
-            user_id: item.user_id,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
+    fn from(profile: ProfileDB) -> Self {
+        Self {
+            id: profile.id,
+            email: Some(profile.email),
+            display_name: profile.display_name,
+            picture: profile.picture,
+            content: profile.content,
+            city: profile.city,
+            state_province: profile.state_province,
+            user_id: profile.user_id,
+            created_at: profile.created_at,
+            updated_at: profile.updated_at,
         }
     }
 }

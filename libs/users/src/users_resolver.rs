@@ -13,11 +13,11 @@ use crate::{
 use caster_auth::Subject;
 use caster_utils::errors::{as_graphql_error, graphql_error};
 
-/// The Query segment owned by the Users library
+/// The Query segment for Users
 #[derive(Default)]
 pub struct UsersQuery {}
 
-/// The Mutation segment owned by the Users library
+/// The Mutation segment for Users
 #[derive(Default)]
 pub struct UsersMutation {}
 
@@ -25,9 +25,11 @@ pub struct UsersMutation {}
 #[ComplexObject]
 impl User {
     async fn profile(&self, ctx: &Context<'_>) -> Result<Option<Profile>> {
+        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
+        let subject = ctx.data_unchecked::<Subject>();
 
-        let result = profiles
+        let profile = profiles
             .get_by_user_id(&self.id)
             .await
             .map_err(as_graphql_error(
@@ -35,7 +37,19 @@ impl User {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ))?;
 
-        Ok(result)
+        let current_user_id = match subject {
+            Subject(Some(username)) => users
+                .get_by_username(username)
+                .await
+                .map_err(as_graphql_error(
+                    "Error while retrieving User",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ))?
+                .map(|u| u.id),
+            _ => None,
+        };
+
+        Ok(profile.map(|p| p.censor(current_user_id)))
     }
 }
 

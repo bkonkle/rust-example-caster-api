@@ -51,10 +51,12 @@ async fn test_get_current_user() -> Result<()> {
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
 
+    let json_user = &json["data"]["getCurrentUser"];
+
     assert_eq!(status, 200);
-    assert_eq!(json["data"]["getCurrentUser"]["id"], user.id);
-    assert_eq!(json["data"]["getCurrentUser"]["username"], user.username);
-    assert_eq!(json["data"]["getCurrentUser"]["isActive"], true);
+    assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_user["username"], user.username);
+    assert_eq!(json_user["isActive"], true);
 
     // Clean up the user
     users.delete(&user.id).await?;
@@ -70,21 +72,13 @@ async fn test_get_current_user_no_user() -> Result<()> {
         http_client,
         oauth,
         graphql,
-        users,
         ..
     } = init_test().await?;
 
     let Credentials {
         access_token: token,
-        username,
         ..
     } = oauth.get_credentials(TestUser::Test).await;
-
-    // Make sure there's no leftover user
-    let existing = users.get_by_username(username).await?;
-    if let Some(existing) = existing {
-        users.delete(&existing.id).await?;
-    }
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
 
@@ -184,7 +178,9 @@ async fn test_get_or_create_current_user() -> Result<()> {
     let req = graphql.query(
         GET_OR_CREATE_CURRENT_USER,
         json!({ "input": {
-           // TODO: Add inline profile
+           "profile": {
+               "email": email,
+           }
         }}),
         Some(token),
     )?;
@@ -195,19 +191,13 @@ async fn test_get_or_create_current_user() -> Result<()> {
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
 
+    let json_user = &json["data"]["getOrCreateCurrentUser"]["user"];
+    let json_profile = &json_user["profile"];
+
     assert_eq!(status, 200);
-    assert_eq!(
-        json["data"]["getOrCreateCurrentUser"]["user"]["id"],
-        user.id
-    );
-    assert_eq!(
-        json["data"]["getOrCreateCurrentUser"]["user"]["username"],
-        user.username
-    );
-    assert_eq!(
-        json["data"]["getOrCreateCurrentUser"]["user"]["profile"]["email"],
-        email.clone()
-    );
+    assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_user["username"], user.username);
+    assert_eq!(json_profile["email"], email.clone());
 
     // Clean up
     users.delete(&user.id).await?;
@@ -347,12 +337,11 @@ async fn test_update_current_user() -> Result<()> {
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
 
+    let json_user = &json["data"]["updateCurrentUser"]["user"];
+
     assert_eq!(status, 200);
-    assert_eq!(
-        json["data"]["updateCurrentUser"]["user"]["username"],
-        username.to_string()
-    );
-    assert_eq!(json["data"]["updateCurrentUser"]["user"]["isActive"], false);
+    assert_eq!(json_user["username"], username.to_string());
+    assert_eq!(json_user["isActive"], false);
 
     // Clean up the user
     users.delete(&user.id).await?;
