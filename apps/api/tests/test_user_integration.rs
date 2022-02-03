@@ -1,42 +1,12 @@
 use anyhow::Result;
+use caster_users::profile_mutations::CreateProfileInput;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
-use caster_users::{
-    user_model::User,
-    users_repository::{PgUsersRepository, UsersRepository},
-};
 use caster_utils::test::oauth2::{Credentials, User as TestUser};
 
 mod test_utils;
 use test_utils::{init_test, TestUtils};
-
-async fn create_user(users: &PgUsersRepository, username: &str) -> Result<User> {
-    let user = users.get_by_username(username).await?;
-
-    if let Some(user) = user {
-        return Ok(user);
-    }
-
-    users.create(username).await
-}
-
-async fn delete_user_with_profile(users: &PgUsersRepository, user: Option<User>) -> Result<()> {
-    if let Some(user) = user {
-        // TODO: Handle the Profile here as well
-        users.delete(&user.id).await?;
-    }
-
-    Ok(())
-}
-
-async fn delete_user(users: &PgUsersRepository, id: &str) -> Result<()> {
-    delete_user_with_profile(users, users.get(id).await?).await
-}
-
-async fn delete_user_by_username(users: &PgUsersRepository, username: &str) -> Result<()> {
-    delete_user_with_profile(users, users.get_by_username(username).await?).await
-}
 
 /***
  * Query: `getCurrentUser`
@@ -70,8 +40,8 @@ async fn test_get_current_user() -> Result<()> {
         ..
     } = oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username if one doesn't already exist
-    let user = create_user(&users, username).await?;
+    // Create a user with this username
+    let user = users.create(username).await?;
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
 
@@ -87,7 +57,7 @@ async fn test_get_current_user() -> Result<()> {
     assert_eq!(json["data"]["getCurrentUser"]["isActive"], true);
 
     // Clean up the user
-    delete_user(&users, &user.id).await?;
+    users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -111,7 +81,10 @@ async fn test_get_current_user_no_user() -> Result<()> {
     } = oauth.get_credentials(TestUser::Test).await;
 
     // Make sure there's no leftover user
-    delete_user_by_username(&users, username).await?;
+    let existing = users.get_by_username(username).await?;
+    if let Some(existing) = existing {
+        users.delete(&existing.id).await?;
+    }
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
 
@@ -159,7 +132,6 @@ async fn test_get_current_user_requires_authn() -> Result<()> {
 /***
  * Mutation: `getOrCreateCurrentUser`
  */
-
 static GET_OR_CREATE_CURRENT_USER: &str = "
     mutation GetOrCreateCurrentUser($input: CreateUserInput!) {
         getOrCreateCurrentUser(input: $input) {
@@ -185,6 +157,7 @@ async fn test_get_or_create_current_user() -> Result<()> {
         oauth,
         graphql,
         users,
+        profiles,
         ..
     } = init_test().await?;
 
@@ -194,8 +167,19 @@ async fn test_get_or_create_current_user() -> Result<()> {
         email,
     } = oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username if one doesn't already exist
-    let user = create_user(&users, username).await?;
+    // Create a user and profile
+    let user = users.create(username).await?;
+    let profile = profiles
+        .create(&CreateProfileInput {
+            email: email.clone(),
+            user_id: Some(user.id.clone()),
+            display_name: None,
+            picture: None,
+            content: None,
+            city: None,
+            state_province: None,
+        })
+        .await?;
 
     let req = graphql.query(
         GET_OR_CREATE_CURRENT_USER,
@@ -225,8 +209,9 @@ async fn test_get_or_create_current_user() -> Result<()> {
         email.clone()
     );
 
-    // Clean up the user
-    delete_user(&users, &user.id).await?;
+    // Clean up
+    users.delete(&user.id).await?;
+    profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -240,22 +225,22 @@ async fn test_get_or_create_current_user_create() -> Result<()> {
         oauth,
         graphql,
         users,
+        profiles,
         ..
     } = init_test().await?;
 
     let Credentials {
         access_token: token,
         username,
-        ..
+        email,
     } = oauth.get_credentials(TestUser::Test).await;
-
-    // Make sure there's no leftover user
-    delete_user_by_username(&users, username).await?;
 
     let req = graphql.query(
         GET_OR_CREATE_CURRENT_USER,
         json!({ "input": {
-           // TODO: Add inline profile
+           "profile": {
+               "email": email,
+           }
         }}),
         Some(token),
     )?;
@@ -266,11 +251,20 @@ async fn test_get_or_create_current_user_create() -> Result<()> {
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
 
+    let user = &json["data"]["getOrCreateCurrentUser"]["user"];
+    let profile = &user["profile"];
+
     assert_eq!(status, 200);
-    assert_eq!(
-        json["data"]["getOrCreateCurrentUser"]["user"]["username"],
-        username.to_string()
-    );
+    assert_eq!(user["username"], username.to_string());
+    assert_eq!(profile["email"], email.to_string());
+
+    // Clean up
+    users
+        .delete(user["id"].as_str().expect("No user id found"))
+        .await?;
+    profiles
+        .delete(profile["id"].as_str().expect("No profile id found"))
+        .await?;
 
     Ok(())
 }
@@ -285,13 +279,7 @@ async fn test_get_or_create_current_user_requires_authn() -> Result<()> {
         ..
     } = init_test().await?;
 
-    let req = graphql.query(
-        GET_OR_CREATE_CURRENT_USER,
-        json!({ "input": {
-           // TODO: Add inline profile
-        }}),
-        None,
-    )?;
+    let req = graphql.query(GET_OR_CREATE_CURRENT_USER, json!({ "input": {}}), None)?;
 
     let resp = http_client.request(req).await?;
     let status = resp.status();
@@ -342,8 +330,8 @@ async fn test_update_current_user() -> Result<()> {
         ..
     } = oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username if one doesn't already exist
-    let user = create_user(&users, username).await?;
+    // Create a user with this username
+    let user = users.create(username).await?;
 
     let req = graphql.query(
         UPDATE_CURRENT_USER,
@@ -367,7 +355,7 @@ async fn test_update_current_user() -> Result<()> {
     assert_eq!(json["data"]["updateCurrentUser"]["user"]["isActive"], false);
 
     // Clean up the user
-    delete_user(&users, &user.id).await?;
+    users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -414,18 +402,13 @@ async fn test_update_current_user_requires_user() -> Result<()> {
         http_client,
         oauth,
         graphql,
-        users,
         ..
     } = init_test().await?;
 
     let Credentials {
         access_token: token,
-        username,
         ..
     } = oauth.get_credentials(TestUser::Test).await;
-
-    // Make sure there's no leftover user
-    delete_user_by_username(&users, username).await?;
 
     let req = graphql.query(
         UPDATE_CURRENT_USER,

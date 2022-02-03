@@ -14,10 +14,10 @@ use crate::{
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ProfilesRepository: Sync + Send {
-    /// Get a `Profile` from the "users" table by id
+    /// Get a `Profile` from the "profiles" table by id
     async fn get(&self, id: &str) -> Result<Option<ProfileDB>>;
 
-    /// Get a `Profile` from the "users" table by username
+    /// Get the first `Profile` from the "profiles" table with this user_id
     async fn get_by_user_id(&self, user_id: &str) -> Result<Option<ProfileDB>>;
 
     /// Create a `Profile` from input
@@ -116,9 +116,13 @@ impl ProfilesRepository for PgProfilesRepository {
     }
 
     async fn delete(&self, id: &str) -> Result<()> {
-        sqlx::query!(r#"DELETE FROM profiles WHERE id = $1"#, id)
-            .fetch_optional(&*self.pg_pool)
+        let result = sqlx::query!(r#"DELETE FROM profiles WHERE id = $1"#, id)
+            .execute(&*self.pg_pool)
             .await?;
+
+        if result.rows_affected() != 1 {
+            return Err(anyhow!("Failed to delete Profile"));
+        }
 
         Ok(())
     }

@@ -6,9 +6,9 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-use caster_api::run;
-use caster_shows::shows_repository::PgShowsRepository;
-use caster_users::users_repository::PgUsersRepository;
+use caster_api::{run, Dependencies};
+use caster_shows::shows_service::ShowsService;
+use caster_users::{profiles_service::ProfilesService, users_service::UsersService};
 use caster_utils::{
     config::{get_config, Config},
     http::http_client,
@@ -17,10 +17,6 @@ use caster_utils::{
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 static OAUTH: OnceCell<OAuth2Utils> = OnceCell::new();
-
-pub fn get_http_client() -> &'static Client<HttpsConnector<HttpConnector>> {
-    &HTTP_CLIENT
-}
 
 pub async fn run_server(config: &'static Config) -> Result<SocketAddr> {
     let (addr, server) = run(config).await?;
@@ -42,8 +38,9 @@ pub struct TestUtils {
     pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
     pub pool: Arc<PgPool>,
-    pub users: PgUsersRepository,
-    pub shows: PgShowsRepository,
+    pub users: Arc<dyn UsersService>,
+    pub profiles: Arc<dyn ProfilesService>,
+    pub shows: Arc<dyn ShowsService>,
 }
 
 /// Initialize common test utils
@@ -52,7 +49,7 @@ pub async fn init_test() -> Result<TestUtils> {
 
     let config = get_config();
 
-    let http_client = get_http_client();
+    let http_client = &HTTP_CLIENT;
     let addr = run_server(config).await?;
 
     let oauth = OAUTH.get_or_init(|| OAuth2Utils::new(config));
@@ -71,8 +68,11 @@ pub async fn init_test() -> Result<TestUtils> {
             .await?,
     );
 
-    let shows = PgShowsRepository::new(&pool);
-    let users = PgUsersRepository::new(&pool);
+    let Dependencies {
+        users,
+        profiles,
+        shows,
+    } = Dependencies::new(&pool);
 
     Ok(TestUtils {
         config,
@@ -81,6 +81,7 @@ pub async fn init_test() -> Result<TestUtils> {
         graphql,
         pool,
         users,
+        profiles,
         shows,
     })
 }

@@ -1,18 +1,10 @@
 use async_graphql::{EmptySubscription, MergedObject, Schema};
-use sqlx::PgPool;
-use std::sync::Arc;
 
-use caster_shows::{
-    shows_repository::PgShowsRepository,
-    shows_resolver::ShowsQuery,
-    shows_service::{DefaultShowsService, ShowsService},
-};
-use caster_users::{
-    users_repository::PgUsersRepository,
-    users_resolver::{UsersMutation, UsersQuery},
-    users_service::{DefaultUsersService, UsersService},
-};
+use caster_shows::shows_resolver::ShowsQuery;
+use caster_users::users_resolver::{UsersMutation, UsersQuery};
 use caster_utils::config::Config;
+
+use crate::Dependencies;
 
 #[derive(MergedObject, Default)]
 pub struct Query(UsersQuery, ShowsQuery);
@@ -25,19 +17,18 @@ pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
 /// Initialize all necessary dependencies to create a `GraphQLSchema`. Very simple dependency
 /// injection based on async-graphql's `.data()` calls.
-pub fn create_schema(pool: &Arc<PgPool>, config: &'static Config) -> GraphQLSchema {
-    // Service dependencies
-    let shows_repo = Arc::new(PgShowsRepository::new(pool));
-    let users_repo = Arc::new(PgUsersRepository::new(pool));
-
-    // Services
-    let shows = Arc::new(DefaultShowsService::new(&shows_repo)) as Arc<dyn ShowsService>;
-    let users = Arc::new(DefaultUsersService::new(&users_repo)) as Arc<dyn UsersService>;
+pub fn create_schema(deps: Dependencies, config: &'static Config) -> GraphQLSchema {
+    let Dependencies {
+        users,
+        profiles,
+        shows,
+    } = deps;
 
     // Inject the initialized services into the `Schema` instance.
     Schema::build(Query::default(), Mutation::default(), EmptySubscription)
         .data(config)
-        .data(shows)
         .data(users)
+        .data(profiles)
+        .data(shows)
         .finish()
 }

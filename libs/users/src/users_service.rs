@@ -4,11 +4,7 @@ use async_trait::async_trait;
 use mockall::automock;
 use std::sync::Arc;
 
-use crate::{
-    user_model::User,
-    user_mutations::{CreateUserInput, UpdateUserInput},
-    users_repository::UsersRepository,
-};
+use crate::{user_model::User, user_mutations::UpdateUserInput, users_repository::UsersRepository};
 
 /// A UsersService appliies business logic to a dynamic UsersRepository implementation.
 #[cfg_attr(test, automock)]
@@ -21,13 +17,16 @@ pub trait UsersService: Sync + Send {
     async fn get_by_username(&self, username: &str) -> Result<Option<User>>;
 
     /// Create a `User` with the given username
-    async fn create(&self, username: &str, input: &CreateUserInput) -> Result<User>;
+    async fn create(&self, username: &str) -> Result<User>;
 
     /// Create a `User` with the given username if one doesn't exist
-    async fn get_or_create(&self, username: &str, input: &CreateUserInput) -> Result<User>;
+    async fn get_or_create(&self, username: &str) -> Result<User>;
 
     /// Update an existing `User`
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User>;
+
+    /// Delete an existing `User`
+    async fn delete(&self, id: &str) -> Result<()>;
 }
 
 /// The default `UsersService` struct
@@ -58,29 +57,27 @@ impl UsersService for DefaultUsersService {
         Ok(user)
     }
 
-    async fn create(&self, username: &str, input: &CreateUserInput) -> Result<User> {
-        let user = self.repo.create(username).await?;
-
-        if input.profile.is_some() {
-            debug!("TODO: Create inline profile");
-        }
-
-        Ok(user)
+    async fn create(&self, username: &str) -> Result<User> {
+        self.repo.create(username).await
     }
 
-    async fn get_or_create(&self, username: &str, input: &CreateUserInput) -> Result<User> {
+    async fn get_or_create(&self, username: &str) -> Result<User> {
         let user = self.get_by_username(username).await?;
 
         if let Some(user) = user {
             return Ok(user);
         }
 
-        self.create(username, input).await
+        self.create(username).await
     }
 
     async fn update(&self, id: &str, input: &UpdateUserInput) -> Result<User> {
         self.repo
             .update(id, &input.username, &input.is_active)
             .await
+    }
+
+    async fn delete(&self, id: &str) -> Result<()> {
+        self.repo.delete(id).await
     }
 }

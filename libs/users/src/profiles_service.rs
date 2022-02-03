@@ -17,8 +17,11 @@ pub trait ProfilesService: Sync + Send {
     /// Get an individual `Profile` by id
     async fn get(&self, id: &str) -> Result<Option<Profile>>;
 
-    /// Get a list of `Profile`s by user_id
+    /// Get the first `Profile` with this user_id
     async fn get_by_user_id(&self, user_id: &str) -> Result<Option<Profile>>;
+
+    /// Get or create a `Profile`.
+    async fn get_or_create(&self, user_id: &str, input: &CreateProfileInput) -> Result<Profile>;
 
     /// Create a `Profile` with the given input
     async fn create(&self, input: &CreateProfileInput) -> Result<Profile>;
@@ -62,6 +65,16 @@ impl ProfilesService for DefaultProfilesService {
         let profile = self.repo.create(input).await?;
 
         Ok(profile.into())
+    }
+
+    async fn get_or_create(&self, user_id: &str, input: &CreateProfileInput) -> Result<Profile> {
+        let profile = self.get_by_user_id(user_id).await?;
+
+        if let Some(profile) = profile {
+            return Ok(profile);
+        }
+
+        self.create(input).await
     }
 
     async fn update(&self, id: &str, input: &UpdateProfileInput) -> Result<Profile> {

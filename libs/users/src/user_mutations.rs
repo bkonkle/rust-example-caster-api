@@ -1,29 +1,12 @@
 use async_graphql::{InputObject, SimpleObject};
-use serde_json;
 
-use crate::user_model::User;
-
-/// The `CreateUserProfileInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
-pub struct CreateUserProfileInput {
-    /// The Profile id
-    pub id: String,
-
-    /// The Profile display name
-    pub display_name: Option<String>,
-
-    /// The Profile picture
-    pub picture: Option<String>,
-
-    /// The Profile json content
-    pub content: Option<serde_json::Value>,
-}
+use crate::{profile_mutations::CreateProfileInput, user_model::User};
 
 /// The `CreateUserInput` input type
 #[derive(Clone, Eq, PartialEq, InputObject)]
 pub struct CreateUserInput {
     /// The User's profile
-    pub profile: Option<CreateUserProfileInput>,
+    pub profile: Option<CreateProfileInput>,
 }
 
 /// The `UpdateUserInput` input type

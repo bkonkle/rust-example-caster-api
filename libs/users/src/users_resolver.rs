@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::{
     profile_model::Profile,
+    profile_mutations::CreateProfileInput,
     profiles_service::ProfilesService,
     user_model::User,
     user_mutations::{CreateUserInput, MutateUserResult, UpdateUserInput},
@@ -72,6 +73,7 @@ impl UsersMutation {
         input: CreateUserInput,
     ) -> Result<MutateUserResult> {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
         let username = match subject {
@@ -83,12 +85,24 @@ impl UsersMutation {
         }?;
 
         let user = users
-            .get_or_create(username, &input)
+            .get_or_create(username)
             .await
             .map_err(as_graphql_error(
                 "Eror while creating User",
                 StatusCode::INTERNAL_SERVER_ERROR,
             ))?;
+
+        if let Some(profile) = input.profile {
+            profiles
+                .get_or_create(
+                    &user.id,
+                    &CreateProfileInput {
+                        user_id: Some(user.id.clone()),
+                        ..profile
+                    },
+                )
+                .await?;
+        }
 
         Ok(MutateUserResult { user: Some(user) })
     }
