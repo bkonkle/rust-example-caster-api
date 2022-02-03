@@ -16,8 +16,17 @@ pub mod user_model;
 /// The User mutations
 pub mod user_mutations;
 
+/// The Profile mutations
+pub mod profiles_repository;
+
+/// The Profiles entity service
+pub mod profiles_service;
+
 /// The Profile model
 pub mod profile_model;
+
+/// The Profile mutations
+pub mod profile_mutations;
 
 #[macro_use]
 extern crate anyhow;

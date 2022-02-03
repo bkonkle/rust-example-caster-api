@@ -12,7 +12,7 @@ caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 hyper = "0.14"
-jsonwebtoken = "7.2.0"
+jsonwebtoken = "8.0"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"

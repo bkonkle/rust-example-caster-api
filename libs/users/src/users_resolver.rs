@@ -1,8 +1,10 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{ComplexObject, Context, Object, Result};
 use hyper::StatusCode;
 use std::sync::Arc;
 
 use crate::{
+    profile_model::Profile,
+    profiles_service::ProfilesService,
     user_model::User,
     user_mutations::{CreateUserInput, MutateUserResult, UpdateUserInput},
     users_service::UsersService,
@@ -18,6 +20,25 @@ pub struct UsersQuery {}
 #[derive(Default)]
 pub struct UsersMutation {}
 
+/// Resolver fields for the User model
+#[ComplexObject]
+impl User {
+    async fn profile(&self, ctx: &Context<'_>) -> Result<Option<Profile>> {
+        let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
+
+        let result = profiles
+            .get_by_user_id(&self.id)
+            .await
+            .map_err(as_graphql_error(
+                "Eror while retrieving Profile",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?;
+
+        Ok(result)
+    }
+}
+
+/// Queries for the User model
 #[Object]
 impl UsersQuery {
     async fn get_current_user(&self, ctx: &Context<'_>) -> Result<Option<User>> {
@@ -42,6 +63,7 @@ impl UsersQuery {
     }
 }
 
+/// Mutations for the User model
 #[Object]
 impl UsersMutation {
     async fn get_or_create_current_user(

@@ -1,8 +1,13 @@
 use async_graphql::SimpleObject;
 use chrono::NaiveDateTime;
 
+/**
+ * The GraphQL Model
+ */
+
 /// The User model
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Debug, sqlx::Type, Clone, Eq, PartialEq, SimpleObject)]
+#[graphql(complex)]
 pub struct User {
     /// The User id
     pub id: String,

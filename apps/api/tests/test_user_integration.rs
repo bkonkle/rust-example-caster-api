@@ -160,22 +160,6 @@ async fn test_get_current_user_requires_authn() -> Result<()> {
  * Mutation: `getOrCreateCurrentUser`
  */
 
-// static GET_OR_CREATE_CURRENT_USER: &str = "
-//     mutation GetOrCreateCurrentUser($input: CreateUserInput!) {
-//         getOrCreateCurrentUser(input: $input) {
-//             user {
-//                 id
-//                 username
-//                 isActive
-//                 profile {
-//                     id
-//                     email
-//                 }
-//             }
-//         }
-//     }
-// ";
-
 static GET_OR_CREATE_CURRENT_USER: &str = "
     mutation GetOrCreateCurrentUser($input: CreateUserInput!) {
         getOrCreateCurrentUser(input: $input) {
@@ -183,6 +167,10 @@ static GET_OR_CREATE_CURRENT_USER: &str = "
                 id
                 username
                 isActive
+                profile {
+                    id
+                    email
+                }
             }
         }
     }
@@ -203,7 +191,7 @@ async fn test_get_or_create_current_user() -> Result<()> {
     let Credentials {
         access_token: token,
         username,
-        ..
+        email,
     } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username if one doesn't already exist
@@ -231,6 +219,10 @@ async fn test_get_or_create_current_user() -> Result<()> {
     assert_eq!(
         json["data"]["getOrCreateCurrentUser"]["user"]["username"],
         user.username
+    );
+    assert_eq!(
+        json["data"]["getOrCreateCurrentUser"]["user"]["profile"]["email"],
+        email.clone()
     );
 
     // Clean up the user
