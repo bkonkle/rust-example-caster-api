@@ -2,19 +2,14 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sea_orm::DatabaseConnection;
 use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
 
 use caster_auth::jwks::get_jwks;
-use caster_shows::{
-    shows_repository::PgShowsRepository,
-    shows_service::{DefaultShowsService, ShowsService},
-};
+use caster_shows::shows_service::{DefaultShowsService, ShowsService};
 use caster_users::{
-    profiles_repository::PgProfilesRepository,
     profiles_service::{DefaultProfilesService, ProfilesService},
-    users_repository::PgUsersRepository,
     users_service::{DefaultUsersService, UsersService},
 };
 use caster_utils::config::Config;
@@ -42,17 +37,11 @@ pub struct Dependencies {
 /// Intialize dependencies
 impl Dependencies {
     /// Create a new set of dependencies based on the given shared resources
-    pub fn new(pool: &Arc<PgPool>) -> Self {
-        // Service dependencies
-        let users_repo = Arc::new(PgUsersRepository::new(pool));
-        let profiles_repo = Arc::new(PgProfilesRepository::new(pool));
-        let shows_repo = Arc::new(PgShowsRepository::new(pool));
-
+    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
         // Services
-        let users = Arc::new(DefaultUsersService::new(&users_repo)) as Arc<dyn UsersService>;
-        let profiles =
-            Arc::new(DefaultProfilesService::new(&profiles_repo)) as Arc<dyn ProfilesService>;
-        let shows = Arc::new(DefaultShowsService::new(&shows_repo)) as Arc<dyn ShowsService>;
+        let users = Arc::new(DefaultUsersService::new(&db)) as Arc<dyn UsersService>;
+        let profiles = Arc::new(DefaultProfilesService::new(&db)) as Arc<dyn ProfilesService>;
+        let shows = Arc::new(DefaultShowsService::new(&db)) as Arc<dyn ShowsService>;
 
         Self {
             users,
@@ -67,13 +56,12 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let port = config.port;
     let jwks = get_jwks(config).await;
 
-    let pool = Arc::new(
-        PgPoolOptions::new()
-            .max_connections(10)
-            .connect(&config.database.url)
-            .await?,
+    let db = Arc::new(
+        sea_orm::Database::connect(&config.database.url)
+            .await
+            .unwrap(),
     );
-    let deps = Dependencies::new(&pool);
+    let deps = Dependencies::new(&db);
 
     let router = create_routes(deps, config, jwks);
 

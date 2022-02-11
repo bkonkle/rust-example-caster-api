@@ -19,6 +19,6 @@ impl ShowsQuery {
             .data::<Arc<dyn ShowsService>>()
             .map_err(|err| anyhow!("ShowsService not found: {}", err.message))?;
 
-        Ok(shows.get(id).await?)
+        Ok(shows.get(&id).await?)
     }
 }

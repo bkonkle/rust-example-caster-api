@@ -18,6 +18,10 @@ static GET_CURRENT_USER: &str = "
             id
             username
             isActive
+            profile {
+                id
+                email
+            }
         }
     }
 ";
@@ -31,17 +35,29 @@ async fn test_get_current_user() -> Result<()> {
         oauth,
         graphql,
         users,
+        profiles,
         ..
     } = init_test().await?;
 
     let Credentials {
         access_token: token,
         username,
-        ..
+        email,
     } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
     let user = users.create(username).await?;
+    let profile = profiles
+        .create(&CreateProfileInput {
+            email: email.clone(),
+            user_id: Some(user.id.clone()),
+            display_name: None,
+            picture: None,
+            content: None,
+            city: None,
+            state_province: None,
+        })
+        .await?;
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
 
@@ -52,14 +68,17 @@ async fn test_get_current_user() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     let json_user = &json["data"]["getCurrentUser"];
+    let json_profile = &json_user["profile"];
 
     assert_eq!(status, 200);
     assert_eq!(json_user["id"], user.id);
     assert_eq!(json_user["username"], user.username);
     assert_eq!(json_user["isActive"], true);
+    assert_eq!(json_profile["email"], email.clone());
 
-    // Clean up the user
+    // Clean up
     users.delete(&user.id).await?;
+    profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -297,6 +316,10 @@ static UPDATE_CURRENT_USER: &str = "
                 id
                 username
                 isActive
+                profile {
+                    id
+                    email
+                }
             }
         }
     }
@@ -311,17 +334,29 @@ async fn test_update_current_user() -> Result<()> {
         oauth,
         graphql,
         users,
+        profiles,
         ..
     } = init_test().await?;
 
     let Credentials {
         access_token: token,
         username,
-        ..
+        email,
     } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
     let user = users.create(username).await?;
+    let profile = profiles
+        .create(&CreateProfileInput {
+            email: email.clone(),
+            user_id: Some(user.id.clone()),
+            display_name: None,
+            picture: None,
+            content: None,
+            city: None,
+            state_province: None,
+        })
+        .await?;
 
     let req = graphql.query(
         UPDATE_CURRENT_USER,
@@ -338,13 +373,16 @@ async fn test_update_current_user() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     let json_user = &json["data"]["updateCurrentUser"]["user"];
+    let json_profile = &json_user["profile"];
 
     assert_eq!(status, 200);
     assert_eq!(json_user["username"], username.to_string());
     assert_eq!(json_user["isActive"], false);
+    assert_eq!(json_profile["email"], email.clone());
 
-    // Clean up the user
+    // Clean up
     users.delete(&user.id).await?;
+    profiles.delete(&profile.id).await?;
 
     Ok(())
 }

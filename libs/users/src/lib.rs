@@ -4,9 +4,6 @@
 /// The GraphQL Users Resolver
 pub mod users_resolver;
 
-/// The Users entity repository
-pub mod users_repository;
-
 /// The Users entity service
 pub mod users_service;
 
@@ -19,9 +16,6 @@ pub mod user_mutations;
 /// The GraphQL Profiles Resolver
 pub mod profiles_resolver;
 
-/// The Profile mutations
-pub mod profiles_repository;
-
 /// The Profiles entity service
 pub mod profiles_service;
 
@@ -30,9 +24,3 @@ pub mod profile_model;
 
 /// The Profile mutations
 pub mod profile_mutations;
-
-#[macro_use]
-extern crate anyhow;
-
-#[macro_use]
-extern crate log;

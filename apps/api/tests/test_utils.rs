@@ -2,7 +2,7 @@ use anyhow::Result;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sea_orm::DatabaseConnection;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
@@ -37,7 +37,7 @@ pub struct TestUtils {
     pub http_client: &'static Client<HttpsConnector<HttpConnector>>,
     pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
-    pub pool: Arc<PgPool>,
+    pub db: Arc<DatabaseConnection>,
     pub users: Arc<dyn UsersService>,
     pub profiles: Arc<dyn ProfilesService>,
     pub shows: Arc<dyn ShowsService>,
@@ -61,25 +61,24 @@ pub async fn init_test() -> Result<TestUtils> {
 
     // This needs to be created anew each time because it can't be shared when the Tokio runtime
     // is being stopped and re-started between tests
-    let pool = Arc::new(
-        PgPoolOptions::new()
-            .max_connections(10)
-            .connect(&config.database.url)
-            .await?,
+    let db = Arc::new(
+        sea_orm::Database::connect(&config.database.url)
+            .await
+            .unwrap(),
     );
 
     let Dependencies {
         users,
         profiles,
         shows,
-    } = Dependencies::new(&pool);
+    } = Dependencies::new(&db);
 
     Ok(TestUtils {
         config,
         http_client,
         oauth,
         graphql,
-        pool,
+        db,
         users,
         profiles,
         shows,

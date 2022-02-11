@@ -13,9 +13,13 @@ caster-utils = { path = "../utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 hyper = "0.14"
 jsonwebtoken = "8.0"
-log = "0.4"
+sea-orm = { version = "0.6", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+    "mock",
+], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
-serde_derive = "1.0"
 serde_json = "1.0"
 sqlx = { version = "0.5", features = [
     "chrono",

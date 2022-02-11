@@ -1,9 +1,8 @@
-use async_graphql::{ComplexObject, Context, Object, Result};
+use async_graphql::{Context, Object, Result};
 use hyper::StatusCode;
 use std::sync::Arc;
 
 use crate::{
-    profile_model::Profile,
     profile_mutations::CreateProfileInput,
     profiles_service::ProfilesService,
     user_model::User,
@@ -21,38 +20,6 @@ pub struct UsersQuery {}
 #[derive(Default)]
 pub struct UsersMutation {}
 
-/// Resolver fields for the User model
-#[ComplexObject]
-impl User {
-    async fn profile(&self, ctx: &Context<'_>) -> Result<Option<Profile>> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
-        let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
-
-        let profile = profiles
-            .get_by_user_id(&self.id)
-            .await
-            .map_err(as_graphql_error(
-                "Eror while retrieving Profile",
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
-
-        let current_user_id = match subject {
-            Subject(Some(username)) => users
-                .get_by_username(username)
-                .await
-                .map_err(as_graphql_error(
-                    "Error while retrieving User",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ))?
-                .map(|u| u.id),
-            _ => None,
-        };
-
-        Ok(profile.map(|p| p.censor(current_user_id)))
-    }
-}
-
 /// Queries for the User model
 #[Object]
 impl UsersQuery {
@@ -60,16 +27,16 @@ impl UsersQuery {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
+        let with_profile = ctx.look_ahead().field("profile").exists();
+
         match subject {
-            Subject(Some(username)) => {
-                users
-                    .get_by_username(username)
-                    .await
-                    .map_err(as_graphql_error(
-                        "Error while retrieving User",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                    ))
-            }
+            Subject(Some(username)) => users
+                .get_by_username(username, &with_profile)
+                .await
+                .map_err(as_graphql_error(
+                    "Error while retrieving User",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                )),
             _ => Err(graphql_error(
                 "A valid JWT token is required",
                 StatusCode::UNAUTHORIZED,
@@ -90,6 +57,9 @@ impl UsersMutation {
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
+        // Check to see if the associated Profile is selected
+        let with_profile = ctx.look_ahead().field("user").field("profile").exists();
+
         let username = match subject {
             Subject(Some(username)) => Ok(username),
             _ => Err(graphql_error(
@@ -98,16 +68,17 @@ impl UsersMutation {
             )),
         }?;
 
-        let user = users
-            .get_or_create(username)
-            .await
-            .map_err(as_graphql_error(
-                "Eror while creating User",
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
+        let mut user =
+            users
+                .get_or_create(username, &with_profile)
+                .await
+                .map_err(as_graphql_error(
+                    "Eror while creating User",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ))?;
 
         if let Some(profile) = input.profile {
-            profiles
+            let created = profiles
                 .get_or_create(
                     &user.id,
                     &CreateProfileInput {
@@ -116,6 +87,9 @@ impl UsersMutation {
                     },
                 )
                 .await?;
+
+            // Add the created profile to the result
+            user.profile = Some(created);
         }
 
         Ok(MutateUserResult { user: Some(user) })
@@ -129,10 +103,13 @@ impl UsersMutation {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
+        // Check to see if the associated Profile is selected
+        let with_profile = ctx.look_ahead().field("user").field("profile").exists();
+
         let existing = match subject {
             Subject(Some(username)) => {
                 users
-                    .get_by_username(username)
+                    .get_by_username(username, &false)
                     .await
                     .map_err(as_graphql_error(
                         "Error while retrieving existing User",
@@ -147,7 +124,7 @@ impl UsersMutation {
 
         let user = match existing {
             Some(existing) => users
-                .update(&existing.id, &input)
+                .update(&existing.id, &input, &with_profile)
                 .await
                 .map_err(as_graphql_error(
                     "Error while updating User",

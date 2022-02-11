@@ -1,13 +1,23 @@
+#![allow(missing_docs)]
+
 use async_graphql::SimpleObject;
-use chrono::NaiveDateTime;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 
 /// The Profile model
-#[derive(Debug, Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, SimpleObject)]
 pub struct Profile {
     /// The Profile id
     pub id: String,
 
+    /// The date the Profile was created
+    pub created_at: DateTime,
+
+    /// The date the Profile was last updated
+    pub updated_at: DateTime,
+
     /// The Profile's email address
+    // (differs from DB)
     // Optional because this field may be censored for unauthorized users
     pub email: Option<String>,
 
@@ -28,28 +38,6 @@ pub struct Profile {
 
     /// The Profile's User id
     pub user_id: Option<String>,
-
-    /// The date the Profile was created
-    pub created_at: NaiveDateTime,
-
-    /// The date the Profile was last updated
-    pub updated_at: NaiveDateTime,
-}
-
-/// The Profile DB model
-#[allow(missing_docs)]
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ProfileDB {
-    pub id: String,
-    pub email: String,
-    pub display_name: Option<String>,
-    pub picture: Option<String>,
-    pub content: Option<serde_json::Value>,
-    pub city: Option<String>,
-    pub state_province: Option<String>,
-    pub user_id: Option<String>,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
 }
 
 impl Profile {
@@ -70,19 +58,74 @@ impl Profile {
     }
 }
 
-impl From<ProfileDB> for Profile {
-    fn from(profile: ProfileDB) -> Self {
+/// The Profile DB model
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
+#[sea_orm(table_name = "profiles")]
+pub struct Model {
+    #[sea_orm(primary_key, column_type = "Text")]
+    #[serde(skip_deserializing)]
+    pub id: String,
+
+    pub created_at: DateTime,
+
+    pub updated_at: DateTime,
+
+    #[sea_orm(column_type = "Text")]
+    pub email: String,
+
+    #[sea_orm(column_type = "Text", nullable)]
+    pub display_name: Option<String>,
+
+    #[sea_orm(column_type = "Text", nullable)]
+    pub picture: Option<String>,
+
+    #[sea_orm(nullable)]
+    pub content: Option<Json>,
+
+    #[sea_orm(column_type = "Text", nullable)]
+    pub city: Option<String>,
+
+    #[sea_orm(column_type = "Text", nullable)]
+    pub state_province: Option<String>,
+
+    #[sea_orm(column_type = "Text", nullable)]
+    pub user_id: Option<String>,
+}
+
+/// Profile entity relationships
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::user_model::Entity",
+        from = "Column::UserId",
+        to = "super::user_model::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    User,
+}
+
+impl Related<super::user_model::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
+    }
+}
+
+impl ActiveModelBehavior for ActiveModel {}
+
+impl From<Model> for Profile {
+    fn from(model: Model) -> Self {
         Self {
-            id: profile.id,
-            email: Some(profile.email),
-            display_name: profile.display_name,
-            picture: profile.picture,
-            content: profile.content,
-            city: profile.city,
-            state_province: profile.state_province,
-            user_id: profile.user_id,
-            created_at: profile.created_at,
-            updated_at: profile.updated_at,
+            id: model.id,
+            created_at: model.created_at,
+            updated_at: model.updated_at,
+            email: Some(model.email),
+            display_name: model.display_name,
+            picture: model.picture,
+            content: model.content,
+            city: model.city,
+            state_province: model.state_province,
+            user_id: model.user_id,
         }
     }
 }

@@ -15,9 +15,9 @@ pub struct ProfilesQuery {}
 impl ProfilesQuery {
     async fn get_profile(&self, ctx: &Context<'_>, id: String) -> Result<Option<Profile>> {
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
+        let _subject = ctx.data_unchecked::<Subject>();
 
-        let profile = profiles.get(&id).await?;
+        let _profile = profiles.get(&id).await?;
 
         // match subject {
         //     Subject(Some(username)) => {
