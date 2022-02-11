@@ -48,15 +48,18 @@ async fn test_get_current_user() -> Result<()> {
     // Create a user with this username
     let user = users.create(username).await?;
     let profile = profiles
-        .create(&CreateProfileInput {
-            email: email.clone(),
-            user_id: Some(user.id.clone()),
-            display_name: None,
-            picture: None,
-            content: None,
-            city: None,
-            state_province: None,
-        })
+        .create(
+            &CreateProfileInput {
+                email: email.clone(),
+                user_id: Some(user.id.clone()),
+                display_name: None,
+                picture: None,
+                content: None,
+                city: None,
+                state_province: None,
+            },
+            &false,
+        )
         .await?;
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
@@ -183,15 +186,18 @@ async fn test_get_or_create_current_user() -> Result<()> {
     // Create a user and profile
     let user = users.create(username).await?;
     let profile = profiles
-        .create(&CreateProfileInput {
-            email: email.clone(),
-            user_id: Some(user.id.clone()),
-            display_name: None,
-            picture: None,
-            content: None,
-            city: None,
-            state_province: None,
-        })
+        .create(
+            &CreateProfileInput {
+                email: email.clone(),
+                user_id: Some(user.id.clone()),
+                display_name: None,
+                picture: None,
+                content: None,
+                city: None,
+                state_province: None,
+            },
+            &false,
+        )
         .await?;
 
     let req = graphql.query(
@@ -347,15 +353,18 @@ async fn test_update_current_user() -> Result<()> {
     // Create a user with this username
     let user = users.create(username).await?;
     let profile = profiles
-        .create(&CreateProfileInput {
-            email: email.clone(),
-            user_id: Some(user.id.clone()),
-            display_name: None,
-            picture: None,
-            content: None,
-            city: None,
-            state_province: None,
-        })
+        .create(
+            &CreateProfileInput {
+                email: email.clone(),
+                user_id: Some(user.id.clone()),
+                display_name: None,
+                picture: None,
+                content: None,
+                city: None,
+                state_province: None,
+            },
+            &false,
+        )
         .await?;
 
     let req = graphql.query(
