@@ -4,6 +4,8 @@ use async_graphql::SimpleObject;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::user_model::User;
+
 /// The Profile model
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, SimpleObject)]
 pub struct Profile {
@@ -38,6 +40,9 @@ pub struct Profile {
 
     /// The Profile's User id
     pub user_id: Option<String>,
+
+    /// The associated User
+    pub user: Box<Option<User>>,
 }
 
 impl Profile {
@@ -126,6 +131,7 @@ impl From<Model> for Profile {
             city: model.city,
             state_province: model.state_province,
             user_id: model.user_id,
+            user: Box::new(None),
         }
     }
 }

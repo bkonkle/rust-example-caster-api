@@ -17,7 +17,7 @@ impl ProfilesQuery {
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
         let _subject = ctx.data_unchecked::<Subject>();
 
-        let _profile = profiles.get(&id).await?;
+        let _profile = profiles.get(&id, &false).await?;
 
         // match subject {
         //     Subject(Some(username)) => {

@@ -85,6 +85,7 @@ impl UsersMutation {
                         user_id: Some(user.id.clone()),
                         ..profile
                     },
+                    &false,
                 )
                 .await?;
 
