@@ -8,6 +8,7 @@ use crate::{
     profile_model::Profile,
     profile_mutations::{CreateProfileInput, MutateProfileResult, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy, ProfilesPage},
+    profile_utils::get_current_user,
     profiles_service::ProfilesService,
     users_service::UsersService,
 };
@@ -30,21 +31,7 @@ impl ProfilesQuery {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the current request User for authorization
-        let user = match subject {
-            Subject(Some(username)) => {
-                users
-                    .get_by_username(username, &false)
-                    .await
-                    .map_err(as_graphql_error(
-                        "Error while retrieving Profile",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                    ))
-            }
-            _ => Err(graphql_error(
-                "A valid JWT token is required",
-                StatusCode::UNAUTHORIZED,
-            )),
-        }?;
+        let user = get_current_user(subject, users).await?;
 
         let profile = profiles.get(&id, &false).await?;
 
@@ -83,22 +70,7 @@ impl ProfilesQuery {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the current request User for authorization
-        let user_id = match subject {
-            Subject(Some(username)) => {
-                users
-                    .get_by_username(username, &false)
-                    .await
-                    .map_err(as_graphql_error(
-                        "Error while retrieving Profile",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                    ))
-            }
-            _ => Err(graphql_error(
-                "A valid JWT token is required",
-                StatusCode::UNAUTHORIZED,
-            )),
-        }?
-        .map(|u| u.id);
+        let user_id = get_current_user(subject, users).await?.map(|u| u.id);
 
         let response = profiles
             .get_many(condition, order_by, page, page_size, &false)
@@ -123,9 +95,28 @@ impl ProfilesMutation {
         ctx: &Context<'_>,
         input: CreateProfileInput,
     ) -> Result<MutateProfileResult> {
+        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
+        let subject = ctx.data_unchecked::<Subject>();
 
-        // TODO: Authorization
+        // Retrieve the current request User for authorization
+        let user_id = get_current_user(subject, users)
+            .await?
+            .map(|u| u.id)
+            .ok_or_else(|| {
+                graphql_error(
+                    "A currently logged-in User is required",
+                    StatusCode::UNAUTHORIZED,
+                )
+            })?;
+
+        // Make sure the current request User id matches the input
+        if user_id != input.user_id {
+            return Err(graphql_error(
+                "The user_id must match the currently logged-in User",
+                StatusCode::FORBIDDEN,
+            ));
+        }
 
         let profile = profiles
             .create(&input, &false)
@@ -147,12 +138,47 @@ impl ProfilesMutation {
         id: String,
         input: UpdateProfileInput,
     ) -> Result<MutateProfileResult> {
+        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
+        let subject = ctx.data_unchecked::<Subject>();
 
-        // TODO: Authorization
+        // Retrieve the existing Profile for authorization
+        let (existing, existing_user) = profiles
+            .get_model(&id, &true)
+            .await
+            .map_err(as_graphql_error(
+                "Error while fetching Profile",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?
+            .ok_or_else(|| {
+                graphql_error(
+                    "Unable to find existing Profile",
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?;
 
+        // Retrieve the current request User for authorization
+        let user_id = get_current_user(subject, users)
+            .await?
+            .map(|u| u.id)
+            .ok_or_else(|| {
+                graphql_error(
+                    "A currently logged-in User is required",
+                    StatusCode::UNAUTHORIZED,
+                )
+            })?;
+
+        // Make sure the current request User id matches the existing user
+        if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+            return Err(graphql_error(
+                "The user_id must match the currently logged-in User",
+                StatusCode::FORBIDDEN,
+            ));
+        }
+
+        // Use the already retrieved Profile to update the record
         let profile = profiles
-            .update(&id, &input, &false)
+            .update_model(existing, &input, existing_user)
             .await
             .map_err(as_graphql_error(
                 "Error while updating Profile",

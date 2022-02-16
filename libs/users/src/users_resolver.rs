@@ -84,7 +84,7 @@ impl UsersMutation {
                 .get_or_create(
                     &user.id,
                     &CreateProfileInput {
-                        user_id: Some(user.id.clone()),
+                        user_id: user.id.clone(),
                         ..profile
                     },
                     &false,

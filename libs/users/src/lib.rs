@@ -28,6 +28,9 @@ pub mod profile_queries;
 /// The Profile mutations
 pub mod profile_mutations;
 
+/// Profile utilities
+pub mod profile_utils;
+
 /// Error macros
 #[macro_use]
 extern crate anyhow;

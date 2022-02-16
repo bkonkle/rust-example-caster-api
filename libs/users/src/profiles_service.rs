@@ -9,7 +9,7 @@ use crate::{
     profile_model::{self, Profile, ProfileList, ProfileOption},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy},
-    user_model,
+    user_model::{self, User},
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
@@ -17,6 +17,13 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ProfilesService: Sync + Send {
+    /// Get an individual `Profile` by id, returning the Model instances
+    async fn get_model(
+        &self,
+        id: &str,
+        with_user: &bool,
+    ) -> Result<Option<(profile_model::Model, Option<User>)>>;
+
     /// Get an individual `Profile` by id
     async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>>;
 
@@ -45,6 +52,14 @@ pub trait ProfilesService: Sync + Send {
     async fn create(&self, input: &CreateProfileInput, with_user: &bool) -> Result<Profile>;
 
     /// Update an existing `Profile`
+    async fn update_model(
+        &self,
+        profile: profile_model::Model,
+        input: &UpdateProfileInput,
+        user: Option<User>,
+    ) -> Result<Profile>;
+
+    /// Update an existing `Profile` by id
     async fn update(
         &self,
         id: &str,
@@ -72,17 +87,28 @@ impl DefaultProfilesService {
 
 #[async_trait]
 impl ProfilesService for DefaultProfilesService {
-    async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>> {
+    async fn get_model(
+        &self,
+        id: &str,
+        with_user: &bool,
+    ) -> Result<Option<(profile_model::Model, Option<User>)>> {
         let query = profile_model::Entity::find_by_id(id.to_owned());
 
-        let profile: ProfileOption = match with_user {
-            true => query
-                .find_also_related(user_model::Entity)
-                .one(&*self.db)
-                .await?
-                .into(),
-            false => query.one(&*self.db).await?.into(),
+        let profile = match with_user {
+            true => {
+                query
+                    .find_also_related(user_model::Entity)
+                    .one(&*self.db)
+                    .await?
+            }
+            false => query.one(&*self.db).await?.map(|u| (u, None)),
         };
+
+        Ok(profile)
+    }
+
+    async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>> {
+        let profile: ProfileOption = self.get_model(id, with_user).await?.into();
 
         Ok(profile.into())
     }
@@ -198,7 +224,7 @@ impl ProfilesService for DefaultProfilesService {
             content: Set(input.content.clone()),
             city: Set(input.city.clone()),
             state_province: Set(input.state_province.clone()),
-            user_id: Set(input.user_id.clone()),
+            user_id: Set(Some(input.user_id.clone())),
             ..Default::default()
         }
         .insert(&*self.db)
@@ -210,15 +236,11 @@ impl ProfilesService for DefaultProfilesService {
             return Ok(created);
         }
 
-        if let Some(user_id) = &input.user_id {
-            let user = user_model::Entity::find_by_id(user_id.clone())
-                .one(&*self.db)
-                .await?;
+        let user = user_model::Entity::find_by_id(input.user_id.clone())
+            .one(&*self.db)
+            .await?;
 
-            created.user = Box::new(user);
-
-            return Ok(created);
-        }
+        created.user = Box::new(user);
 
         Ok(created)
     }
@@ -238,27 +260,12 @@ impl ProfilesService for DefaultProfilesService {
         self.create(input, with_user).await
     }
 
-    async fn update(
+    async fn update_model(
         &self,
-        id: &str,
+        profile: profile_model::Model,
         input: &UpdateProfileInput,
-        with_user: &bool,
+        user: Option<User>,
     ) -> Result<Profile> {
-        let query = profile_model::Entity::find_by_id(id.to_owned());
-
-        // Pull out the `Profile` and the related `User`, if selected
-        let (profile, user) = match with_user {
-            true => {
-                query
-                    .find_also_related(user_model::Entity)
-                    .one(&*self.db)
-                    .await?
-            }
-            // If the Profile isn't requested, just map to None
-            false => query.one(&*self.db).await?.map(|p| (p, None)),
-        }
-        .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
-
         let mut profile: profile_model::ActiveModel = profile.into();
 
         if let Some(email) = &input.email {
@@ -295,6 +302,30 @@ impl ProfilesService for DefaultProfilesService {
         updated.user = Box::new(user);
 
         Ok(updated)
+    }
+
+    async fn update(
+        &self,
+        id: &str,
+        input: &UpdateProfileInput,
+        with_user: &bool,
+    ) -> Result<Profile> {
+        let query = profile_model::Entity::find_by_id(id.to_owned());
+
+        // Pull out the `Profile` and the related `User`, if selected
+        let (profile, user) = match with_user {
+            true => {
+                query
+                    .find_also_related(user_model::Entity)
+                    .one(&*self.db)
+                    .await?
+            }
+            // If the Profile isn't requested, just map to None
+            false => query.one(&*self.db).await?.map(|p| (p, None)),
+        }
+        .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
+
+        self.update_model(profile, input, user).await
     }
 
     async fn delete(&self, id: &str) -> Result<()> {

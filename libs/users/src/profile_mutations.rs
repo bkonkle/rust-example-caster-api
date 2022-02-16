@@ -25,7 +25,7 @@ pub struct CreateProfileInput {
     pub state_province: Option<String>,
 
     /// The Profile's User id
-    pub user_id: Option<String>,
+    pub user_id: String,
 }
 
 /// The `UpdateProfileInput` input type
