@@ -105,7 +105,7 @@ pub struct Config {
 impl Config {
     /// Create a new Config by merging in various sources
     pub fn new() -> Result<Self> {
-        let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
+        let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".to_string());
 
         let config: Config = Figment::new()
             // Load defaults

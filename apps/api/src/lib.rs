@@ -39,9 +39,9 @@ impl Dependencies {
     /// Create a new set of dependencies based on the given shared resources
     pub fn new(db: &Arc<DatabaseConnection>) -> Self {
         // Services
-        let users = Arc::new(DefaultUsersService::new(&db)) as Arc<dyn UsersService>;
-        let profiles = Arc::new(DefaultProfilesService::new(&db)) as Arc<dyn ProfilesService>;
-        let shows = Arc::new(DefaultShowsService::new(&db)) as Arc<dyn ShowsService>;
+        let users = Arc::new(DefaultUsersService::new(db)) as Arc<dyn UsersService>;
+        let profiles = Arc::new(DefaultProfilesService::new(db)) as Arc<dyn ProfilesService>;
+        let shows = Arc::new(DefaultShowsService::new(db)) as Arc<dyn ShowsService>;
 
         Self {
             users,
@@ -56,11 +56,7 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let port = config.port;
     let jwks = get_jwks(config).await;
 
-    let db = Arc::new(
-        sea_orm::Database::connect(&config.database.url)
-            .await
-            .unwrap(),
-    );
+    let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
     let deps = Dependencies::new(&db);
 
     let router = create_routes(deps, config, jwks);

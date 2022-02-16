@@ -6,17 +6,29 @@ use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
 use std::sync::Arc;
 
 use crate::{
-    profile_model::{self, Profile},
+    profile_model::{self, Profile, ProfileList, ProfileOption},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
-    user_model::{self, User},
+    profile_queries::{ProfileCondition, ProfilesOrderBy},
+    user_model,
 };
+use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
-/// A ProfilesService appliies business logic to a dynamic ProfilesRepository implementation.
+/// A ProfilesService applies business logic to a dynamic ProfilesRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ProfilesService: Sync + Send {
     /// Get an individual `Profile` by id
     async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>>;
+
+    /// Get multiple `Profile` records
+    async fn get_many(
+        &self,
+        condition: ProfileCondition,
+        order_by: Option<Vec<ProfilesOrderBy>>,
+        page_size: Option<usize>,
+        page: Option<usize>,
+        with_user: &bool,
+    ) -> Result<ManyResponse<Profile>>;
 
     /// Get the first `Profile` with this user_id
     async fn get_by_user_id(&self, user_id: &str, with_user: &bool) -> Result<Option<Profile>>;
@@ -63,38 +75,119 @@ impl ProfilesService for DefaultProfilesService {
     async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>> {
         let query = profile_model::Entity::find_by_id(id.to_owned());
 
-        let profile = match with_user {
+        let profile: ProfileOption = match with_user {
             true => query
-                .find_with_related(user_model::Entity)
+                .find_also_related(user_model::Entity)
                 .one(&*self.db)
                 .await?
-                .map(|(profile, user)| Profile {
-                    user: Box::new(user),
-                    ..profile.into()
-                }),
-            false => query.one(&*self.db).await?.map(|p| p.into()),
+                .into(),
+            false => query.one(&*self.db).await?.into(),
         };
 
-        Ok(profile)
+        Ok(profile.into())
+    }
+
+    async fn get_many(
+        &self,
+        condition: ProfileCondition,
+        order_by: Option<Vec<ProfilesOrderBy>>,
+        page: Option<usize>,
+        page_size: Option<usize>,
+        with_user: &bool,
+    ) -> Result<ManyResponse<Profile>> {
+        let page_num = page.unwrap_or(1);
+
+        let mut query = profile_model::Entity::find();
+
+        if let Some(email) = condition.email {
+            query = query.filter(profile_model::Column::Email.eq(email));
+        }
+
+        if let Some(display_name) = condition.display_name {
+            query = query.filter(profile_model::Column::DisplayName.eq(display_name));
+        }
+
+        if let Some(city) = condition.city {
+            query = query.filter(profile_model::Column::City.eq(city));
+        }
+
+        if let Some(state_province) = condition.state_province {
+            query = query.filter(profile_model::Column::StateProvince.eq(state_province));
+        }
+
+        if let Some(user_id) = condition.user_id {
+            query = query.filter(profile_model::Column::UserId.eq(user_id));
+        }
+
+        if let Some(order_by) = order_by {
+            for order in order_by {
+                let ordering: Ordering<ProfilesOrderBy> = order.into();
+
+                match ordering {
+                    Ordering::Asc(order) => {
+                        query = query.order_by_asc(order.column());
+                    }
+                    Ordering::Desc(order) => {
+                        query = query.order_by_desc(order.column());
+                    }
+                }
+            }
+        }
+
+        let (data, total) = match (page_size, with_user) {
+            (Some(page_size), true) => {
+                let paginator = query
+                    .find_also_related(user_model::Entity)
+                    .paginate(&*self.db, page_size);
+
+                let total = paginator.num_items().await?;
+                let data: ProfileList = paginator.fetch_page(page_num - 1).await?.into();
+
+                (data, total)
+            }
+            (Some(page_size), false) => {
+                let paginator = query.paginate(&*self.db, page_size);
+                let total = paginator.num_items().await?;
+                let data: ProfileList = paginator.fetch_page(page_num - 1).await?.into();
+
+                (data, total)
+            }
+            (None, true) => {
+                let data: ProfileList = query
+                    .find_also_related(user_model::Entity)
+                    .all(&*self.db)
+                    .await?
+                    .into();
+
+                let total = data.len();
+
+                (data, total)
+            }
+            (None, false) => {
+                let data: ProfileList = query.all(&*self.db).await?.into();
+                let total = data.len();
+
+                (data, total)
+            }
+        };
+
+        Ok(ManyResponse::new(data.into(), total, page_num, page_size))
     }
 
     async fn get_by_user_id(&self, user_id: &str, with_user: &bool) -> Result<Option<Profile>> {
         let query = profile_model::Entity::find()
             .filter(profile_model::Column::UserId.eq(user_id.to_owned()));
 
-        let profile = match with_user {
+        let profile: ProfileOption = match with_user {
             true => query
-                .find_with_related(user_model::Entity)
+                .find_also_related(user_model::Entity)
                 .one(&*self.db)
                 .await?
-                .map(|(profile, user)| Profile {
-                    user: Box::new(user),
-                    ..profile.into()
-                }),
-            false => query.one(&*self.db).await?.map(|p| p.into()),
+                .into(),
+            false => query.one(&*self.db).await?.into(),
         };
 
-        Ok(profile)
+        Ok(profile.into())
     }
 
     async fn create(&self, input: &CreateProfileInput, with_user: &bool) -> Result<Profile> {
@@ -152,23 +245,21 @@ impl ProfilesService for DefaultProfilesService {
         with_user: &bool,
     ) -> Result<Profile> {
         let query = profile_model::Entity::find_by_id(id.to_owned());
-        let mut user: Option<User> = None;
 
-        let profile = match with_user {
-            true => query
-                .find_with_related(user_model::Entity)
-                .one(&*self.db)
-                .await?
-                .map(|(profile, related_user)| {
-                    // Save the User for later
-                    user = related_user;
+        // Pull out the `Profile` and the related `User`, if selected
+        let (profile, user) = match with_user {
+            true => {
+                query
+                    .find_also_related(user_model::Entity)
+                    .one(&*self.db)
+                    .await?
+            }
+            // If the Profile isn't requested, just map to None
+            false => query.one(&*self.db).await?.map(|p| (p, None)),
+        }
+        .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
 
-                    profile
-                }),
-            false => query.one(&*self.db).await?,
-        };
-
-        let mut profile: profile_model::ActiveModel = profile.unwrap().into();
+        let mut profile: profile_model::ActiveModel = profile.into();
 
         if let Some(email) = &input.email {
             profile.email = Set(email.clone());
@@ -209,9 +300,10 @@ impl ProfilesService for DefaultProfilesService {
     async fn delete(&self, id: &str) -> Result<()> {
         let profile = profile_model::Entity::find_by_id(id.to_owned())
             .one(&*self.db)
-            .await?;
+            .await?
+            .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
 
-        let _res = profile.unwrap().delete(&*self.db).await?;
+        let _result = profile.delete(&*self.db).await?;
 
         Ok(())
     }

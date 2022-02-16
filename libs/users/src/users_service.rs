@@ -6,8 +6,8 @@ use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
 use std::sync::Arc;
 
 use crate::{
-    profile_model::{self, Profile},
-    user_model::{self, User},
+    profile_model,
+    user_model::{self, User, UserOption},
     user_mutations::UpdateUserInput,
 };
 
@@ -62,19 +62,16 @@ impl UsersService for DefaultUsersService {
         let query =
             user_model::Entity::find().filter(user_model::Column::Username.eq(username.to_owned()));
 
-        let user = match with_profile {
+        let user: UserOption = match with_profile {
             true => query
-                .find_with_related(profile_model::Entity)
+                .find_also_related(profile_model::Entity)
                 .one(&*self.db)
                 .await?
-                .map(|(user, profile)| User {
-                    profile: profile.map(|p| p.into()),
-                    ..user
-                }),
-            false => query.one(&*self.db).await?,
+                .into(),
+            false => query.one(&*self.db).await?.into(),
         };
 
-        Ok(user)
+        Ok(user.into())
     }
 
     async fn create(&self, username: &str) -> Result<User> {
@@ -91,19 +88,16 @@ impl UsersService for DefaultUsersService {
     async fn get_or_create(&self, username: &str, with_profile: &bool) -> Result<User> {
         let query = user_model::Entity::find().filter(user_model::Column::Username.eq(username));
 
-        let user: Option<User> = match with_profile {
-            true => query.one(&*self.db).await?,
+        let user: UserOption = match with_profile {
+            true => query.one(&*self.db).await?.into(),
             false => query
-                .find_with_related(profile_model::Entity)
+                .find_also_related(profile_model::Entity)
                 .one(&*self.db)
                 .await?
-                .map(|(user, profile)| User {
-                    profile: profile.map(|p| p.into()),
-                    ..user
-                }),
+                .into(),
         };
 
-        if let Some(user) = user {
+        if let UserOption(Some(user)) = user {
             return Ok(user);
         }
 
@@ -112,23 +106,21 @@ impl UsersService for DefaultUsersService {
 
     async fn update(&self, id: &str, input: &UpdateUserInput, with_profile: &bool) -> Result<User> {
         let query = user_model::Entity::find_by_id(id.to_owned());
-        let mut profile: Option<Profile> = None;
 
-        let user = match with_profile {
-            true => query
-                .find_with_related(profile_model::Entity)
-                .one(&*self.db)
-                .await?
-                .map(|(user, related_profile)| {
-                    // Save the Profile for later
-                    profile = related_profile.map(|p| p.into());
+        // Pull out the `User` and the related `Profile`, if selected
+        let (user, profile) = match with_profile {
+            true => {
+                query
+                    .find_also_related(profile_model::Entity)
+                    .one(&*self.db)
+                    .await?
+            }
+            // If the Profile isn't requested, just map to None
+            false => query.one(&*self.db).await?.map(|u| (u, None)),
+        }
+        .ok_or_else(|| anyhow!("Unable to find User with id: {}", id))?;
 
-                    user
-                }),
-            false => query.one(&*self.db).await?,
-        };
-
-        let mut user: user_model::ActiveModel = user.unwrap().into();
+        let mut user: user_model::ActiveModel = user.into();
 
         if let Some(username) = &input.username {
             user.username = Set(username.clone());
@@ -141,7 +133,7 @@ impl UsersService for DefaultUsersService {
         let mut updated = user.update(&*self.db).await?;
 
         // Add back the Profile from above
-        updated.profile = profile;
+        updated.profile = profile.map(|p| p.into());
 
         Ok(updated)
     }
@@ -149,9 +141,10 @@ impl UsersService for DefaultUsersService {
     async fn delete(&self, id: &str) -> Result<()> {
         let user = user_model::Entity::find_by_id(id.to_owned())
             .one(&*self.db)
-            .await?;
+            .await?
+            .ok_or_else(|| anyhow!("Unable to find User with id: {}", id))?;
 
-        let _res = user.unwrap().delete(&*self.db).await?;
+        let _result = user.delete(&*self.db).await?;
 
         Ok(())
     }

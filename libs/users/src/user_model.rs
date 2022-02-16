@@ -4,7 +4,7 @@ use async_graphql::SimpleObject;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::profile_model::Profile;
+use crate::profile_model::{Model as ProfileModel, Profile};
 
 /// The User GraphQL and Database Model
 #[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject)]
@@ -51,3 +51,28 @@ impl Related<super::profile_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+/// A wrapper around `Option<User>` to enable the trait implementations below
+pub struct UserOption(pub Option<User>);
+
+impl From<Option<Model>> for UserOption {
+    fn from(data: Option<Model>) -> UserOption {
+        UserOption(data)
+    }
+}
+
+impl From<Option<(Model, Option<ProfileModel>)>> for UserOption {
+    fn from(data: Option<(Model, Option<ProfileModel>)>) -> UserOption {
+        UserOption(data.map(|(user, profile)| User {
+            profile: profile.map(|p| p.into()),
+            ..user
+        }))
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Option<User>> for UserOption {
+    fn into(self) -> Option<User> {
+        self.0
+    }
+}

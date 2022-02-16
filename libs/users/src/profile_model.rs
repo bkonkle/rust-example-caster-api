@@ -135,3 +135,69 @@ impl From<Model> for Profile {
         }
     }
 }
+
+/// A wrapper around a `Vec<Profile` to enable trait implementations
+pub struct ProfileList(Vec<Profile>);
+
+impl ProfileList {
+    /// Proxy to the `Vec` `len` method
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Proxy to the `Vec` `is_empty` method
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl From<Vec<Model>> for ProfileList {
+    fn from(data: Vec<Model>) -> ProfileList {
+        ProfileList(data.into_iter().map(|p| p.into()).collect())
+    }
+}
+
+impl From<Vec<(Model, Option<User>)>> for ProfileList {
+    fn from(data: Vec<(Model, Option<User>)>) -> ProfileList {
+        ProfileList(
+            data.into_iter()
+                .map(|(profile, user)| Profile {
+                    user: Box::new(user),
+                    ..profile.into()
+                })
+                .collect(),
+        )
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Vec<Profile>> for ProfileList {
+    fn into(self) -> Vec<Profile> {
+        self.0
+    }
+}
+
+/// A wrapper around `Option<Profile>` to enable trait implementations
+pub struct ProfileOption(pub Option<Profile>);
+
+impl From<Option<Model>> for ProfileOption {
+    fn from(data: Option<Model>) -> ProfileOption {
+        ProfileOption(data.map(|p| p.into()))
+    }
+}
+
+impl From<Option<(Model, Option<User>)>> for ProfileOption {
+    fn from(data: Option<(Model, Option<User>)>) -> ProfileOption {
+        ProfileOption(data.map(|(profile, user)| Profile {
+            user: Box::new(user),
+            ..profile.into()
+        }))
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Option<Profile>> for ProfileOption {
+    fn into(self) -> Option<Profile> {
+        self.0
+    }
+}

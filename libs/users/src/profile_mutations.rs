@@ -53,7 +53,7 @@ pub struct UpdateProfileInput {
     pub user_id: Option<String>,
 }
 
-/// The `MutateProfileResult` input type
+/// The `MutateProfileResult` type
 #[derive(Clone, Eq, PartialEq, SimpleObject)]
 pub struct MutateProfileResult {
     /// The Profile's subscriber id

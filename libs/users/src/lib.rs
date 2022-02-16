@@ -22,5 +22,12 @@ pub mod profiles_service;
 /// The Profile model
 pub mod profile_model;
 
+/// The Profile queries
+pub mod profile_queries;
+
 /// The Profile mutations
 pub mod profile_mutations;
+
+/// Error macros
+#[macro_use]
+extern crate anyhow;

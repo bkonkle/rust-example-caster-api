@@ -23,6 +23,7 @@ pub struct UsersMutation {}
 /// Queries for the User model
 #[Object]
 impl UsersQuery {
+    /// Get the current User based on the current token username (the "sub" claim)
     async fn get_current_user(&self, ctx: &Context<'_>) -> Result<Option<User>> {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data_unchecked::<Subject>();
@@ -48,6 +49,7 @@ impl UsersQuery {
 /// Mutations for the User model
 #[Object]
 impl UsersMutation {
+    /// Get or create the current User based on the current token username (the "sub" claim)
     async fn get_or_create_current_user(
         &self,
         ctx: &Context<'_>,
@@ -89,13 +91,14 @@ impl UsersMutation {
                 )
                 .await?;
 
-            // Add the created profile to the result
+            // Add the created Profile to the result
             user.profile = Some(created);
         }
 
         Ok(MutateUserResult { user: Some(user) })
     }
 
+    /// Update the current User based on the current token username (the "sub" claim)
     async fn update_current_user(
         &self,
         ctx: &Context<'_>,

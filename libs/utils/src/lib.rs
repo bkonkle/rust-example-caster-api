@@ -13,5 +13,11 @@ pub mod test;
 /// Error helpers for GraphQL
 pub mod errors;
 
+/// Pagination utils
+pub mod pagination;
+
+/// Ordering utils
+pub mod ordering;
+
 #[macro_use]
 extern crate anyhow;
