@@ -84,8 +84,13 @@ impl UsersMutation {
                 .get_or_create(
                     &user.id,
                     &CreateProfileInput {
+                        email: profile.email,
+                        display_name: profile.display_name,
+                        picture: profile.picture,
+                        content: profile.content,
+                        city: profile.city,
+                        state_province: profile.state_province,
                         user_id: user.id.clone(),
-                        ..profile
                     },
                     &false,
                 )

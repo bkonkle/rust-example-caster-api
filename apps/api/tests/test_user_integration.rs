@@ -51,7 +51,7 @@ async fn test_get_current_user() -> Result<()> {
         .create(
             &CreateProfileInput {
                 email: email.clone(),
-                user_id: Some(user.id.clone()),
+                user_id: user.id.clone(),
                 display_name: None,
                 picture: None,
                 content: None,
@@ -189,7 +189,7 @@ async fn test_get_or_create_current_user() -> Result<()> {
         .create(
             &CreateProfileInput {
                 email: email.clone(),
-                user_id: Some(user.id.clone()),
+                user_id: user.id.clone(),
                 display_name: None,
                 picture: None,
                 content: None,
@@ -356,7 +356,7 @@ async fn test_update_current_user() -> Result<()> {
         .create(
             &CreateProfileInput {
                 email: email.clone(),
-                user_id: Some(user.id.clone()),
+                user_id: user.id.clone(),
                 display_name: None,
                 picture: None,
                 content: None,
