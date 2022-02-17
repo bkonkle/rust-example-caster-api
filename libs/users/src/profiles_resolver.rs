@@ -8,7 +8,7 @@ use crate::{
     profile_model::Profile,
     profile_mutations::{CreateProfileInput, MutateProfileResult, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy, ProfilesPage},
-    profile_utils::get_current_user,
+    profile_utils::{get_current_user, maybe_get_current_user},
     profiles_service::ProfilesService,
     users_service::UsersService,
 };
@@ -31,9 +31,12 @@ impl ProfilesQuery {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the current request User for authorization
-        let user = get_current_user(subject, users).await?;
+        let user = maybe_get_current_user(subject, users).await?;
 
-        let profile = profiles.get(&id, &false).await?;
+        // Check to see if the associated User is selected
+        let with_user = ctx.look_ahead().field("user").exists();
+
+        let profile = profiles.get(&id, &with_user).await?;
 
         // Use the request User to decide if the Profile should be censored
         let censored = match user {
@@ -70,10 +73,13 @@ impl ProfilesQuery {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users).await?.map(|u| u.id);
+        let user_id = maybe_get_current_user(subject, users).await?.map(|u| u.id);
+
+        // Check to see if the associated User is selected
+        let with_user = ctx.look_ahead().field("data").field("user").exists();
 
         let response = profiles
-            .get_many(condition, order_by, page, page_size, &false)
+            .get_many(condition, order_by, page, page_size, &with_user)
             .await
             .map_err(as_graphql_error(
                 "Error while listing Profiles",
@@ -100,26 +106,21 @@ impl ProfilesMutation {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users)
-            .await?
-            .map(|u| u.id)
-            .ok_or_else(|| {
-                graphql_error(
-                    "A currently logged-in User is required",
-                    StatusCode::UNAUTHORIZED,
-                )
-            })?;
+        let user_id = get_current_user(subject, users).await?.id;
 
         // Make sure the current request User id matches the input
         if user_id != input.user_id {
             return Err(graphql_error(
-                "The user_id must match the currently logged-in User",
+                "The userId must match the currently logged-in User",
                 StatusCode::FORBIDDEN,
             ));
         }
 
+        // Check to see if the associated User is selected
+        let with_user = ctx.look_ahead().field("profile").field("user").exists();
+
         let profile = profiles
-            .create(&input, &false)
+            .create(&input, &with_user)
             .await
             .map_err(as_graphql_error(
                 "Error while creating Profile",
@@ -158,15 +159,7 @@ impl ProfilesMutation {
             })?;
 
         // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users)
-            .await?
-            .map(|u| u.id)
-            .ok_or_else(|| {
-                graphql_error(
-                    "A currently logged-in User is required",
-                    StatusCode::UNAUTHORIZED,
-                )
-            })?;
+        let user_id = get_current_user(subject, users).await?.id;
 
         // Make sure the current request User id matches the existing user
         if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {

@@ -94,14 +94,13 @@ impl ProfilesService for DefaultProfilesService {
     ) -> Result<Option<(profile_model::Model, Option<User>)>> {
         let query = profile_model::Entity::find_by_id(id.to_owned());
 
-        let profile = match with_user {
-            true => {
-                query
-                    .find_also_related(user_model::Entity)
-                    .one(&*self.db)
-                    .await?
-            }
-            false => query.one(&*self.db).await?.map(|u| (u, None)),
+        let profile = if *with_user {
+            query
+                .find_also_related(user_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
+            query.one(&*self.db).await?.map(|u| (u, None))
         };
 
         Ok(profile)
@@ -313,15 +312,14 @@ impl ProfilesService for DefaultProfilesService {
         let query = profile_model::Entity::find_by_id(id.to_owned());
 
         // Pull out the `Profile` and the related `User`, if selected
-        let (profile, user) = match with_user {
-            true => {
-                query
-                    .find_also_related(user_model::Entity)
-                    .one(&*self.db)
-                    .await?
-            }
+        let (profile, user) = if *with_user {
+            query
+                .find_also_related(user_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
             // If the Profile isn't requested, just map to None
-            false => query.one(&*self.db).await?.map(|p| (p, None)),
+            query.one(&*self.db).await?.map(|p| (p, None))
         }
         .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
 

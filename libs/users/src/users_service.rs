@@ -62,13 +62,14 @@ impl UsersService for DefaultUsersService {
         let query =
             user_model::Entity::find().filter(user_model::Column::Username.eq(username.to_owned()));
 
-        let user: UserOption = match with_profile {
-            true => query
+        let user: UserOption = if *with_profile {
+            query
                 .find_also_related(profile_model::Entity)
                 .one(&*self.db)
                 .await?
-                .into(),
-            false => query.one(&*self.db).await?.into(),
+                .into()
+        } else {
+            query.one(&*self.db).await?.into()
         };
 
         Ok(user.into())
@@ -88,13 +89,14 @@ impl UsersService for DefaultUsersService {
     async fn get_or_create(&self, username: &str, with_profile: &bool) -> Result<User> {
         let query = user_model::Entity::find().filter(user_model::Column::Username.eq(username));
 
-        let user: UserOption = match with_profile {
-            true => query.one(&*self.db).await?.into(),
-            false => query
+        let user: UserOption = if *with_profile {
+            query.one(&*self.db).await?.into()
+        } else {
+            query
                 .find_also_related(profile_model::Entity)
                 .one(&*self.db)
                 .await?
-                .into(),
+                .into()
         };
 
         if let UserOption(Some(user)) = user {
@@ -108,15 +110,14 @@ impl UsersService for DefaultUsersService {
         let query = user_model::Entity::find_by_id(id.to_owned());
 
         // Pull out the `User` and the related `Profile`, if selected
-        let (user, profile) = match with_profile {
-            true => {
-                query
-                    .find_also_related(profile_model::Entity)
-                    .one(&*self.db)
-                    .await?
-            }
+        let (user, profile) = if *with_profile {
+            query
+                .find_also_related(profile_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
             // If the Profile isn't requested, just map to None
-            false => query.one(&*self.db).await?.map(|u| (u, None)),
+            query.one(&*self.db).await?.map(|u| (u, None))
         }
         .ok_or_else(|| anyhow!("Unable to find User with id: {}", id))?;
 

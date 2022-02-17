@@ -105,7 +105,7 @@ pub enum Relation {
         from = "Column::UserId",
         to = "super::user_model::Column::Id",
         on_update = "Cascade",
-        on_delete = "Cascade"
+        on_delete = "SetNull"
     )]
     User,
 }
