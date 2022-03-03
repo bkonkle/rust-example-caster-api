@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use caster_utils::test::oauth2::{Credentials, User as TestUser};
 
 mod test_utils;
-use test_utils::{init_test, TestUtils};
+use test_utils::TestUtils;
 
 /***
  * Query: `getCurrentUser`
@@ -37,7 +37,7 @@ async fn test_get_current_user() -> Result<()> {
         users,
         profiles,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
@@ -95,7 +95,7 @@ async fn test_get_current_user_no_user() -> Result<()> {
         oauth,
         graphql,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
@@ -125,7 +125,7 @@ async fn test_get_current_user_requires_authn() -> Result<()> {
         http_client,
         graphql,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let req = graphql.query(GET_CURRENT_USER, Value::Null, None)?;
 
@@ -168,39 +168,18 @@ static GET_OR_CREATE_CURRENT_USER: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_get_or_create_current_user() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        users,
-        profiles,
-        ..
-    } = init_test().await?;
+    let utils = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         email,
-    } = oauth.get_credentials(TestUser::Test).await;
+    } = utils.oauth.get_credentials(TestUser::Test).await;
 
     // Create a user and profile
-    let user = users.create(username).await?;
-    let profile = profiles
-        .create(
-            &CreateProfileInput {
-                email: email.clone(),
-                user_id: user.id.clone(),
-                display_name: None,
-                picture: None,
-                content: None,
-                city: None,
-                state_province: None,
-            },
-            &false,
-        )
-        .await?;
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         GET_OR_CREATE_CURRENT_USER,
         json!({ "input": {
            "profile": {
@@ -210,7 +189,7 @@ async fn test_get_or_create_current_user() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -225,8 +204,8 @@ async fn test_get_or_create_current_user() -> Result<()> {
     assert_eq!(json_profile["email"], email.clone());
 
     // Clean up
-    users.delete(&user.id).await?;
-    profiles.delete(&profile.id).await?;
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -242,7 +221,7 @@ async fn test_get_or_create_current_user_create() -> Result<()> {
         users,
         profiles,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
@@ -292,7 +271,7 @@ async fn test_get_or_create_current_user_requires_authn() -> Result<()> {
         http_client,
         graphql,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let req = graphql.query(GET_OR_CREATE_CURRENT_USER, json!({ "input": {}}), None)?;
 
@@ -335,39 +314,18 @@ static UPDATE_CURRENT_USER: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_update_current_user() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        users,
-        profiles,
-        ..
-    } = init_test().await?;
+    let utils = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         email,
-    } = oauth.get_credentials(TestUser::Test).await;
+    } = utils.oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
-    let user = users.create(username).await?;
-    let profile = profiles
-        .create(
-            &CreateProfileInput {
-                email: email.clone(),
-                user_id: user.id.clone(),
-                display_name: None,
-                picture: None,
-                content: None,
-                city: None,
-                state_province: None,
-            },
-            &false,
-        )
-        .await?;
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         UPDATE_CURRENT_USER,
         json!({ "input": {
            "isActive": false
@@ -375,7 +333,7 @@ async fn test_update_current_user() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -390,8 +348,8 @@ async fn test_update_current_user() -> Result<()> {
     assert_eq!(json_profile["email"], email.clone());
 
     // Clean up
-    users.delete(&user.id).await?;
-    profiles.delete(&profile.id).await?;
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -404,7 +362,7 @@ async fn test_update_current_user_requires_authentication() -> Result<()> {
         http_client,
         graphql,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let req = graphql.query(
         UPDATE_CURRENT_USER,
@@ -439,7 +397,7 @@ async fn test_update_current_user_requires_user() -> Result<()> {
         oauth,
         graphql,
         ..
-    } = init_test().await?;
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,

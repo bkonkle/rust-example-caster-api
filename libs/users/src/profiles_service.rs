@@ -30,7 +30,7 @@ pub trait ProfilesService: Sync + Send {
     /// Get multiple `Profile` records
     async fn get_many(
         &self,
-        condition: ProfileCondition,
+        condition: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
         page_size: Option<usize>,
         page: Option<usize>,
@@ -114,7 +114,7 @@ impl ProfilesService for DefaultProfilesService {
 
     async fn get_many(
         &self,
-        condition: ProfileCondition,
+        condition: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
         page: Option<usize>,
         page_size: Option<usize>,
@@ -124,24 +124,26 @@ impl ProfilesService for DefaultProfilesService {
 
         let mut query = profile_model::Entity::find();
 
-        if let Some(email) = condition.email {
-            query = query.filter(profile_model::Column::Email.eq(email));
-        }
+        if let Some(condition) = condition {
+            if let Some(email) = condition.email {
+                query = query.filter(profile_model::Column::Email.eq(email));
+            }
 
-        if let Some(display_name) = condition.display_name {
-            query = query.filter(profile_model::Column::DisplayName.eq(display_name));
-        }
+            if let Some(display_name) = condition.display_name {
+                query = query.filter(profile_model::Column::DisplayName.eq(display_name));
+            }
 
-        if let Some(city) = condition.city {
-            query = query.filter(profile_model::Column::City.eq(city));
-        }
+            if let Some(city) = condition.city {
+                query = query.filter(profile_model::Column::City.eq(city));
+            }
 
-        if let Some(state_province) = condition.state_province {
-            query = query.filter(profile_model::Column::StateProvince.eq(state_province));
-        }
+            if let Some(state_province) = condition.state_province {
+                query = query.filter(profile_model::Column::StateProvince.eq(state_province));
+            }
 
-        if let Some(user_id) = condition.user_id {
-            query = query.filter(profile_model::Column::UserId.eq(user_id));
+            if let Some(user_id) = condition.user_id {
+                query = query.filter(profile_model::Column::UserId.eq(user_id));
+            }
         }
 
         if let Some(order_by) = order_by {

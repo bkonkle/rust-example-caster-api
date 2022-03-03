@@ -8,7 +8,10 @@ use tokio::time::sleep;
 
 use caster_api::{run, Dependencies};
 use caster_shows::shows_service::ShowsService;
-use caster_users::{profiles_service::ProfilesService, users_service::UsersService};
+use caster_users::{
+    profile_model::Profile, profile_mutations::CreateProfileInput,
+    profiles_service::ProfilesService, user_model::User, users_service::UsersService,
+};
 use caster_utils::{
     config::{get_config, Config},
     http::http_client,
@@ -43,40 +46,68 @@ pub struct TestUtils {
     pub shows: Arc<dyn ShowsService>,
 }
 
-/// Initialize common test utils
-pub async fn init_test() -> Result<TestUtils> {
-    let _ = pretty_env_logger::try_init();
+impl TestUtils {
+    /// Initialize a new set of utils
+    pub async fn init() -> Result<Self> {
+        let _ = pretty_env_logger::try_init();
 
-    let config = get_config();
+        let config = get_config();
 
-    let http_client = &HTTP_CLIENT;
-    let addr = run_server(config).await?;
+        let http_client = &HTTP_CLIENT;
+        let addr = run_server(config).await?;
 
-    let oauth = OAUTH.get_or_init(|| OAuth2Utils::new(config));
+        let oauth = OAUTH.get_or_init(|| OAuth2Utils::new(config));
 
-    let graphql = GraphQL::new(format!(
-        "http://localhost:{port}/graphql",
-        port = addr.port()
-    ));
+        let graphql = GraphQL::new(format!(
+            "http://localhost:{port}/graphql",
+            port = addr.port()
+        ));
 
-    // This needs to be created anew each time because it can't be shared when the Tokio runtime
-    // is being stopped and re-started between tests
-    let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
+        // This needs to be created anew each time because it can't be shared when the Tokio runtime
+        // is being stopped and re-started between tests
+        let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
 
-    let Dependencies {
-        users,
-        profiles,
-        shows,
-    } = Dependencies::new(&db);
+        let Dependencies {
+            users,
+            profiles,
+            shows,
+        } = Dependencies::new(&db);
 
-    Ok(TestUtils {
-        config,
-        http_client,
-        oauth,
-        graphql,
-        db,
-        users,
-        profiles,
-        shows,
-    })
+        Ok(TestUtils {
+            config,
+            http_client,
+            oauth,
+            graphql,
+            db,
+            users,
+            profiles,
+            shows,
+        })
+    }
+
+    /// Create a User and Profile together
+    pub async fn create_user_and_profile(
+        &self,
+        username: &str,
+        email: &str,
+    ) -> Result<(User, Profile)> {
+        let user = self.users.create(username).await?;
+        let profile = self
+            .profiles
+            .create(
+                &CreateProfileInput {
+                    email: email.to_string(),
+                    user_id: user.id.clone(),
+                    display_name: None,
+                    picture: None,
+                    content: None,
+                    city: None,
+                    state_province: None,
+                },
+                &false,
+            )
+            .await?;
+
+        Ok((user, profile))
+    }
 }

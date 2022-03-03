@@ -63,7 +63,7 @@ impl ProfilesQuery {
     async fn get_many_profiles(
         &self,
         ctx: &Context<'_>,
-        condition: ProfileCondition,
+        r#where: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
         page: Option<usize>,
         page_size: Option<usize>,
@@ -79,7 +79,7 @@ impl ProfilesQuery {
         let with_user = ctx.look_ahead().field("data").field("user").exists();
 
         let response = profiles
-            .get_many(condition, order_by, page, page_size, &with_user)
+            .get_many(r#where, order_by, page, page_size, &with_user)
             .await
             .map_err(as_graphql_error(
                 "Error while listing Profiles",
