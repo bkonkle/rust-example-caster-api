@@ -39,7 +39,7 @@ async fn test_create_profile() -> Result<()> {
         email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let user = utils.users.create(username).await?;
 
     let req = utils.graphql.query(
@@ -173,7 +173,7 @@ async fn test_create_profile_authz() -> Result<()> {
         email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let user = utils.users.create(username).await?;
 
     let req = utils.graphql.query(
@@ -232,7 +232,7 @@ async fn test_get_profile() -> Result<()> {
         email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     let req = utils
@@ -278,7 +278,7 @@ async fn test_get_profile_empty() -> Result<()> {
         ..
     } = oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let user = users.create(username).await?;
 
     let req = graphql.query(GET_PROFILE, json!({ "id": "dummy-id",}), Some(token))?;
@@ -308,7 +308,7 @@ async fn test_get_profile_authn() -> Result<()> {
         username, email, ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     let req = utils
@@ -422,7 +422,7 @@ async fn test_get_many_profiles() -> Result<()> {
         email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     // Create a user with another username
@@ -480,7 +480,7 @@ async fn test_get_many_profiles_anon() -> Result<()> {
         username, email, ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     let req = utils.graphql.query(GET_MANY_PROFILES, Value::Null, None)?;
@@ -537,14 +537,17 @@ async fn test_update_profile() -> Result<()> {
         email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user with this username
+    // Create a user and profile with this username
     let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     let req = utils.graphql.query(
         UPDATE_PROFILE,
-        json!({ "input": {
-           "displayName": "Test Name"
-        }}),
+        json!({
+            "id": profile.id,
+            "input": {
+                "displayName": "Test Name"
+            }
+        }),
         Some(token),
     )?;
     let resp = utils.http_client.request(req).await?;
@@ -553,7 +556,6 @@ async fn test_update_profile() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
-    println!("json: {:?}", json);
 
     let json_profile = &json["data"]["updateProfile"]["profile"];
     let json_user = &json_profile["user"];
@@ -572,11 +574,139 @@ async fn test_update_profile() -> Result<()> {
     Ok(())
 }
 
-//- It requires authentication
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_update_profile_authn() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-//- It returns an error if no existing profile was found
+    let Credentials {
+        username, email, ..
+    } = utils.oauth.get_credentials(TestUser::Test).await;
 
-//- It requires authorization
+    // Create a user and profile with this username
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+
+    let req = utils.graphql.query(
+        UPDATE_PROFILE,
+        json!({
+            "id": profile.id,
+            "input": {
+                "displayName": "Test Name"
+            }
+        }),
+        None,
+    )?;
+
+    let resp = utils.http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "A valid JWT token is required"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
+
+    Ok(())
+}
+
+/// It returns an error if no existing profile was found
+#[tokio::test]
+#[ignore]
+async fn test_update_profile_not_found() -> Result<()> {
+    let TestUtils {
+        http_client,
+        graphql,
+        ..
+    } = TestUtils::init().await?;
+
+    let req = graphql.query(
+        UPDATE_PROFILE,
+        json!({
+            "id": "test-id",
+            "input": {
+                "displayName": "Test Name"
+            }
+        }),
+        None,
+    )?;
+
+    let resp = http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "Unable to find existing Profile"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 404);
+
+    Ok(())
+}
+
+/// It requires authorization
+#[tokio::test]
+#[ignore]
+async fn test_update_profile_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        access_token: token,
+        username,
+        email,
+    } = utils.oauth.get_credentials(TestUser::Alt).await;
+
+    // Create a dummy user and profile
+    let (user, profile) = utils
+        .create_user_and_profile("dummy-username", "other@email.address")
+        .await?;
+
+    // Create a user and profile for the Alt user
+    let (other_user, other_profile) = utils.create_user_and_profile(username, email).await?;
+
+    let req = utils.graphql.query(
+        UPDATE_PROFILE,
+        json!({
+            "id": profile.id,
+            "input": {
+                "displayName": "Test Name"
+            }
+        }),
+        Some(token),
+    )?;
+
+    let resp = utils.http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "The userId must match the currently logged-in User"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
+    utils.users.delete(&other_user.id).await?;
+    utils.profiles.delete(&other_profile.id).await?;
+
+    Ok(())
+}
 
 /// Mutation: `deleteProfile`
 
@@ -586,10 +716,148 @@ static DELETE_PROFILE: &str = "
     }
 ";
 
-//- It deletes an existing user profile
+/// It deletes an existing user profile
+#[tokio::test]
+#[ignore]
+async fn test_delete_profile() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-//- It requires authentication
+    let Credentials {
+        access_token: token,
+        username,
+        email,
+    } = utils.oauth.get_credentials(TestUser::Test).await;
 
-//- It returns an error if no existing profile was found
+    // Create a user and profile with this username
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
-//- It requires authorization
+    let req = utils
+        .graphql
+        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(token))?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert!(json["data"]["deleteProfile"].as_bool().unwrap());
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+
+    Ok(())
+}
+
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_delete_profile_authn() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        username, email, ..
+    } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a user and profile with this username
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+
+    let req = utils
+        .graphql
+        .query(DELETE_PROFILE, json!({"id": profile.id}), None)?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+    println!("json: {:?}", json);
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "A valid JWT token is required"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
+
+    Ok(())
+}
+
+/// It returns an error if no existing profile was found
+#[tokio::test]
+#[ignore]
+async fn test_delete_profile_not_found() -> Result<()> {
+    let TestUtils {
+        http_client,
+        graphql,
+        ..
+    } = TestUtils::init().await?;
+
+    let req = graphql.query(DELETE_PROFILE, json!({"id": "test-id"}), None)?;
+
+    let resp = http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "Unable to find existing Profile"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 404);
+
+    Ok(())
+}
+
+/// It requires authorization
+#[tokio::test]
+#[ignore]
+async fn test_delete_profile_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        access_token: token,
+        username,
+        email,
+    } = utils.oauth.get_credentials(TestUser::Alt).await;
+
+    // Create a dummy user and profile
+    let (user, profile) = utils
+        .create_user_and_profile("dummy-username", "other@email.address")
+        .await?;
+
+    // Create a user and profile for the Alt user
+    let (other_user, other_profile) = utils.create_user_and_profile(username, email).await?;
+
+    let req = utils
+        .graphql
+        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(token))?;
+
+    let resp = utils.http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(
+        json["errors"][0]["message"],
+        "The userId must match the currently logged-in User"
+    );
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
+    utils.users.delete(&other_user.id).await?;
+    utils.profiles.delete(&other_profile.id).await?;
+
+    Ok(())
+}

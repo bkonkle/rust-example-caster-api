@@ -152,10 +152,7 @@ impl ProfilesMutation {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ))?
             .ok_or_else(|| {
-                graphql_error(
-                    "Unable to find existing Profile",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                )
+                graphql_error("Unable to find existing Profile", StatusCode::NOT_FOUND)
             })?;
 
         // Retrieve the current request User for authorization
@@ -164,7 +161,7 @@ impl ProfilesMutation {
         // Make sure the current request User id matches the existing user
         if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
             return Err(graphql_error(
-                "The user_id must match the currently logged-in User",
+                "The userId must match the currently logged-in User",
                 StatusCode::FORBIDDEN,
             ));
         }
@@ -184,16 +181,39 @@ impl ProfilesMutation {
     }
 
     /// Remove an existing Profile
-    async fn delete_profile(&self, ctx: &Context<'_>, id: String) -> Result<MutateProfileResult> {
+    async fn delete_profile(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
+        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
+        let subject = ctx.data_unchecked::<Subject>();
 
-        // TODO: Authorization
+        // Retrieve the existing Profile for authorization
+        let (_, existing_user) = profiles
+            .get_model(&id, &true)
+            .await
+            .map_err(as_graphql_error(
+                "Error while fetching Profile",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?
+            .ok_or_else(|| {
+                graphql_error("Unable to find existing Profile", StatusCode::NOT_FOUND)
+            })?;
+
+        // Retrieve the current request User for authorization
+        let user_id = get_current_user(subject, users).await?.id;
+
+        // Make sure the current request User id matches the existing user
+        if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+            return Err(graphql_error(
+                "The userId must match the currently logged-in User",
+                StatusCode::FORBIDDEN,
+            ));
+        }
 
         profiles.delete(&id).await.map_err(as_graphql_error(
             "Error while deleting Profile",
             StatusCode::INTERNAL_SERVER_ERROR,
         ))?;
 
-        Ok(MutateProfileResult { profile: None })
+        Ok(true)
     }
 }

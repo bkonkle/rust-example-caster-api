@@ -76,7 +76,7 @@ async fn test_get_current_user() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(json_user["id"], user.id);
     assert_eq!(json_user["username"], user.username);
-    assert_eq!(json_user["isActive"], true);
+    assert!(json_user["isActive"].as_bool().unwrap());
     assert_eq!(json_profile["email"], email.clone());
 
     // Clean up
@@ -344,7 +344,7 @@ async fn test_update_current_user() -> Result<()> {
 
     assert_eq!(status, 200);
     assert_eq!(json_user["username"], username.to_string());
-    assert_eq!(json_user["isActive"], false);
+    assert!(!json_user["isActive"].as_bool().unwrap());
     assert_eq!(json_profile["email"], email.clone());
 
     // Clean up
