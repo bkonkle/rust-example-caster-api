@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::user_model::User;
 
-/// The Profile model
+/// The Profile GraphQL model
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, SimpleObject)]
 pub struct Profile {
     /// The Profile id
@@ -63,7 +63,7 @@ impl Profile {
     }
 }
 
-/// The Profile DB model
+/// The Profile Database model
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "profiles")]
 pub struct Model {

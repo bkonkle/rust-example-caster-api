@@ -86,6 +86,7 @@ impl TestUtils {
     }
 
     /// Create a User and Profile together
+    #[allow(dead_code)] // Not sure why this is necessary
     pub async fn create_user_and_profile(
         &self,
         username: &str,

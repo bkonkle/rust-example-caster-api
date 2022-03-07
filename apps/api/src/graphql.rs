@@ -1,6 +1,6 @@
 use async_graphql::{EmptySubscription, MergedObject, Schema};
 
-use caster_shows::shows_resolver::ShowsQuery;
+use caster_shows::shows_resolver::{ShowsMutation, ShowsQuery};
 use caster_users::{
     profiles_resolver::{ProfilesMutation, ProfilesQuery},
     users_resolver::{UsersMutation, UsersQuery},
@@ -13,7 +13,7 @@ use crate::Dependencies;
 pub struct Query(UsersQuery, ProfilesQuery, ShowsQuery);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(UsersMutation, ProfilesMutation);
+pub struct Mutation(UsersMutation, ProfilesMutation, ShowsMutation);
 
 /// The application's top-level merged GraphQL schema
 pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;

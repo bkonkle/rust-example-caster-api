@@ -44,10 +44,12 @@ async fn test_create_profile() -> Result<()> {
 
     let req = utils.graphql.query(
         CREATE_PROFILE,
-        json!({ "input": {
-           "email": email,
-           "userId": user.id.clone(),
-        }}),
+        json!({
+            "input": {
+                "email": email,
+                "userId": user.id.clone(),
+            }
+        }),
         Some(token),
     )?;
 
@@ -105,9 +107,11 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
     // Now provide the "email" and try again
     let req = utils.graphql.query(
         CREATE_PROFILE,
-        json!({ "input": {
-            "email": email,
-        }}),
+        json!({
+            "input": {
+                "email": email,
+            }
+        }),
         Some(token),
     )?;
 
@@ -138,10 +142,12 @@ async fn test_create_profile_authn() -> Result<()> {
 
     let req = graphql.query(
         CREATE_PROFILE,
-        json!({ "input": {
-            "email": "dummy-email",
-            "userId": "dummy-user-id"
-        }}),
+        json!({
+            "input": {
+                "email": "dummy-email",
+                "userId": "dummy-user-id"
+            }
+        }),
         None,
     )?;
 
@@ -178,10 +184,12 @@ async fn test_create_profile_authz() -> Result<()> {
 
     let req = utils.graphql.query(
         CREATE_PROFILE,
-        json!({ "input": {
-           "email": email,
-           "userId": "dummy-user-id",
-        }}),
+        json!({
+            "input": {
+                "email": email,
+                "userId": "dummy-user-id",
+            }
+        }),
         Some(token),
     )?;
 
@@ -204,7 +212,9 @@ async fn test_create_profile_authz() -> Result<()> {
     Ok(())
 }
 
-/// Query: `getProfile`
+/***
+ * Query: `getProfile`
+ */
 
 static GET_PROFILE: &str = "
     query GetProfile($id: ID!) {
@@ -378,7 +388,9 @@ async fn test_get_profile_authz() -> Result<()> {
     Ok(())
 }
 
-/// Query: `getManyProfiles`
+/***
+ * Query: `getManyProfiles`
+ */
 
 static GET_MANY_PROFILES: &str = "
     query GetManyProfiles(
@@ -507,7 +519,9 @@ async fn test_get_many_profiles_anon() -> Result<()> {
     Ok(())
 }
 
-/// Mutation: `updateProfile`
+/***
+ * Mutation: `updateProfile`
+ */
 
 static UPDATE_PROFILE: &str = "
     mutation UpdateProfile($id: ID!, $input: UpdateProfileInput!) {
@@ -708,7 +722,9 @@ async fn test_update_profile_authz() -> Result<()> {
     Ok(())
 }
 
-/// Mutation: `deleteProfile`
+/***
+ * Mutation: `deleteProfile`
+ */
 
 static DELETE_PROFILE: &str = "
     mutation DeleteProfile($id: ID!) {

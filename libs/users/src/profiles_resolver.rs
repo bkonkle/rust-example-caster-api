@@ -21,7 +21,7 @@ pub struct ProfilesQuery {}
 #[derive(Default)]
 pub struct ProfilesMutation {}
 
-/// Queries for the `User` model
+/// Queries for the `Profile` model
 #[Object]
 impl ProfilesQuery {
     /// Get a single Profile

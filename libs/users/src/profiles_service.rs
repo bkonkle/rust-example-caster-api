@@ -17,7 +17,7 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ProfilesService: Sync + Send {
-    /// Get an individual `Profile` by id, returning the Model instances
+    /// Get an individual `Profile` by id, returning the Model instance for updating
     async fn get_model(
         &self,
         id: &str,
