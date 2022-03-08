@@ -7,13 +7,13 @@ pub mod shows_resolver;
 /// The Shows service
 pub mod shows_service;
 
-/// The Show models
+/// Show models
 pub mod show_model;
 
-/// The Show queries
+/// Show queries
 pub mod show_queries;
 
-/// The Show mutations
+/// Show mutations
 pub mod show_mutations;
 
 /// Show tests

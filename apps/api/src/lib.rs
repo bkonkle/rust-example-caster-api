@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
+use graphql::create_schema;
 use sea_orm::DatabaseConnection;
 use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
@@ -59,7 +60,8 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
     let deps = Dependencies::new(&db);
 
-    let router = create_routes(deps, config, jwks);
+    let schema = create_schema(deps, config)?;
+    let router = create_routes(schema, jwks);
 
     Ok(warp::serve(
         router

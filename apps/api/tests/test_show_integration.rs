@@ -12,7 +12,7 @@ use test_utils::TestUtils;
  * Mutation: `createShow`
  */
 
-static CREATE_SHOW: &str = "
+const CREATE_SHOW: &str = "
     mutation CreateShow($input: CreateShowInput!) {
         createShow(input: $input) {
             show {
@@ -103,7 +103,7 @@ async fn test_create_show_requires_title() -> Result<()> {
  * Query: `getShow`
  */
 
-static GET_SHOW: &str = "
+const GET_SHOW: &str = "
     query GetShow($id: ID!) {
         getShow(id: $id) {
             id
@@ -192,7 +192,7 @@ async fn test_get_show_empty() -> Result<()> {
  * Query: `getManyShows`
  */
 
-static GET_MANY_SHOWS: &str = "
+const GET_MANY_SHOWS: &str = "
     query GetManyShows(
         $where: ShowCondition
         $orderBy: [ShowsOrderBy!]
@@ -284,7 +284,7 @@ async fn test_get_many_shows() -> Result<()> {
  * Mutation: `updateShow`
  */
 
-static UPDATE_SHOW: &str = "
+const UPDATE_SHOW: &str = "
     mutation UpdateShow($id: ID!, $input: UpdateShowInput!) {
         updateShow(id: $id, input: $input) {
             show {
@@ -392,7 +392,7 @@ async fn test_update_show_not_found() -> Result<()> {
  * Mutation: `deleteShow`
  */
 
-static DELETE_SHOW: &str = "
+const DELETE_SHOW: &str = "
     mutation DeleteShow($id: ID!) {
         deleteShow(id: $id)
     }

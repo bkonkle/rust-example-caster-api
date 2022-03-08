@@ -1,15 +1,20 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
+use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::user_model::User;
 
+/// Authorization rules
+pub const AUTHORIZATION: &str = include_str!("authorization.polar");
+
 /// The Profile GraphQL model
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize, SimpleObject)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
 pub struct Profile {
     /// The Profile id
+    #[polar(attribute)]
     pub id: String,
 
     /// The date the Profile was created
@@ -21,6 +26,7 @@ pub struct Profile {
     /// The Profile's email address
     // (differs from DB)
     // Optional because this field may be censored for unauthorized users
+    #[polar(attribute)]
     pub email: Option<String>,
 
     /// The Profile's display name
@@ -39,6 +45,7 @@ pub struct Profile {
     pub state_province: Option<String>,
 
     /// The Profile's User id
+    #[polar(attribute)]
     pub user_id: Option<String>,
 
     /// The associated User

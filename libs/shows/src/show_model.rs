@@ -1,17 +1,23 @@
 #![allow(missing_docs)]
-
 use async_graphql::SimpleObject;
+use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+/// Authorization rules
+pub const AUTHORIZATION: &str = include_str!("authorization.polar");
+
 /// The Show GraphQL and Database Model
-#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject)]
+#[derive(
+    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+)]
 #[graphql(name = "Show")]
 #[sea_orm(table_name = "shows")]
 pub struct Model {
     /// The Show id
     #[sea_orm(primary_key, column_type = "Text")]
     #[serde(skip_deserializing)]
+    #[polar(attribute)]
     pub id: String,
 
     /// The date the Show was created

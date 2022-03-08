@@ -5,21 +5,14 @@ use std::convert::Infallible;
 use warp::{http::Response as HttpResponse, Rejection};
 use warp::{Filter, Reply};
 
-use crate::{
-    graphql::{create_schema, Mutation, Query},
-    Dependencies,
-};
+use crate::graphql::{Mutation, Query};
 use caster_auth::{jwks::JWKS, with_auth};
-use caster_utils::config::Config;
 
 /// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
 pub fn create_routes(
-    deps: Dependencies,
-    config: &'static Config,
+    schema: Schema<Query, Mutation, EmptySubscription>,
     jwks: &'static JWKS,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let schema = create_schema(deps, config);
-
     let graphql_post = graphql(schema).and(with_auth(jwks)).and_then(
         |(schema, request): (
             Schema<Query, Mutation, EmptySubscription>,

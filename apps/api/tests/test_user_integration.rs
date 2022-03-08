@@ -12,7 +12,7 @@ use test_utils::TestUtils;
  * Query: `getCurrentUser`
  */
 
-static GET_CURRENT_USER: &str = "
+const GET_CURRENT_USER: &str = "
     query GetCurrentUser {
         getCurrentUser {
             id
@@ -148,7 +148,7 @@ async fn test_get_current_user_requires_authn() -> Result<()> {
 /***
  * Mutation: `getOrCreateCurrentUser`
  */
-static GET_OR_CREATE_CURRENT_USER: &str = "
+const GET_OR_CREATE_CURRENT_USER: &str = "
     mutation GetOrCreateCurrentUser($input: CreateUserInput!) {
         getOrCreateCurrentUser(input: $input) {
             user {
@@ -294,7 +294,7 @@ async fn test_get_or_create_current_user_requires_authn() -> Result<()> {
 /***
  * Query: `updateCurrentUser`
  */
-static UPDATE_CURRENT_USER: &str = "
+const UPDATE_CURRENT_USER: &str = "
     mutation UpdateCurrentUser($input: UpdateUserInput!) {
         updateCurrentUser(input: $input) {
             user {

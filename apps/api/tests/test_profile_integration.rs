@@ -11,7 +11,7 @@ use test_utils::TestUtils;
  * Mutation: `createProfile`
  */
 
-static CREATE_PROFILE: &str = "
+const CREATE_PROFILE: &str = "
     mutation CreateProfile($input: CreateProfileInput!) {
         createProfile(input: $input) {
             profile {
@@ -216,7 +216,7 @@ async fn test_create_profile_authz() -> Result<()> {
  * Query: `getProfile`
  */
 
-static GET_PROFILE: &str = "
+const GET_PROFILE: &str = "
     query GetProfile($id: ID!) {
         getProfile(id: $id) {
             id
@@ -392,7 +392,7 @@ async fn test_get_profile_authz() -> Result<()> {
  * Query: `getManyProfiles`
  */
 
-static GET_MANY_PROFILES: &str = "
+const GET_MANY_PROFILES: &str = "
     query GetManyProfiles(
         $where: ProfileCondition
         $orderBy: [ProfilesOrderBy!]
@@ -523,7 +523,7 @@ async fn test_get_many_profiles_anon() -> Result<()> {
  * Mutation: `updateProfile`
  */
 
-static UPDATE_PROFILE: &str = "
+const UPDATE_PROFILE: &str = "
     mutation UpdateProfile($id: ID!, $input: UpdateProfileInput!) {
         updateProfile(id: $id, input: $input) {
             profile {
@@ -726,7 +726,7 @@ async fn test_update_profile_authz() -> Result<()> {
  * Mutation: `deleteProfile`
  */
 
-static DELETE_PROFILE: &str = "
+const DELETE_PROFILE: &str = "
     mutation DeleteProfile($id: ID!) {
         deleteProfile(id: $id)
     }
