@@ -9,7 +9,7 @@ resource Show {
         "delete",
         # Create, update, and delete any Episodes for a Show
         "manage_episodes",
-        # Grant or revoke User Roles for a Show
+        # Grant or revoke Profile Roles for a Show
         "manage_roles"
     ];
     roles = [

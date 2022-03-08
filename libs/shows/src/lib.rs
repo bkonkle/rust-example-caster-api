@@ -16,6 +16,9 @@ pub mod show_queries;
 /// Show mutations
 pub mod show_mutations;
 
+/// Episode models
+pub mod episode_model;
+
 /// Show tests
 #[cfg(test)]
 mod tests;

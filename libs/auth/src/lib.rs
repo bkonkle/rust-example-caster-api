@@ -26,22 +26,29 @@ pub mod jwks;
 
 const BEARER: &str = "Bearer ";
 
-/// The token's Subject claim
+/// The token's Subject claim, which corresponds with the username
 #[derive(Clone)]
 pub struct Subject(pub Option<String>);
 
 /// If an authorization header is provided, make sure it's in the expected format, and
 /// return it as a String.
 fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<Option<String>, AuthError> {
-    let header = match headers.get(AUTHORIZATION) {
-        Some(v) => v,
-        None => return Ok(None),
+    let header = if let Some(v) = headers.get(AUTHORIZATION) {
+        v
+    } else {
+        // No Authorization header found, so return early with None
+        return Ok(None);
     };
-    let auth_header = match std::str::from_utf8(header.as_bytes()) {
-        Ok(v) => v,
-        Err(_) => return Ok(None),
+
+    let auth_header = if let Ok(v) = std::str::from_utf8(header.as_bytes()) {
+        v
+    } else {
+        // Authorization header couldn't be decoded, so return early with None
+        return Ok(None);
     };
+
     if !auth_header.starts_with(BEARER) {
+        // Authorization header doesn't start with "Bearer ", so return early with an Error
         return Err(InvalidAuthHeaderError);
     }
 
@@ -90,10 +97,6 @@ async fn authorize(
         Err(e) => Err(warp::reject::custom(e)),
     }
 }
-
-// pub(crate) fn reject_any(error: impl Into<anyhow::Error>) -> warp::Rejection {
-//     warp::reject::custom(AnyReject(error.into()))
-// }
 
 /// A Warp Filter to add Authentication context
 pub fn with_auth(

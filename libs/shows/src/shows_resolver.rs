@@ -1,5 +1,6 @@
 use async_graphql::{Context, Object, Result};
 use hyper::StatusCode;
+use oso::Oso;
 use std::sync::Arc;
 
 use crate::{
@@ -64,6 +65,7 @@ impl ShowsMutation {
         input: CreateShowInput,
     ) -> Result<MutateShowResult> {
         let shows = ctx.data_unchecked::<Arc<dyn ShowsService>>();
+        let oso = ctx.data_unchecked::<Oso>();
 
         let show = shows.create(&input).await.map_err(as_graphql_error(
             "Error while creating Show",

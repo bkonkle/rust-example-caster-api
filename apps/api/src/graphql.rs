@@ -3,6 +3,7 @@ use async_graphql::{EmptySubscription, MergedObject, Schema};
 use oso::{Oso, PolarClass};
 
 use caster_shows::{
+    episode_model::Episode,
     show_model::{Show, AUTHORIZATION as SHOWS_AUTHZ},
     shows_resolver::{ShowsMutation, ShowsQuery},
 };
@@ -33,13 +34,14 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
         shows,
     } = deps;
 
+    // Set up authorization
     let mut oso = Oso::new();
 
-    oso.register_class(Profile::get_polar_class_builder().build())?;
-    oso.register_class(Show::get_polar_class_builder().build())?;
+    oso.register_class(Profile::get_polar_class_builder().name("Profile").build())?;
+    oso.register_class(Show::get_polar_class_builder().name("Show").build())?;
+    oso.register_class(Episode::get_polar_class_builder().name("Episode").build())?;
 
-    oso.load_str(PROFILES_AUTHZ)?;
-    oso.load_str(SHOWS_AUTHZ)?;
+    oso.load_str(&format!("{}\n{}", PROFILES_AUTHZ, SHOWS_AUTHZ))?;
 
     // Inject the initialized services into the `Schema` instance.
     Ok(

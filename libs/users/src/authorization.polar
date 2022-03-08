@@ -1,9 +1,13 @@
 allow(actor, action, resource) if
   has_permission(actor, action, resource);
 
-has_role(profile: Profile, name: String, resource: Resource) if
-  role in profile.roles and
+has_role(user: User, name: String, resource: Resource) if
+  role in user.profile.roles and
   role.name = name and
   role.resource = resource;
 
-actor Profile {}
+actor User {
+    relations = {profile: Profile};
+}
+
+resource Profile {}

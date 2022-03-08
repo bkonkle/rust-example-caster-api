@@ -61,7 +61,7 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let deps = Dependencies::new(&db);
 
     let schema = create_schema(deps, config)?;
-    let router = create_routes(schema, jwks);
+    let router = create_routes(deps.users.clone(), schema, jwks);
 
     Ok(warp::serve(
         router
