@@ -136,10 +136,7 @@ async fn test_get_current_user_requires_authn() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
@@ -282,10 +279,7 @@ async fn test_get_or_create_current_user_requires_authn() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
@@ -357,7 +351,7 @@ async fn test_update_current_user() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_update_current_user_requires_authentication() -> Result<()> {
+async fn test_update_current_user_requires_authn() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -379,10 +373,7 @@ async fn test_update_current_user_requires_authentication() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())

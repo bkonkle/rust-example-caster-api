@@ -19,6 +19,9 @@ pub mod show_mutations;
 /// Episode models
 pub mod episode_model;
 
+/// Authorization rules
+pub const AUTHORIZATION: &str = include_str!("authorization.polar");
+
 /// Show tests
 #[cfg(test)]
 mod tests;

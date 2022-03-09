@@ -31,6 +31,9 @@ pub mod profile_mutations;
 /// Profile utilities
 pub mod profile_utils;
 
+/// Authorization rules
+pub const AUTHORIZATION: &str = include_str!("authorization.polar");
+
 /// Error macros
 #[macro_use]
 extern crate anyhow;

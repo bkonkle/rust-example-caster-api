@@ -59,9 +59,10 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
 
     let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
     let deps = Dependencies::new(&db);
+    let users = deps.users.clone();
 
     let schema = create_schema(deps, config)?;
-    let router = create_routes(deps.users.clone(), schema, jwks);
+    let router = create_routes(users, schema, jwks);
 
     Ok(warp::serve(
         router

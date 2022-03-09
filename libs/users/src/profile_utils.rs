@@ -18,17 +18,9 @@ pub async fn get_current_user(subject: &Subject, users: &Arc<dyn UsersService>) 
                     StatusCode::INTERNAL_SERVER_ERROR,
                 ))
         }
-        _ => Err(graphql_error(
-            "A valid JWT token is required",
-            StatusCode::UNAUTHORIZED,
-        )),
+        _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
     }?
-    .ok_or_else(|| {
-        graphql_error(
-            "A currently logged-in User is required",
-            StatusCode::UNAUTHORIZED,
-        )
-    })
+    .ok_or_else(|| graphql_error("Unauthorized", StatusCode::UNAUTHORIZED))
 }
 
 /// Optionally get an existing User based on the token username (the "sub" claim)

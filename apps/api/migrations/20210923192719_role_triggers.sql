@@ -1,4 +1,4 @@
--- Create a trigger that validates the subject_table based on information_schema
+-- Create a trigger that validates the resource_table based on information_schema
 CREATE OR REPLACE FUNCTION check_role_grant() RETURNS trigger as $$
   BEGIN
     IF EXISTS (
@@ -6,12 +6,12 @@ CREATE OR REPLACE FUNCTION check_role_grant() RETURNS trigger as $$
         FROM information_schema.tables
       WHERE table_schema='public'
         AND table_type='BASE TABLE'
-        AND table_name=NEW."subject_table"
+        AND table_name=NEW."resource_table"
     ) THEN
       RETURN NEW;
     END IF;
 
-    RAISE EXCEPTION 'subject_table must match an existing table_name';
+    RAISE EXCEPTION 'resource_table must match an existing table_name';
   END;
 $$ LANGUAGE plpgsql;
 
@@ -41,8 +41,8 @@ BEFORE DELETE ON "profiles"
 CREATE OR REPLACE FUNCTION on_delete_show() RETURNS trigger AS $$
   BEGIN
     DELETE FROM "role_grants"
-    WHERE "subject_id" = OLD.id
-      AND "subject_table" = 'shows';
+    WHERE "resource_id" = OLD.id
+      AND "resource_table" = 'shows';
 
     RETURN OLD;
   END;
@@ -59,8 +59,8 @@ BEFORE DELETE ON "shows"
 CREATE OR REPLACE FUNCTION on_delete_episode() RETURNS trigger AS $$
   BEGIN
     DELETE FROM "role_grants"
-    WHERE "subject_id" = OLD.id
-      AND "subject_table" = 'episodes';
+    WHERE "resource_id" = OLD.id
+      AND "resource_table" = 'episodes';
 
     RETURN OLD;
   END;

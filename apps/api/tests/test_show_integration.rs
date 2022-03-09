@@ -34,8 +34,12 @@ async fn test_create_show() -> Result<()> {
 
     let Credentials {
         access_token: token,
-        ..
+        username,
+        email,
     } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a user and profile with this username
+    let (user, profile) = utils.create_user_and_profile(username, email).await?;
 
     let req = utils.graphql.query(
         CREATE_SHOW,
@@ -59,6 +63,8 @@ async fn test_create_show() -> Result<()> {
     assert_eq!(json_show["title"], "Test Show");
 
     // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.profiles.delete(&profile.id).await?;
     utils
         .shows
         .delete(json_show["id"].as_str().unwrap())
@@ -97,7 +103,39 @@ async fn test_create_show_requires_title() -> Result<()> {
     Ok(())
 }
 
-//- TODO: It requires authentication
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_create_show_requires_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        access_token: token,
+        ..
+    } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    let req = utils.graphql.query(
+        CREATE_SHOW,
+        json!({
+            "input": {
+                "title": "Test Show"
+            }
+        }),
+        Some(token),
+    )?;
+
+    let resp = utils.http_client.request(req).await?;
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    Ok(())
+}
 
 /***
  * Query: `getShow`

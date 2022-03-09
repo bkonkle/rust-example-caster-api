@@ -4,9 +4,6 @@ use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-/// Authorization rules
-pub const AUTHORIZATION: &str = include_str!("authorization.polar");
-
 /// The Show GraphQL and Database Model
 #[derive(
     Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,

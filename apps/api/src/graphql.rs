@@ -4,13 +4,16 @@ use oso::{Oso, PolarClass};
 
 use caster_shows::{
     episode_model::Episode,
-    show_model::{Show, AUTHORIZATION as SHOWS_AUTHZ},
+    show_model::Show,
     shows_resolver::{ShowsMutation, ShowsQuery},
+    AUTHORIZATION as SHOWS_AUTHZ,
 };
 use caster_users::{
-    profile_model::{Profile, AUTHORIZATION as PROFILES_AUTHZ},
+    profile_model::Profile,
     profiles_resolver::{ProfilesMutation, ProfilesQuery},
+    user_model::User,
     users_resolver::{UsersMutation, UsersQuery},
+    AUTHORIZATION as PROFILES_AUTHZ,
 };
 use caster_utils::config::Config;
 
@@ -37,6 +40,7 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
     // Set up authorization
     let mut oso = Oso::new();
 
+    oso.register_class(User::get_polar_class_builder().name("User").build())?;
     oso.register_class(Profile::get_polar_class_builder().name("Profile").build())?;
     oso.register_class(Show::get_polar_class_builder().name("Show").build())?;
     oso.register_class(Episode::get_polar_class_builder().name("Episode").build())?;

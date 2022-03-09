@@ -4,8 +4,8 @@ CREATE TABLE "role_grants" (
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "role_key" TEXT NOT NULL,
     "profile_id" TEXT NOT NULL,
-    "subject_table" TEXT NOT NULL,
-    "subject_id" TEXT NOT NULL,
+    "resource_table" TEXT NOT NULL,
+    "resource_id" TEXT NOT NULL,
 
     PRIMARY KEY ("id")
 );

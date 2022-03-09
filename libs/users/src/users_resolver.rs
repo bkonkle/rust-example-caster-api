@@ -38,10 +38,7 @@ impl UsersQuery {
                     "Error while retrieving User",
                     StatusCode::INTERNAL_SERVER_ERROR,
                 )),
-            _ => Err(graphql_error(
-                "A valid JWT token is required",
-                StatusCode::UNAUTHORIZED,
-            )),
+            _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }
     }
 }
@@ -64,10 +61,7 @@ impl UsersMutation {
 
         let username = match subject {
             Subject(Some(username)) => Ok(username),
-            _ => Err(graphql_error(
-                "A valid JWT token is required",
-                StatusCode::UNAUTHORIZED,
-            )),
+            _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }?;
 
         let mut user =
@@ -125,10 +119,7 @@ impl UsersMutation {
                         StatusCode::INTERNAL_SERVER_ERROR,
                     ))
             }
-            _ => Err(graphql_error(
-                "A valid JWT token is required",
-                StatusCode::UNAUTHORIZED,
-            )),
+            _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }?;
 
         let user = match existing {

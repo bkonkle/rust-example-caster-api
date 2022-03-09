@@ -1,19 +1,23 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
+use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::profile_model::{Model as ProfileModel, Profile};
 
 /// The User GraphQL and Database Model
-#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject)]
+#[derive(
+    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+)]
 #[graphql(name = "User")]
 #[sea_orm(table_name = "users")]
 pub struct Model {
     /// The User id
     #[sea_orm(primary_key, column_type = "Text")]
     #[serde(skip_deserializing)]
+    #[polar(attribute)]
     pub id: String,
 
     /// The date the User was created
@@ -24,13 +28,16 @@ pub struct Model {
 
     /// The User's subscriber id
     #[sea_orm(column_type = "Text")]
+    #[polar(attribute)]
     pub username: String,
 
     /// Whether the User is active or disabled
+    #[polar(attribute)]
     pub is_active: bool,
 
     /// The related Profile, if one is associated
     #[sea_orm(ignore)]
+    #[polar(attribute)]
     pub profile: Option<Profile>,
 }
 

@@ -404,12 +404,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "caster-roles"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "caster-utils",
+ "chrono",
+ "fake",
+ "jsonpath_lib",
+ "mockall",
+ "rand",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "caster-shows"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-graphql",
  "async-trait",
+ "caster-users",
  "caster-utils",
  "chrono",
  "fake",

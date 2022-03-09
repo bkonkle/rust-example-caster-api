@@ -9,6 +9,7 @@ use crate::{
     show_queries::{ShowCondition, ShowsOrderBy, ShowsPage},
     shows_service::ShowsService,
 };
+use caster_users::user_model::User;
 use caster_utils::errors::{as_graphql_error, graphql_error};
 
 /// The Query segment owned by the Shows library
@@ -65,14 +66,21 @@ impl ShowsMutation {
         input: CreateShowInput,
     ) -> Result<MutateShowResult> {
         let shows = ctx.data_unchecked::<Arc<dyn ShowsService>>();
-        let oso = ctx.data_unchecked::<Oso>();
+        let user = ctx.data_unchecked::<Option<User>>();
 
-        let show = shows.create(&input).await.map_err(as_graphql_error(
-            "Error while creating Show",
-            StatusCode::INTERNAL_SERVER_ERROR,
-        ))?;
+        // Check authorization
+        if let Some(_user) = user {
+            let show = shows.create(&input).await.map_err(as_graphql_error(
+                "Error while creating Show",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?;
 
-        Ok(MutateShowResult { show: Some(show) })
+            // TODO: Grant the Admin role to the creator
+
+            Ok(MutateShowResult { show: Some(show) })
+        } else {
+            Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED))
+        }
     }
 
     /// Update an existing Show

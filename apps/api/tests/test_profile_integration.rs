@@ -158,10 +158,7 @@ async fn test_create_profile_authn() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
@@ -200,10 +197,7 @@ async fn test_create_profile_authz() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "The userId must match the currently logged-in User"
-    );
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
@@ -619,10 +613,7 @@ async fn test_update_profile_authn() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
@@ -707,10 +698,7 @@ async fn test_update_profile_authz() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "The userId must match the currently logged-in User"
-    );
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
@@ -788,13 +776,9 @@ async fn test_delete_profile_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
     let json: Value = serde_json::from_slice(&body)?;
-    println!("json: {:?}", json);
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "A valid JWT token is required"
-    );
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
@@ -863,10 +847,7 @@ async fn test_delete_profile_authz() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "The userId must match the currently logged-in User"
-    );
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up

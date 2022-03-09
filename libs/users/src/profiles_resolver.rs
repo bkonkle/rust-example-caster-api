@@ -110,10 +110,7 @@ impl ProfilesMutation {
 
         // Make sure the current request User id matches the input
         if user_id != input.user_id {
-            return Err(graphql_error(
-                "The userId must match the currently logged-in User",
-                StatusCode::FORBIDDEN,
-            ));
+            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
         }
 
         // Check to see if the associated User is selected
@@ -160,10 +157,7 @@ impl ProfilesMutation {
 
         // Make sure the current request User id matches the existing user
         if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
-            return Err(graphql_error(
-                "The userId must match the currently logged-in User",
-                StatusCode::FORBIDDEN,
-            ));
+            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
         }
 
         // Use the already retrieved Profile to update the record
@@ -203,10 +197,7 @@ impl ProfilesMutation {
 
         // Make sure the current request User id matches the existing user
         if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
-            return Err(graphql_error(
-                "The userId must match the currently logged-in User",
-                StatusCode::FORBIDDEN,
-            ));
+            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
         }
 
         profiles.delete(&id).await.map_err(as_graphql_error(

@@ -7,9 +7,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::user_model::User;
 
-/// Authorization rules
-pub const AUTHORIZATION: &str = include_str!("authorization.polar");
-
 /// The Profile GraphQL model
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
 pub struct Profile {
