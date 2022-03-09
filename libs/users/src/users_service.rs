@@ -19,7 +19,7 @@ pub trait UsersService: Sync + Send {
     async fn get(&self, id: &str) -> Result<Option<User>>;
 
     /// Get an individual `User` by username
-    // TODO: Add a "with_rules" flag here
+    // TODO: Add a "with_roles" flag here
     async fn get_by_username(&self, username: &str, with_profile: &bool) -> Result<Option<User>>;
 
     /// Create a `User` with the given username

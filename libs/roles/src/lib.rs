@@ -1,12 +1,8 @@
-//! # The Shows Library
+//! # The Roles Library
 #![forbid(unsafe_code)]
 
-/// The RoleGrant service
+/// The `RoleGrant` service
 pub mod role_grant_service;
 
-/// RoleGrant models
+/// `RoleGrant` models
 pub mod role_grant_model;
-
-/// Error macros
-#[macro_use]
-extern crate anyhow;
