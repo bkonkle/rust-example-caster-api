@@ -5,6 +5,8 @@ use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use super::profile_model;
+use super::role_grant_model;
 use crate::profile_model::{Model as ProfileModel, Profile};
 
 /// The User GraphQL and Database Model
@@ -47,13 +49,22 @@ pub type User = Model;
 /// User entity relationships
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::profile_model::Entity")]
+    #[sea_orm(has_many = "profile_model::Entity")]
     Profile,
+
+    #[sea_orm(has_many = "role_grant_model::Entity")]
+    RoleGrant,
 }
 
-impl Related<super::profile_model::Entity> for Entity {
+impl Related<profile_model::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Profile.def()
+    }
+}
+
+impl Related<role_grant_model::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RoleGrant.def()
     }
 }
 

@@ -19,21 +19,21 @@ CREATE TRIGGER on_create_role_grant
 BEFORE INSERT OR UPDATE ON "role_grants"
   FOR EACH ROW EXECUTE PROCEDURE check_role_grant();
 
--- Profiles
+-- Users
 
--- Delete any role_grants that match the Profile id
-CREATE OR REPLACE FUNCTION on_delete_profile() RETURNS trigger AS $$
+-- Delete any role_grants that match the User id
+CREATE OR REPLACE FUNCTION on_delete_user() RETURNS trigger AS $$
   BEGIN
-    DELETE FROM "role_grants" WHERE "profile_id" = OLD.id;
+    DELETE FROM "role_grants" WHERE "user_id" = OLD.id;
 
     RETURN OLD;
   END;
 $$ LANGUAGE plpgsql;
 
--- Whenever a Profile is deleted, remove all the associated RoleGrants as well
-CREATE TRIGGER on_delete_profile
-BEFORE DELETE ON "profiles"
-  FOR EACH ROW EXECUTE PROCEDURE on_delete_profile();
+-- Whenever a User is deleted, remove all the associated RoleGrants as well
+CREATE TRIGGER on_delete_user
+BEFORE DELETE ON "users"
+  FOR EACH ROW EXECUTE PROCEDURE on_delete_user();
 
 -- Shows
 

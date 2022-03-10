@@ -2,6 +2,8 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use super::user_model;
+
 /// The `RoleGrant` GraphQL and Database Model
 #[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "role_grants")]
@@ -21,9 +23,9 @@ pub struct Model {
     #[sea_orm(column_type = "Text")]
     pub role_key: String,
 
-    /// The Role id that the Role is being granted to
+    /// The User id that the Role is being granted to
     #[sea_orm(column_type = "Text")]
-    pub profile_id: String,
+    pub user_id: String,
 
     /// The table of the resource that the Role is being granted for
     #[sea_orm(column_type = "Text")]
@@ -39,7 +41,22 @@ pub type RoleGrant = Model;
 
 /// `RoleGrant` entity relationships
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "user_model::Entity",
+        from = "Column::UserId",
+        to = "user_model::Column::Id",
+        on_update = "Cascade",
+        on_delete = "SetNull"
+    )]
+    User,
+}
+
+impl Related<user_model::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}
 
