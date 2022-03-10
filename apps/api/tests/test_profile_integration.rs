@@ -326,12 +326,11 @@ async fn test_get_profile_authn() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     let json_profile = &json["data"]["getProfile"];
-    let json_user = &json_profile["user"];
 
     assert_eq!(status, 200);
     assert_eq!(json_profile["id"], profile.id);
     assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
     utils.users.delete(&user.id).await?;
@@ -368,12 +367,11 @@ async fn test_get_profile_authz() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     let json_profile = &json["data"]["getProfile"];
-    let json_user = &json_profile["user"];
 
     assert_eq!(status, 200);
     assert_eq!(json_profile["id"], profile.id);
     assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
     utils.users.delete(&user.id).await?;
@@ -450,7 +448,6 @@ async fn test_get_many_profiles() -> Result<()> {
     let json_user = &json_profile["user"];
 
     let json_other_profile = &json["data"]["getManyProfiles"]["data"][1];
-    let json_other_user = &json_other_profile["user"];
 
     assert_eq!(status, 200);
 
@@ -465,7 +462,7 @@ async fn test_get_many_profiles() -> Result<()> {
 
     assert_eq!(json_other_profile["id"], other_profile.id);
     assert_eq!(json_other_profile["email"], Value::Null); // Because of censoring
-    assert_eq!(json_other_user["id"], other_user.id);
+    assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
 
     // Clean up
     utils.users.delete(&user.id).await?;
@@ -498,13 +495,12 @@ async fn test_get_many_profiles_anon() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     let json_profile = &json["data"]["getManyProfiles"]["data"][0];
-    let json_user = &json_profile["user"];
 
     assert_eq!(status, 200);
 
     assert_eq!(json_profile["id"], profile.id);
     assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
     utils.users.delete(&user.id).await?;

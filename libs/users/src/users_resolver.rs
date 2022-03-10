@@ -28,16 +28,18 @@ impl UsersQuery {
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
-        let with_profile = ctx.look_ahead().field("profile").exists();
+        let with_roles = ctx.look_ahead().field("roles").exists();
 
         match subject {
-            Subject(Some(username)) => users
-                .get_by_username(username, &with_profile)
-                .await
-                .map_err(as_graphql_error(
-                    "Error while retrieving User",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                )),
+            Subject(Some(username)) => {
+                users
+                    .get_by_username(username, &with_roles)
+                    .await
+                    .map_err(as_graphql_error(
+                        "Error while retrieving User",
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                    ))
+            }
             _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }
     }
@@ -57,24 +59,23 @@ impl UsersMutation {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Check to see if the associated Profile is selected
-        let with_profile = ctx.look_ahead().field("user").field("profile").exists();
+        let with_roles = ctx.look_ahead().field("user").field("roles").exists();
 
         let username = match subject {
             Subject(Some(username)) => Ok(username),
             _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }?;
 
-        let mut user =
-            users
-                .get_or_create(username, &with_profile)
-                .await
-                .map_err(as_graphql_error(
-                    "Eror while creating User",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ))?;
+        let user = users
+            .get_or_create(username, &with_roles)
+            .await
+            .map_err(as_graphql_error(
+                "Eror while creating User",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?;
 
         if let Some(profile) = input.profile {
-            let created = profiles
+            profiles
                 .get_or_create(
                     &user.id,
                     &CreateProfileInput {
@@ -89,9 +90,6 @@ impl UsersMutation {
                     &false,
                 )
                 .await?;
-
-            // Add the created Profile to the result
-            user.profile = Some(created);
         }
 
         Ok(MutateUserResult { user: Some(user) })
@@ -107,7 +105,7 @@ impl UsersMutation {
         let subject = ctx.data_unchecked::<Subject>();
 
         // Check to see if the associated Profile is selected
-        let with_profile = ctx.look_ahead().field("user").field("profile").exists();
+        let with_roles = ctx.look_ahead().field("user").field("roles").exists();
 
         let existing = match subject {
             Subject(Some(username)) => {
@@ -124,7 +122,7 @@ impl UsersMutation {
 
         let user = match existing {
             Some(existing) => users
-                .update(&existing.id, &input, &with_profile)
+                .update(&existing.id, &input, &with_roles)
                 .await
                 .map_err(as_graphql_error(
                     "Error while updating User",

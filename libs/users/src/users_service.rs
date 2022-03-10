@@ -6,7 +6,7 @@ use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
 use std::sync::Arc;
 
 use crate::{
-    profile_model,
+    role_grant_model,
     user_model::{self, User, UserOption},
     user_mutations::UpdateUserInput,
 };
@@ -19,17 +19,16 @@ pub trait UsersService: Sync + Send {
     async fn get(&self, id: &str) -> Result<Option<User>>;
 
     /// Get an individual `User` by username
-    // TODO: Add a "with_roles" flag here
-    async fn get_by_username(&self, username: &str, with_profile: &bool) -> Result<Option<User>>;
+    async fn get_by_username(&self, username: &str, with_roles: &bool) -> Result<Option<User>>;
 
     /// Create a `User` with the given username
     async fn create(&self, username: &str) -> Result<User>;
 
     /// Create a `User` with the given username if one doesn't exist
-    async fn get_or_create(&self, username: &str, with_profile: &bool) -> Result<User>;
+    async fn get_or_create(&self, username: &str, with_roles: &bool) -> Result<User>;
 
     /// Update an existing `User`
-    async fn update(&self, id: &str, input: &UpdateUserInput, with_profile: &bool) -> Result<User>;
+    async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User>;
 
     /// Delete an existing `User`
     async fn delete(&self, id: &str) -> Result<()>;
@@ -59,15 +58,17 @@ impl UsersService for DefaultUsersService {
         Ok(user)
     }
 
-    async fn get_by_username(&self, username: &str, with_profile: &bool) -> Result<Option<User>> {
+    async fn get_by_username(&self, username: &str, with_roles: &bool) -> Result<Option<User>> {
         let query =
             user_model::Entity::find().filter(user_model::Column::Username.eq(username.to_owned()));
 
-        let user: UserOption = if *with_profile {
+        let user: UserOption = if *with_roles {
             query
-                .find_also_related(profile_model::Entity)
-                .one(&*self.db)
+                .find_with_related(role_grant_model::Entity)
+                .all(&*self.db)
                 .await?
+                .first()
+                .map(|t| t.to_owned())
                 .into()
         } else {
             query.one(&*self.db).await?.into()
@@ -87,17 +88,19 @@ impl UsersService for DefaultUsersService {
         Ok(user)
     }
 
-    async fn get_or_create(&self, username: &str, with_profile: &bool) -> Result<User> {
+    async fn get_or_create(&self, username: &str, with_roles: &bool) -> Result<User> {
         let query = user_model::Entity::find().filter(user_model::Column::Username.eq(username));
 
-        let user: UserOption = if *with_profile {
-            query.one(&*self.db).await?.into()
-        } else {
+        let user: UserOption = if *with_roles {
             query
-                .find_also_related(profile_model::Entity)
-                .one(&*self.db)
+                .find_with_related(role_grant_model::Entity)
+                .all(&*self.db)
                 .await?
+                .first()
+                .map(|t| t.to_owned())
                 .into()
+        } else {
+            query.one(&*self.db).await?.into()
         };
 
         if let UserOption(Some(user)) = user {
@@ -107,18 +110,20 @@ impl UsersService for DefaultUsersService {
         self.create(username).await
     }
 
-    async fn update(&self, id: &str, input: &UpdateUserInput, with_profile: &bool) -> Result<User> {
+    async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User> {
         let query = user_model::Entity::find_by_id(id.to_owned());
 
-        // Pull out the `User` and the related `Profile`, if selected
-        let (user, profile) = if *with_profile {
+        // Pull out the `User` and the related `RoleGrants`, if selected
+        let (user, roles) = if *with_roles {
             query
-                .find_also_related(profile_model::Entity)
-                .one(&*self.db)
+                .find_with_related(role_grant_model::Entity)
+                .all(&*self.db)
                 .await?
+                .first()
+                .map(|t| t.to_owned())
         } else {
             // If the Profile isn't requested, just map to None
-            query.one(&*self.db).await?.map(|u| (u, None))
+            query.one(&*self.db).await?.map(|u| (u, vec![]))
         }
         .ok_or_else(|| anyhow!("Unable to find User with id: {}", id))?;
 
@@ -134,8 +139,8 @@ impl UsersService for DefaultUsersService {
 
         let mut updated = user.update(&*self.db).await?;
 
-        // Add back the Profile from above
-        updated.profile = profile.map(|p| p.into());
+        // Add back the RoleGrants from above
+        updated.roles = roles;
 
         Ok(updated)
     }

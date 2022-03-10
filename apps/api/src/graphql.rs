@@ -35,6 +35,7 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
         users,
         profiles,
         shows,
+        role_grants,
     } = deps;
 
     // Set up authorization
@@ -54,6 +55,7 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
             .data(oso)
             .data(users)
             .data(profiles)
+            .data(role_grants)
             .data(shows)
             .finish(),
     )

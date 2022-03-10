@@ -1,5 +1,6 @@
 use anyhow::Result;
 use caster_shows::show_mutations::CreateShowInput;
+use caster_users::role_grant_model::CreateRoleGrantInput;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
@@ -344,8 +345,12 @@ async fn test_update_show() -> Result<()> {
 
     let Credentials {
         access_token: token,
+        username,
         ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a User
+    let user = utils.users.create(username).await?;
 
     let show = utils
         .shows
@@ -354,6 +359,17 @@ async fn test_update_show() -> Result<()> {
             summary: Some("Show with a summary".to_string()),
             picture: None,
             content: None,
+        })
+        .await?;
+
+    // Grant the admin role to this User for this Show
+    utils
+        .role_grants
+        .create(&CreateRoleGrantInput {
+            role_key: "admin".to_string(),
+            user_id: user.id.clone(),
+            resource_table: "shows".to_string(),
+            resource_id: show.id.clone(),
         })
         .await?;
 
@@ -383,6 +399,7 @@ async fn test_update_show() -> Result<()> {
     assert_eq!(json_show["summary"], "Something else");
 
     // Clean up
+    utils.users.delete(&user.id).await?;
     utils.shows.delete(&show.id).await?;
 
     Ok(())
@@ -422,9 +439,101 @@ async fn test_update_show_not_found() -> Result<()> {
     Ok(())
 }
 
-//- TODO: It requires authentication
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_update_show_requires_authn() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-//- TODO: It requires authorization
+    let show = utils
+        .shows
+        .create(&CreateShowInput {
+            title: "Test Show".to_string(),
+            summary: Some("Show with a summary".to_string()),
+            picture: None,
+            content: None,
+        })
+        .await?;
+
+    let req = utils.graphql.query(
+        UPDATE_SHOW,
+        json!({
+            "id": show.id,
+            "input": {
+                "summary": "Something else"
+            }
+        }),
+        None,
+    )?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    // Clean up
+    utils.shows.delete(&show.id).await?;
+
+    Ok(())
+}
+
+/// It requires authorization
+#[tokio::test]
+#[ignore]
+async fn test_update_show_requires_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        access_token: token,
+        username,
+        ..
+    } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a User
+    let user = utils.users.create(username).await?;
+
+    let show = utils
+        .shows
+        .create(&CreateShowInput {
+            title: "Test Show".to_string(),
+            summary: Some("Show with a summary".to_string()),
+            picture: None,
+            content: None,
+        })
+        .await?;
+
+    let req = utils.graphql.query(
+        UPDATE_SHOW,
+        json!({
+            "id": show.id,
+            "input": {
+                "summary": "Something else"
+            }
+        }),
+        Some(token),
+    )?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
+    utils.shows.delete(&show.id).await?;
+
+    Ok(())
+}
 
 /***
  * Mutation: `deleteShow`
@@ -444,8 +553,12 @@ async fn test_delete_show() -> Result<()> {
 
     let Credentials {
         access_token: token,
+        username,
         ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a User
+    let user = utils.users.create(username).await?;
 
     let show = utils
         .shows
@@ -454,6 +567,17 @@ async fn test_delete_show() -> Result<()> {
             summary: None,
             picture: None,
             content: None,
+        })
+        .await?;
+
+    // Grant the admin role to this User for this Show
+    utils
+        .role_grants
+        .create(&CreateRoleGrantInput {
+            role_key: "admin".to_string(),
+            user_id: user.id.clone(),
+            resource_table: "shows".to_string(),
+            resource_id: show.id.clone(),
         })
         .await?;
 
@@ -469,6 +593,9 @@ async fn test_delete_show() -> Result<()> {
 
     assert_eq!(status, 200);
     assert!(json["data"]["deleteShow"].as_bool().unwrap());
+
+    // Clean up
+    utils.users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -498,6 +625,84 @@ async fn test_delete_show_not_found() -> Result<()> {
     Ok(())
 }
 
-//- TODO: It requires authentication
+/// It requires authentication
+#[tokio::test]
+#[ignore]
+async fn test_delete_show_requires_authn() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-//- TODO: It requires authorization
+    let show = utils
+        .shows
+        .create(&CreateShowInput {
+            title: "Test Show".to_string(),
+            summary: None,
+            picture: None,
+            content: None,
+        })
+        .await?;
+
+    let req = utils
+        .graphql
+        .query(DELETE_SHOW, json!({"id": show.id}), None)?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+    // Clean up
+    utils.shows.delete(&show.id).await?;
+
+    Ok(())
+}
+
+/// It requires authorization
+#[tokio::test]
+#[ignore]
+async fn test_delete_show_requires_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
+
+    let Credentials {
+        access_token: token,
+        username,
+        ..
+    } = utils.oauth.get_credentials(TestUser::Test).await;
+
+    // Create a User
+    let user = utils.users.create(username).await?;
+
+    let show = utils
+        .shows
+        .create(&CreateShowInput {
+            title: "Test Show".to_string(),
+            summary: None,
+            picture: None,
+            content: None,
+        })
+        .await?;
+
+    let req = utils
+        .graphql
+        .query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
+    let resp = utils.http_client.request(req).await?;
+
+    let status = resp.status();
+
+    let body = to_bytes(resp.into_body()).await?;
+    let json: Value = serde_json::from_slice(&body)?;
+
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+    // Clean up
+    utils.shows.delete(&show.id).await?;
+    utils.users.delete(&user.id).await?;
+
+    Ok(())
+}

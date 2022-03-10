@@ -1,8 +1,8 @@
 allow(actor, action, resource) if
   has_permission(actor, action, resource);
 
-actor User {
-    relations = {profile: Profile};
-}
+actor User {}
 
-resource Profile {}
+resource Profile {
+    relations = {user: User};
+}

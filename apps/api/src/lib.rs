@@ -11,6 +11,7 @@ use caster_auth::jwks::get_jwks;
 use caster_shows::shows_service::{DefaultShowsService, ShowsService};
 use caster_users::{
     profiles_service::{DefaultProfilesService, ProfilesService},
+    role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
     users_service::{DefaultUsersService, UsersService},
 };
 use caster_utils::config::Config;
@@ -25,13 +26,16 @@ extern crate log;
 
 /// Dependencies needed by the resolvers
 pub struct Dependencies {
-    /// The Users entity service
+    /// The `User` entity service
     pub users: Arc<dyn UsersService>,
 
-    /// The Profiles entity service
+    /// The `Profile` entity service
     pub profiles: Arc<dyn ProfilesService>,
 
-    /// The Shows entity service
+    /// The `RoleGrant` entity service
+    pub role_grants: Arc<dyn RoleGrantsService>,
+
+    /// The `Show` entity service
     pub shows: Arc<dyn ShowsService>,
 }
 
@@ -42,11 +46,13 @@ impl Dependencies {
         // Services
         let users = Arc::new(DefaultUsersService::new(db)) as Arc<dyn UsersService>;
         let profiles = Arc::new(DefaultProfilesService::new(db)) as Arc<dyn ProfilesService>;
+        let role_grants = Arc::new(DefaultRoleGrantsService::new(db)) as Arc<dyn RoleGrantsService>;
         let shows = Arc::new(DefaultShowsService::new(db)) as Arc<dyn ShowsService>;
 
         Self {
             users,
             profiles,
+            role_grants,
             shows,
         }
     }

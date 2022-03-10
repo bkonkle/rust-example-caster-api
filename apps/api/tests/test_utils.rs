@@ -10,7 +10,8 @@ use caster_api::{run, Dependencies};
 use caster_shows::shows_service::ShowsService;
 use caster_users::{
     profile_model::Profile, profile_mutations::CreateProfileInput,
-    profiles_service::ProfilesService, user_model::User, users_service::UsersService,
+    profiles_service::ProfilesService, role_grants_service::RoleGrantsService, user_model::User,
+    users_service::UsersService,
 };
 use caster_utils::{
     config::{get_config, Config},
@@ -43,6 +44,7 @@ pub struct TestUtils {
     pub db: Arc<DatabaseConnection>,
     pub users: Arc<dyn UsersService>,
     pub profiles: Arc<dyn ProfilesService>,
+    pub role_grants: Arc<dyn RoleGrantsService>,
     pub shows: Arc<dyn ShowsService>,
 }
 
@@ -71,6 +73,7 @@ impl TestUtils {
             users,
             profiles,
             shows,
+            role_grants,
         } = Dependencies::new(&db);
 
         Ok(TestUtils {
@@ -81,6 +84,7 @@ impl TestUtils {
             db,
             users,
             profiles,
+            role_grants,
             shows,
         })
     }

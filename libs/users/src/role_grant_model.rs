@@ -1,16 +1,21 @@
 #![allow(missing_docs)]
+use async_graphql::SimpleObject;
+use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::user_model;
 
 /// The `RoleGrant` GraphQL and Database Model
-#[derive(Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
+#[derive(
+    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+)]
 #[sea_orm(table_name = "role_grants")]
 pub struct Model {
     /// The RoleGrant id
     #[sea_orm(primary_key, column_type = "Text")]
     #[serde(skip_deserializing)]
+    #[polar(attribute)]
     pub id: String,
 
     /// The date the RoleGrant was created
@@ -21,18 +26,22 @@ pub struct Model {
 
     /// The key of the Role being granted to the Role
     #[sea_orm(column_type = "Text")]
+    #[polar(attribute)]
     pub role_key: String,
 
     /// The User id that the Role is being granted to
     #[sea_orm(column_type = "Text")]
+    #[polar(attribute)]
     pub user_id: String,
 
     /// The table of the resource that the Role is being granted for
     #[sea_orm(column_type = "Text")]
+    #[polar(attribute)]
     pub resource_table: String,
 
     /// The id of the resource that the Role is being granted for
     #[sea_orm(column_type = "Text")]
+    #[polar(attribute)]
     pub resource_id: String,
 }
 
@@ -59,6 +68,22 @@ impl Related<user_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+/// The `CreateRoleGrantInput` type
+#[derive(Clone, Eq, PartialEq)]
+pub struct CreateRoleGrantInput {
+    /// The key of the role to grant
+    pub role_key: String,
+
+    /// The `User` id to grant the role to
+    pub user_id: String,
+
+    /// The table of the resource to grant the role for
+    pub resource_table: String,
+
+    /// The id of the resource to grant the role for
+    pub resource_id: String,
+}
 
 /// A struct representing a granted Role
 pub struct Role {

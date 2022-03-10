@@ -5,9 +5,7 @@ use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use super::profile_model;
-use super::role_grant_model;
-use crate::profile_model::{Model as ProfileModel, Profile};
+use crate::role_grant_model::{self, RoleGrant};
 
 /// The User GraphQL and Database Model
 #[derive(
@@ -37,10 +35,10 @@ pub struct Model {
     #[polar(attribute)]
     pub is_active: bool,
 
-    /// The related Profile, if one is associated
+    /// Related RoleGrants
     #[sea_orm(ignore)]
     #[polar(attribute)]
-    pub profile: Option<Profile>,
+    pub roles: Vec<RoleGrant>,
 }
 
 /// The User GraphQL type is the same as the database Model
@@ -49,17 +47,8 @@ pub type User = Model;
 /// User entity relationships
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "profile_model::Entity")]
-    Profile,
-
     #[sea_orm(has_many = "role_grant_model::Entity")]
     RoleGrant,
-}
-
-impl Related<profile_model::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Profile.def()
-    }
 }
 
 impl Related<role_grant_model::Entity> for Entity {
@@ -79,12 +68,9 @@ impl From<Option<Model>> for UserOption {
     }
 }
 
-impl From<Option<(Model, Option<ProfileModel>)>> for UserOption {
-    fn from(data: Option<(Model, Option<ProfileModel>)>) -> UserOption {
-        UserOption(data.map(|(user, profile)| User {
-            profile: profile.map(|p| p.into()),
-            ..user
-        }))
+impl From<Option<(Model, Vec<RoleGrant>)>> for UserOption {
+    fn from(data: Option<(Model, Vec<RoleGrant>)>) -> UserOption {
+        UserOption(data.map(|(user, roles)| User { roles, ..user }))
     }
 }
 

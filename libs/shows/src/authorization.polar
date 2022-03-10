@@ -1,12 +1,12 @@
-has_role(user: User, key: String, show: Show) if
-  role in user.profile.roles and
-  role.key = key and
+has_role(user: User, role_key: String, show: Show) if
+  role in user.roles and
+  role.role_key = role_key and
   role.resource_table = "shows" and
   role.resource_id = show.id;
 
-has_role(user: User, key: String, episode: Episode) if
-  role in user.profile.roles and
-  role.key = key and
+has_role(user: User, role_key: String, episode: Episode) if
+  role in user.roles and
+  role.role_key = role_key and
   role.resource_table = "episodes" and
   role.resource_id = episode.id;
 

@@ -20,7 +20,6 @@ async fn with_context(
 ) -> Result<GraphQLResponse, Infallible> {
     // Retrieve the request User, if username is present
     let user = if let Subject(Some(ref username)) = sub {
-        // TODO: Add a "with_roles" flag to this call, and use it here
         users.get_by_username(username, &true).await.unwrap_or(None)
     } else {
         None

@@ -1,38 +1,41 @@
 //! # The Users Library
 #![forbid(unsafe_code)]
 
-/// The GraphQL Users Resolver
+/// The GraphQL `User` Resolver
 pub mod users_resolver;
 
-/// The Users entity service
+/// The `User` entity service
 pub mod users_service;
 
-/// The User model
+/// The `User` model
 pub mod user_model;
 
-/// The User mutations
+/// The `User` mutations
 pub mod user_mutations;
 
-/// The GraphQL Profiles Resolver
+/// The GraphQL `Profile` Resolver
 pub mod profiles_resolver;
 
-/// The Profiles entity service
+/// The `Profile` entity service
 pub mod profiles_service;
 
-/// The Profile model
+/// The `Profile` model
 pub mod profile_model;
 
-/// The Profile queries
+/// The `Profile` queries
 pub mod profile_queries;
 
-/// The Profile mutations
+/// The `Profile` mutations
 pub mod profile_mutations;
 
-/// Profile utilities
+/// `Profile` utilities
 pub mod profile_utils;
 
 /// `RoleGrant` models
 pub mod role_grant_model;
+
+/// `RoleGrant` entity service
+pub mod role_grants_service;
 
 /// Authorization rules
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");
