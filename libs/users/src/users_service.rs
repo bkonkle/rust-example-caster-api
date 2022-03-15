@@ -24,9 +24,6 @@ pub trait UsersService: Sync + Send {
     /// Create a `User` with the given username
     async fn create(&self, username: &str) -> Result<User>;
 
-    /// Create a `User` with the given username if one doesn't exist
-    async fn get_or_create(&self, username: &str, with_roles: &bool) -> Result<User>;
-
     /// Update an existing `User`
     async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User>;
 
@@ -86,28 +83,6 @@ impl UsersService for DefaultUsersService {
         .await?;
 
         Ok(user)
-    }
-
-    async fn get_or_create(&self, username: &str, with_roles: &bool) -> Result<User> {
-        let query = user_model::Entity::find().filter(user_model::Column::Username.eq(username));
-
-        let user: UserOption = if *with_roles {
-            query
-                .find_with_related(role_grant_model::Entity)
-                .all(&*self.db)
-                .await?
-                .first()
-                .map(|t| t.to_owned())
-                .into()
-        } else {
-            query.one(&*self.db).await?.into()
-        };
-
-        if let UserOption(Some(user)) = user {
-            return Ok(user);
-        }
-
-        self.create(username).await
     }
 
     async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User> {

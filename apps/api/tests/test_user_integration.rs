@@ -113,31 +113,6 @@ async fn test_get_current_user_no_user() -> Result<()> {
     Ok(())
 }
 
-/// It requires authentication
-#[tokio::test]
-#[ignore]
-async fn test_get_current_user_requires_authn() -> Result<()> {
-    let TestUtils {
-        http_client,
-        graphql,
-        ..
-    } = TestUtils::init().await?;
-
-    let req = graphql.query(GET_CURRENT_USER, Value::Null, None)?;
-
-    let resp = http_client.request(req).await?;
-    let status = resp.status();
-
-    let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
-
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-    Ok(())
-}
-
 /***
  * Mutation: `getOrCreateCurrentUser`
  */
@@ -420,11 +395,8 @@ async fn test_update_current_user_requires_user() -> Result<()> {
     let json: Value = serde_json::from_slice(&body)?;
 
     assert_eq!(status, 200);
-    assert_eq!(
-        json["errors"][0]["message"],
-        "No existing User found for the current JWT token"
-    );
-    assert_eq!(json["errors"][0]["extensions"]["code"], 400);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }

@@ -1,5 +1,4 @@
 use async_graphql::{Context, Object, Result};
-use caster_auth::Subject;
 use caster_utils::errors::{as_graphql_error, graphql_error};
 use hyper::StatusCode;
 use std::sync::Arc;
@@ -8,9 +7,8 @@ use crate::{
     profile_model::Profile,
     profile_mutations::{CreateProfileInput, MutateProfileResult, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy, ProfilesPage},
-    profile_utils::{get_current_user, maybe_get_current_user},
     profiles_service::ProfilesService,
-    users_service::UsersService,
+    user_model::User,
 };
 
 /// The Query segment for Profiles
@@ -26,12 +24,8 @@ pub struct ProfilesMutation {}
 impl ProfilesQuery {
     /// Get a single Profile
     async fn get_profile(&self, ctx: &Context<'_>, id: String) -> Result<Option<Profile>> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
-
-        // Retrieve the current request User for authorization
-        let user = maybe_get_current_user(subject, users).await?;
 
         // Check to see if the associated User is selected
         let with_user = ctx.look_ahead().field("user").exists();
@@ -46,14 +40,14 @@ impl ProfilesQuery {
                 // If the User and Profile are present, censor the Profile based on the User id
                 profile.map(|p| {
                     Profile {
-                        user: Box::new(Some(user)),
+                        user: Box::new(Some(user.clone())),
                         ..p
                     }
-                    .censor(Some(user_id))
+                    .censor(&Some(user_id))
                 })
             }
             // If the User is absent, always censor the Profile
-            None => profile.map(|p| p.censor(None)),
+            None => profile.map(|p| p.censor(&None)),
         };
 
         Ok(censored)
@@ -68,12 +62,11 @@ impl ProfilesQuery {
         page: Option<usize>,
         page_size: Option<usize>,
     ) -> Result<ProfilesPage> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
 
-        // Retrieve the current request User for authorization
-        let user_id = maybe_get_current_user(subject, users).await?.map(|u| u.id);
+        // Retrieve the current request User id for authorization
+        let user_id = user.clone().map(|u| u.id);
 
         // Check to see if the associated User is selected
         let with_user = ctx.look_ahead().field("data").field("user").exists();
@@ -86,7 +79,7 @@ impl ProfilesQuery {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ))?;
 
-        let censored = response.map(|p| p.censor(user_id.clone()));
+        let censored = response.map(|p| p.censor(&user_id));
 
         Ok(censored.into())
     }
@@ -101,16 +94,20 @@ impl ProfilesMutation {
         ctx: &Context<'_>,
         input: CreateProfileInput,
     ) -> Result<MutateProfileResult> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
 
-        // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users).await?.id;
+        // Retrieve the current request User id for authorization
+        let user_id = user.clone().map(|u| u.id);
 
-        // Make sure the current request User id matches the input
-        if user_id != input.user_id {
-            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+        if let Some(user_id) = user_id {
+            // Make sure the current request User id matches the input
+            if user_id != input.user_id {
+                return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+            }
+        } else {
+            // If there is no request User, return a 401
+            return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
 
         // Check to see if the associated User is selected
@@ -136,9 +133,8 @@ impl ProfilesMutation {
         id: String,
         input: UpdateProfileInput,
     ) -> Result<MutateProfileResult> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the existing Profile for authorization
         let (existing, existing_user) = profiles
@@ -152,12 +148,17 @@ impl ProfilesMutation {
                 graphql_error("Unable to find existing Profile", StatusCode::NOT_FOUND)
             })?;
 
-        // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users).await?.id;
+        // Retrieve the current request User id for authorization
+        let user_id = user.clone().map(|u| u.id);
 
-        // Make sure the current request User id matches the existing user
-        if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
-            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+        if let Some(user_id) = user_id {
+            // Make sure the current request User id matches the existing user
+            if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+                return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+            }
+        } else {
+            // If there is no request User, return a 401
+            return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
 
         // Use the already retrieved Profile to update the record
@@ -176,9 +177,8 @@ impl ProfilesMutation {
 
     /// Remove an existing Profile
     async fn delete_profile(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
-        let subject = ctx.data_unchecked::<Subject>();
 
         // Retrieve the existing Profile for authorization
         let (_, existing_user) = profiles
@@ -192,12 +192,17 @@ impl ProfilesMutation {
                 graphql_error("Unable to find existing Profile", StatusCode::NOT_FOUND)
             })?;
 
-        // Retrieve the current request User for authorization
-        let user_id = get_current_user(subject, users).await?.id;
+        // Retrieve the current request User id for authorization
+        let user_id = user.clone().map(|u| u.id);
 
-        // Make sure the current request User id matches the existing user
-        if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
-            return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+        if let Some(user_id) = user_id {
+            // Make sure the current request User id matches the existing user
+            if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+                return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+            }
+        } else {
+            // If there is no request User, return a 401
+            return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
 
         profiles.delete(&id).await.map_err(as_graphql_error(

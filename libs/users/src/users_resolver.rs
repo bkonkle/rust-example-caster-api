@@ -23,25 +23,11 @@ pub struct UsersMutation {}
 /// Queries for the User model
 #[Object]
 impl UsersQuery {
-    /// Get the current User based on the current token username (the "sub" claim)
+    /// Get the current User from the GraphQL context
     async fn get_current_user(&self, ctx: &Context<'_>) -> Result<Option<User>> {
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
-        let subject = ctx.data_unchecked::<Subject>();
+        let user = ctx.data_unchecked::<Option<User>>();
 
-        let with_roles = ctx.look_ahead().field("roles").exists();
-
-        match subject {
-            Subject(Some(username)) => {
-                users
-                    .get_by_username(username, &with_roles)
-                    .await
-                    .map_err(as_graphql_error(
-                        "Error while retrieving User",
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                    ))
-            }
-            _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
-        }
+        Ok(user.clone())
     }
 }
 
@@ -54,25 +40,28 @@ impl UsersMutation {
         ctx: &Context<'_>,
         input: CreateUserInput,
     ) -> Result<MutateUserResult> {
+        let user = ctx.data_unchecked::<Option<User>>();
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
-        // Check to see if the associated Profile is selected
-        let with_roles = ctx.look_ahead().field("user").field("roles").exists();
+        // If the User exists in the GraphQL context, simply return it
+        if let Some(user) = user {
+            return Ok(MutateUserResult {
+                user: Some(user.clone()),
+            });
+        }
 
+        // Otherwise, check for a username so that it can be created
         let username = match subject {
             Subject(Some(username)) => Ok(username),
             _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
         }?;
 
-        let user = users
-            .get_or_create(username, &with_roles)
-            .await
-            .map_err(as_graphql_error(
-                "Eror while creating User",
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ))?;
+        let user = users.create(username).await.map_err(as_graphql_error(
+            "Eror while creating User",
+            StatusCode::INTERNAL_SERVER_ERROR,
+        ))?;
 
         if let Some(profile) = input.profile {
             profiles
@@ -101,39 +90,27 @@ impl UsersMutation {
         ctx: &Context<'_>,
         input: UpdateUserInput,
     ) -> Result<MutateUserResult> {
+        let user = ctx.data_unchecked::<Option<User>>();
         let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
-        let subject = ctx.data_unchecked::<Subject>();
 
         // Check to see if the associated Profile is selected
         let with_roles = ctx.look_ahead().field("user").field("roles").exists();
 
-        let existing = match subject {
-            Subject(Some(username)) => {
+        if let Some(user) = user {
+            let updated =
                 users
-                    .get_by_username(username, &false)
+                    .update(&user.id, &input, &with_roles)
                     .await
                     .map_err(as_graphql_error(
-                        "Error while retrieving existing User",
+                        "Error while updating User",
                         StatusCode::INTERNAL_SERVER_ERROR,
-                    ))
-            }
-            _ => Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED)),
-        }?;
+                    ))?;
 
-        let user = match existing {
-            Some(existing) => users
-                .update(&existing.id, &input, &with_roles)
-                .await
-                .map_err(as_graphql_error(
-                    "Error while updating User",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                )),
-            _ => Err(graphql_error(
-                "No existing User found for the current JWT token",
-                StatusCode::BAD_REQUEST,
-            )),
-        }?;
+            return Ok(MutateUserResult {
+                user: Some(updated),
+            });
+        }
 
-        Ok(MutateUserResult { user: Some(user) })
+        Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED))
     }
 }

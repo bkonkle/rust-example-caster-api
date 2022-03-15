@@ -51,11 +51,11 @@ pub struct Profile {
 
 impl Profile {
     /// If not authorized, censor the `Profile` `email` and `user_id`
-    pub fn censor(&self, current_user_id: Option<String>) -> Self {
+    pub fn censor(&self, current_user_id: &Option<String>) -> Self {
         let mut profile = self.clone();
 
         let same_user = match current_user_id {
-            Some(user_id) => self.user_id == Some(user_id),
+            Some(user_id) => self.user_id == Some(user_id.clone()),
             _ => false,
         };
 
