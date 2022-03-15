@@ -16,6 +16,9 @@ pub mod show_queries;
 /// Show mutations
 pub mod show_mutations;
 
+/// The GraphQL resolver
+pub mod episodes_resolver;
+
 /// The Episodes service
 pub mod episodes_service;
 

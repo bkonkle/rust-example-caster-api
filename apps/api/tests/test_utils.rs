@@ -7,7 +7,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use caster_api::{run, Dependencies};
-use caster_shows::shows_service::ShowsService;
+use caster_shows::{episodes_service::EpisodesService, shows_service::ShowsService};
 use caster_users::{
     profile_model::Profile, profile_mutations::CreateProfileInput,
     profiles_service::ProfilesService, role_grants_service::RoleGrantsService, user_model::User,
@@ -46,6 +46,7 @@ pub struct TestUtils {
     pub profiles: Arc<dyn ProfilesService>,
     pub role_grants: Arc<dyn RoleGrantsService>,
     pub shows: Arc<dyn ShowsService>,
+    pub episodes: Arc<dyn EpisodesService>,
 }
 
 impl TestUtils {
@@ -72,8 +73,9 @@ impl TestUtils {
         let Dependencies {
             users,
             profiles,
-            shows,
             role_grants,
+            shows,
+            episodes,
         } = Dependencies::new(&db);
 
         Ok(TestUtils {
@@ -86,6 +88,7 @@ impl TestUtils {
             profiles,
             role_grants,
             shows,
+            episodes,
         })
     }
 

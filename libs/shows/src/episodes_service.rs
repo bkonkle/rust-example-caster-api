@@ -6,9 +6,10 @@ use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
 use std::sync::Arc;
 
 use crate::{
-    episode_model::{self, Episode},
+    episode_model::{self, Episode, EpisodeList, EpisodeOption},
     episode_mutations::{CreateEpisodeInput, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy},
+    show_model::{self, Show},
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
@@ -17,10 +18,14 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[async_trait]
 pub trait EpisodesService: Sync + Send {
     /// Get an individual `Episode` by id, returning the Model instance for updating
-    async fn get_model(&self, id: &str) -> Result<Option<episode_model::Model>>;
+    async fn get_model(
+        &self,
+        id: &str,
+        with_show: &bool,
+    ) -> Result<Option<(episode_model::Model, Option<Show>)>>;
 
     /// Get an individual `Episode` by id
-    async fn get(&self, id: &str) -> Result<Option<Episode>>;
+    async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>>;
 
     /// Get multiple `Episode` records
     async fn get_many(
@@ -29,20 +34,27 @@ pub trait EpisodesService: Sync + Send {
         order_by: Option<Vec<EpisodesOrderBy>>,
         page_size: Option<usize>,
         page: Option<usize>,
+        with_show: &bool,
     ) -> Result<ManyResponse<Episode>>;
 
     /// Create a `Episode` with the given input
-    async fn create(&self, input: &CreateEpisodeInput) -> Result<Episode>;
+    async fn create(&self, input: &CreateEpisodeInput, with_show: &bool) -> Result<Episode>;
 
     /// Update an existing `Episode` using a retrieved `Model` instance
     async fn update_model(
         &self,
         episode: episode_model::Model,
         input: &UpdateEpisodeInput,
+        show: Option<Show>,
     ) -> Result<Episode>;
 
     /// Update an existing `Episode` by id
-    async fn update(&self, id: &str, input: &UpdateEpisodeInput) -> Result<Episode>;
+    async fn update(
+        &self,
+        id: &str,
+        input: &UpdateEpisodeInput,
+        with_show: &bool,
+    ) -> Result<Episode>;
 
     /// Delete an existing `Episode`
     async fn delete(&self, id: &str) -> Result<()>;
@@ -64,18 +76,29 @@ impl DefaultEpisodesService {
 
 #[async_trait]
 impl EpisodesService for DefaultEpisodesService {
-    async fn get_model(&self, id: &str) -> Result<Option<episode_model::Model>> {
+    async fn get_model(
+        &self,
+        id: &str,
+        with_show: &bool,
+    ) -> Result<Option<(episode_model::Model, Option<Show>)>> {
         let query = episode_model::Entity::find_by_id(id.to_owned());
 
-        let episode = query.one(&*self.db).await?;
+        let episode = if *with_show {
+            query
+                .find_also_related(show_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
+            query.one(&*self.db).await?.map(|u| (u, None))
+        };
 
         Ok(episode)
     }
 
-    async fn get(&self, id: &str) -> Result<Option<Episode>> {
-        let episode = self.get_model(id).await?;
+    async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>> {
+        let episode: EpisodeOption = self.get_model(id, with_show).await?.into();
 
-        Ok(episode)
+        Ok(episode.into())
     }
 
     async fn get_many(
@@ -84,6 +107,7 @@ impl EpisodesService for DefaultEpisodesService {
         order_by: Option<Vec<EpisodesOrderBy>>,
         page: Option<usize>,
         page_size: Option<usize>,
+        with_show: &bool,
     ) -> Result<ManyResponse<Episode>> {
         let page_num = page.unwrap_or(1);
 
@@ -110,23 +134,47 @@ impl EpisodesService for DefaultEpisodesService {
             }
         }
 
-        let (data, total) = if let Some(page_size) = page_size {
-            let paginator = query.paginate(&*self.db, page_size);
-            let total = paginator.num_items().await?;
-            let data: Vec<Episode> = paginator.fetch_page(page_num - 1).await?;
+        let (data, total) = match (page_size, with_show) {
+            (Some(page_size), true) => {
+                let paginator = query
+                    .find_also_related(show_model::Entity)
+                    .paginate(&*self.db, page_size);
 
-            (data, total)
-        } else {
-            let data: Vec<Episode> = query.all(&*self.db).await?;
-            let total = data.len();
+                let total = paginator.num_items().await?;
+                let data: EpisodeList = paginator.fetch_page(page_num - 1).await?.into();
 
-            (data, total)
+                (data, total)
+            }
+            (Some(page_size), false) => {
+                let paginator = query.paginate(&*self.db, page_size);
+                let total = paginator.num_items().await?;
+                let data: EpisodeList = paginator.fetch_page(page_num - 1).await?.into();
+
+                (data, total)
+            }
+            (None, true) => {
+                let data: EpisodeList = query
+                    .find_also_related(show_model::Entity)
+                    .all(&*self.db)
+                    .await?
+                    .into();
+
+                let total = data.len();
+
+                (data, total)
+            }
+            (None, false) => {
+                let data: EpisodeList = query.all(&*self.db).await?.into();
+                let total = data.len();
+
+                (data, total)
+            }
         };
 
-        Ok(ManyResponse::new(data, total, page_num, page_size))
+        Ok(ManyResponse::new(data.into(), total, page_num, page_size))
     }
 
-    async fn create(&self, input: &CreateEpisodeInput) -> Result<Episode> {
+    async fn create(&self, input: &CreateEpisodeInput, with_show: &bool) -> Result<Episode> {
         let episode = episode_model::ActiveModel {
             title: Set(input.title.clone()),
             summary: Set(input.summary.clone()),
@@ -138,15 +186,26 @@ impl EpisodesService for DefaultEpisodesService {
         .insert(&*self.db)
         .await?;
 
-        let created: Episode = episode;
+        let mut created: Episode = episode;
 
-        return Ok(created);
+        if !with_show {
+            return Ok(created);
+        }
+
+        let show = show_model::Entity::find_by_id(input.show_id.clone())
+            .one(&*self.db)
+            .await?;
+
+        created.show = show;
+
+        Ok(created)
     }
 
     async fn update_model(
         &self,
         episode: episode_model::Model,
         input: &UpdateEpisodeInput,
+        show: Option<Show>,
     ) -> Result<Episode> {
         let mut episode: episode_model::ActiveModel = episode.into();
 
@@ -170,21 +229,35 @@ impl EpisodesService for DefaultEpisodesService {
             episode.show_id = Set(show_id.clone());
         }
 
-        let updated: Episode = episode.update(&*self.db).await?;
+        let mut updated: Episode = episode.update(&*self.db).await?;
+
+        // Add back the User from above
+        updated.show = show;
 
         Ok(updated)
     }
 
-    async fn update(&self, id: &str, input: &UpdateEpisodeInput) -> Result<Episode> {
+    async fn update(
+        &self,
+        id: &str,
+        input: &UpdateEpisodeInput,
+        with_show: &bool,
+    ) -> Result<Episode> {
         let query = episode_model::Entity::find_by_id(id.to_owned());
 
-        // Retrieve the existing Episode
-        let episode = query
-            .one(&*self.db)
-            .await?
-            .ok_or_else(|| anyhow!("Unable to find Episode with id: {}", id))?;
+        // Pull out the `Episode` and the related `Show`, if selected
+        let (episode, show) = if *with_show {
+            query
+                .find_also_related(show_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
+            // If the Show isn't requested, just map to None
+            query.one(&*self.db).await?.map(|p| (p, None))
+        }
+        .ok_or_else(|| anyhow!("Unable to find Episode with id: {}", id))?;
 
-        self.update_model(episode, input).await
+        self.update_model(episode, input, show).await
     }
 
     async fn delete(&self, id: &str) -> Result<()> {

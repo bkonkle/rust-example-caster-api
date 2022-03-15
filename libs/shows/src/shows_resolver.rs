@@ -143,7 +143,7 @@ impl ShowsMutation {
         let user = ctx.data_unchecked::<Option<User>>();
         let oso = ctx.data_unchecked::<Oso>();
 
-        // Retrieve the existing Show for authorization (TODO)
+        // Retrieve the existing Show for authorization
         let existing = shows
             .get_model(&id)
             .await

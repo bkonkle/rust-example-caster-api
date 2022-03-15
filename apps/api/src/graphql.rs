@@ -4,6 +4,7 @@ use oso::{Oso, PolarClass};
 
 use caster_shows::{
     episode_model::Episode,
+    episodes_resolver::{EpisodesMutation, EpisodesQuery},
     show_model::Show,
     shows_resolver::{ShowsMutation, ShowsQuery},
     AUTHORIZATION as SHOWS_AUTHZ,
@@ -20,10 +21,15 @@ use caster_utils::config::Config;
 use crate::Dependencies;
 
 #[derive(MergedObject, Default)]
-pub struct Query(UsersQuery, ProfilesQuery, ShowsQuery);
+pub struct Query(UsersQuery, ProfilesQuery, ShowsQuery, EpisodesQuery);
 
 #[derive(MergedObject, Default)]
-pub struct Mutation(UsersMutation, ProfilesMutation, ShowsMutation);
+pub struct Mutation(
+    UsersMutation,
+    ProfilesMutation,
+    ShowsMutation,
+    EpisodesMutation,
+);
 
 /// The application's top-level merged GraphQL schema
 pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
@@ -35,6 +41,7 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
         users,
         profiles,
         shows,
+        episodes,
         role_grants,
     } = deps;
 
@@ -57,6 +64,7 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
             .data(profiles)
             .data(role_grants)
             .data(shows)
+            .data(episodes)
             .finish(),
     )
 }

@@ -8,7 +8,10 @@ use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
 
 use caster_auth::jwks::get_jwks;
-use caster_shows::shows_service::{DefaultShowsService, ShowsService};
+use caster_shows::{
+    episodes_service::{DefaultEpisodesService, EpisodesService},
+    shows_service::{DefaultShowsService, ShowsService},
+};
 use caster_users::{
     profiles_service::{DefaultProfilesService, ProfilesService},
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
@@ -37,6 +40,9 @@ pub struct Dependencies {
 
     /// The `Show` entity service
     pub shows: Arc<dyn ShowsService>,
+
+    /// The `Episode` entity service
+    pub episodes: Arc<dyn EpisodesService>,
 }
 
 /// Intialize dependencies
@@ -48,12 +54,14 @@ impl Dependencies {
         let profiles = Arc::new(DefaultProfilesService::new(db)) as Arc<dyn ProfilesService>;
         let role_grants = Arc::new(DefaultRoleGrantsService::new(db)) as Arc<dyn RoleGrantsService>;
         let shows = Arc::new(DefaultShowsService::new(db)) as Arc<dyn ShowsService>;
+        let episodes = Arc::new(DefaultEpisodesService::new(db)) as Arc<dyn EpisodesService>;
 
         Self {
             users,
             profiles,
             role_grants,
             shows,
+            episodes,
         }
     }
 }

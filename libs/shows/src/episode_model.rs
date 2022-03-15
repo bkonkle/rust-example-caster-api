@@ -74,3 +74,63 @@ impl Related<show_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+/// A wrapper around a `Vec<Episode` to enable trait implementations
+pub struct EpisodeList(Vec<Episode>);
+
+impl EpisodeList {
+    /// Proxy to the `Vec` `len` method
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Proxy to the `Vec` `is_empty` method
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl From<Vec<Model>> for EpisodeList {
+    fn from(data: Vec<Model>) -> EpisodeList {
+        EpisodeList(data.into_iter().collect())
+    }
+}
+
+impl From<Vec<(Model, Option<Show>)>> for EpisodeList {
+    fn from(data: Vec<(Model, Option<Show>)>) -> EpisodeList {
+        EpisodeList(
+            data.into_iter()
+                .map(|(episode, show)| Episode { show, ..episode })
+                .collect(),
+        )
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Vec<Episode>> for EpisodeList {
+    fn into(self) -> Vec<Episode> {
+        self.0
+    }
+}
+
+/// A wrapper around `Option<Episode>` to enable trait implementations
+pub struct EpisodeOption(pub Option<Episode>);
+
+impl From<Option<Model>> for EpisodeOption {
+    fn from(data: Option<Model>) -> EpisodeOption {
+        EpisodeOption(data)
+    }
+}
+
+impl From<Option<(Model, Option<Show>)>> for EpisodeOption {
+    fn from(data: Option<(Model, Option<Show>)>) -> EpisodeOption {
+        EpisodeOption(data.map(|(episode, show)| Episode { show, ..episode }))
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<Option<Episode>> for EpisodeOption {
+    fn into(self) -> Option<Episode> {
+        self.0
+    }
+}
