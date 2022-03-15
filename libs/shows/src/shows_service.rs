@@ -12,7 +12,7 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
-/// A ShowsService appliies business logic to a dynamic ShowsRepository implementation.
+/// A ShowsService applies business logic to a dynamic ShowsRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ShowsService: Sync + Send {
@@ -93,14 +93,14 @@ impl ShowsService for DefaultShowsService {
 
         if let Some(order_by) = order_by {
             for order in order_by {
-                let ordering: Ordering<ShowsOrderBy> = order.into();
+                let ordering: Ordering<show_model::Column> = order.into();
 
                 match ordering {
-                    Ordering::Asc(order) => {
-                        query = query.order_by_asc(order.column());
+                    Ordering::Asc(column) => {
+                        query = query.order_by_asc(column);
                     }
-                    Ordering::Desc(order) => {
-                        query = query.order_by_desc(order.column());
+                    Ordering::Desc(column) => {
+                        query = query.order_by_desc(column);
                     }
                 }
             }

@@ -85,32 +85,19 @@ pub enum ProfilesOrderBy {
     UpdatedAtDesc,
 }
 
-impl ProfilesOrderBy {
-    /// Retrieve the column name for the given ordering
-    pub fn column(&self) -> profile_model::Column {
-        match self {
-            IdAsc | IdDesc => profile_model::Column::Id,
-            EmailAsc | EmailDesc => profile_model::Column::Email,
-            DisplayNameAsc | DisplayNameDesc => profile_model::Column::DisplayName,
-            CreatedAtAsc | CreatedAtDesc => profile_model::Column::CreatedAt,
-            UpdatedAtAsc | UpdatedAtDesc => profile_model::Column::UpdatedAt,
-        }
-    }
-}
-
-impl From<ProfilesOrderBy> for Ordering<ProfilesOrderBy> {
-    fn from(order_by: ProfilesOrderBy) -> Ordering<ProfilesOrderBy> {
+impl From<ProfilesOrderBy> for Ordering<profile_model::Column> {
+    fn from(order_by: ProfilesOrderBy) -> Ordering<profile_model::Column> {
         match order_by {
-            IdAsc => Asc(IdAsc),
-            EmailAsc => Asc(EmailAsc),
-            DisplayNameAsc => Asc(DisplayNameAsc),
-            CreatedAtAsc => Asc(CreatedAtAsc),
-            UpdatedAtAsc => Asc(UpdatedAtAsc),
-            IdDesc => Desc(IdDesc),
-            EmailDesc => Desc(EmailDesc),
-            DisplayNameDesc => Desc(DisplayNameDesc),
-            CreatedAtDesc => Desc(CreatedAtDesc),
-            UpdatedAtDesc => Desc(UpdatedAtDesc),
+            IdAsc => Asc(profile_model::Column::Id),
+            EmailAsc => Asc(profile_model::Column::Email),
+            DisplayNameAsc => Asc(profile_model::Column::DisplayName),
+            CreatedAtAsc => Asc(profile_model::Column::CreatedAt),
+            UpdatedAtAsc => Asc(profile_model::Column::UpdatedAt),
+            IdDesc => Desc(profile_model::Column::Id),
+            EmailDesc => Desc(profile_model::Column::Email),
+            DisplayNameDesc => Desc(profile_model::Column::DisplayName),
+            CreatedAtDesc => Desc(profile_model::Column::CreatedAt),
+            UpdatedAtDesc => Desc(profile_model::Column::UpdatedAt),
         }
     }
 }

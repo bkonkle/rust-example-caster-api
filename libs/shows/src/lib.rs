@@ -16,8 +16,17 @@ pub mod show_queries;
 /// Show mutations
 pub mod show_mutations;
 
+/// The Episodes service
+pub mod episodes_service;
+
 /// Episode models
 pub mod episode_model;
+
+/// Episode queries
+pub mod episode_queries;
+
+/// Episode mutations
+pub mod episode_mutations;
 
 /// Authorization rules
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");

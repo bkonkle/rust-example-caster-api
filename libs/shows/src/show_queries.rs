@@ -68,29 +68,17 @@ pub enum ShowsOrderBy {
     UpdatedAtDesc,
 }
 
-impl ShowsOrderBy {
-    /// Retrieve the column name for the given ordering
-    pub fn column(&self) -> show_model::Column {
-        match self {
-            IdAsc | IdDesc => show_model::Column::Id,
-            TitleAsc | TitleDesc => show_model::Column::Title,
-            CreatedAtAsc | CreatedAtDesc => show_model::Column::CreatedAt,
-            UpdatedAtAsc | UpdatedAtDesc => show_model::Column::UpdatedAt,
-        }
-    }
-}
-
-impl From<ShowsOrderBy> for Ordering<ShowsOrderBy> {
-    fn from(order_by: ShowsOrderBy) -> Ordering<ShowsOrderBy> {
+impl From<ShowsOrderBy> for Ordering<show_model::Column> {
+    fn from(order_by: ShowsOrderBy) -> Ordering<show_model::Column> {
         match order_by {
-            IdAsc => Asc(IdAsc),
-            TitleAsc => Asc(TitleAsc),
-            CreatedAtAsc => Asc(CreatedAtAsc),
-            UpdatedAtAsc => Asc(UpdatedAtAsc),
-            IdDesc => Desc(IdDesc),
-            TitleDesc => Desc(TitleDesc),
-            CreatedAtDesc => Desc(CreatedAtDesc),
-            UpdatedAtDesc => Desc(UpdatedAtDesc),
+            IdAsc => Asc(show_model::Column::Id),
+            TitleAsc => Asc(show_model::Column::Title),
+            CreatedAtAsc => Asc(show_model::Column::CreatedAt),
+            UpdatedAtAsc => Asc(show_model::Column::UpdatedAt),
+            IdDesc => Desc(show_model::Column::Id),
+            TitleDesc => Desc(show_model::Column::Title),
+            CreatedAtDesc => Desc(show_model::Column::CreatedAt),
+            UpdatedAtDesc => Desc(show_model::Column::UpdatedAt),
         }
     }
 }

@@ -148,14 +148,14 @@ impl ProfilesService for DefaultProfilesService {
 
         if let Some(order_by) = order_by {
             for order in order_by {
-                let ordering: Ordering<ProfilesOrderBy> = order.into();
+                let ordering: Ordering<profile_model::Column> = order.into();
 
                 match ordering {
-                    Ordering::Asc(order) => {
-                        query = query.order_by_asc(order.column());
+                    Ordering::Asc(column) => {
+                        query = query.order_by_asc(column);
                     }
-                    Ordering::Desc(order) => {
-                        query = query.order_by_desc(order.column());
+                    Ordering::Desc(column) => {
+                        query = query.order_by_desc(column);
                     }
                 }
             }
