@@ -38,12 +38,28 @@ To build scripts from the _Makefile.toml_, install Cargo Make:
 cargo install cargo-make
 ```
 
+### Configuration
+
+Configuration is unfortunately stored in two places, with the primary location being the [config](config/) folder. This folder contains hierarchical config files that are read by [Figment](https://github.com/SergioBenitez/Figment).
+
+To set up your local environment, create a `local.toml` file and a `test.toml` file, using [`local.toml.example`](config/local.toml.example) and [`test.toml.example`](config/test.toml.example) as a guide.
+
+This config is read in as part of a [`lazy_static`](https://docs.rs/lazy_static/latest/lazy_static/) instance that is first initialized when the [`main.rs`](apps/api/src/main.rs) module from the `caster_api` app calls `caster_utils::config::get_config()`.
+
+For CLI tools, however, we have to provide a small `.env` file with a subset of our config values so that tools like `docker-compose` and `sqlx-cli` can read them. Use the `.env.example` as a guide.
+
 ### Running Docker
 
 To run the docker-compose formation for the API app:
 
 ```sh
 cargo make docker-api up -d
+```
+
+To shut it down:
+
+```sh
+cargo make docker-api down
 ```
 
 ### SQLx CLI

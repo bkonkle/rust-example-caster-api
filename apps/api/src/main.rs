@@ -23,12 +23,16 @@ async fn main() -> Result<()> {
 
     let (addr, server) = run(config).await?;
 
-    info!("Started at: http://localhost:{port}", port = addr.port());
+    if config.is_dev() {
+        info!("Started at: http://localhost:{port}", port = addr.port());
 
-    info!(
-        "GraphQL at: http://localhost:{port}/graphql",
-        port = addr.port()
-    );
+        info!(
+            "GraphQL at: http://localhost:{port}/graphql",
+            port = addr.port()
+        );
+    } else {
+        info!("Started on port: {port}", port = addr.port());
+    };
 
     server.await;
 

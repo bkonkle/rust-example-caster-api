@@ -1,0 +1,7 @@
+# Local testing
+
+run_mode = "test"
+
+[database]
+name = "caster_rust_test"
+url = "postgresql://caster:caster@localhost:1701/caster_rust_test"

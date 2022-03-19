@@ -1,0 +1,21 @@
+# Local development
+
+[database]
+host = "localhost"
+name = "caster_rust"
+url = "postgresql://caster:caster@localhost:1701/caster_rust"
+
+[redis]
+url = "localhost:6379"
+
+[auth.client]
+id = "client_id"
+secret = "client_secret"
+
+[auth.test.user]
+username = "test@user.com"
+password = "test_user_password"
+
+[auth.test.alt]
+username = "alt@user.com"
+password = "alt_user_password"

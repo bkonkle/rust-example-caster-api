@@ -121,6 +121,11 @@ impl Config {
 
         Ok(config)
     }
+
+    /// Return true if the `run_mode` is "development"
+    pub fn is_dev(&self) -> bool {
+        self.run_mode == "development"
+    }
 }
 
 /// Get the default static `Config`
