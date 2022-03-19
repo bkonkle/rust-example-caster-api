@@ -1,0 +1,23 @@
+name: Cache App
+description:
+    Cache the Node.js npm node_modules directory and the dist directory based on a hash of
+    the yarn.lock.
+
+runs:
+    using: composite
+    steps:
+        - name: Cache node_modules
+          uses: actions/cache@v2
+          with:
+              path: node_modules
+              key: node-cache-${{ runner.os }}-modules-${{ hashFiles('yarn.lock') }}
+              restore-keys: |
+                  node-cache-${{ runner.os }}-modules-
+
+        - name: Cache dist files
+          uses: actions/cache@v2
+          with:
+              path: dist
+              key: cache-dist-${{ hashFiles('yarn.lock') }}-${{ github.sha }}
+              restore-keys: |
+                  cache-dist-${{ hashFiles('yarn.lock') }}-
