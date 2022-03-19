@@ -7,7 +7,11 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use caster_api::{run, Dependencies};
-use caster_shows::{episodes_service::EpisodesService, shows_service::ShowsService};
+use caster_shows::{
+    episode_model::Episode, episode_mutations::CreateEpisodeInput,
+    episodes_service::EpisodesService, show_model::Show, show_mutations::CreateShowInput,
+    shows_service::ShowsService,
+};
 use caster_users::{
     profile_model::Profile, profile_mutations::CreateProfileInput,
     profiles_service::ProfilesService, role_grants_service::RoleGrantsService, user_model::User,
@@ -93,13 +97,14 @@ impl TestUtils {
     }
 
     /// Create a User and Profile together
-    #[allow(dead_code)] // Not sure why this is necessary
+    #[allow(dead_code)] // Since each test is an independent module, this is necessary
     pub async fn create_user_and_profile(
         &self,
         username: &str,
         email: &str,
     ) -> Result<(User, Profile)> {
         let user = self.users.create(username).await?;
+
         let profile = self
             .profiles
             .create(
@@ -117,5 +122,39 @@ impl TestUtils {
             .await?;
 
         Ok((user, profile))
+    }
+
+    /// Create a Show and Episode together
+    #[allow(dead_code)] // Since each test is an independent module, this is necessary
+    pub async fn create_show_and_episode(
+        &self,
+        show_title: &str,
+        episode_title: &str,
+    ) -> Result<(Show, Episode)> {
+        let show = self
+            .shows
+            .create(&CreateShowInput {
+                title: show_title.to_string(),
+                summary: None,
+                picture: None,
+                content: None,
+            })
+            .await?;
+
+        let episode = self
+            .episodes
+            .create(
+                &CreateEpisodeInput {
+                    title: episode_title.to_string(),
+                    summary: None,
+                    picture: None,
+                    content: None,
+                    show_id: show.id.clone(),
+                },
+                &false,
+            )
+            .await?;
+
+        Ok((show, episode))
     }
 }

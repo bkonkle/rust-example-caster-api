@@ -1,9 +1,11 @@
 # Local development
 
+port = 3000
+
 [database]
 host = "localhost"
-name = "caster_rust"
 url = "postgresql://caster:caster@localhost:1701/caster_rust"
+debug = false
 
 [redis]
 url = "localhost:6379"

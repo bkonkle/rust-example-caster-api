@@ -282,7 +282,7 @@ async fn test_get_profile_empty() -> Result<()> {
         ..
     } = oauth.get_credentials(TestUser::Test).await;
 
-    // Create a user and profile with this username
+    // Create a user with this username
     let user = users.create(username).await?;
 
     let req = graphql.query(GET_PROFILE, json!({ "id": "dummy-id",}), Some(token))?;

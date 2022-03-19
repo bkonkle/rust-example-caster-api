@@ -8,11 +8,9 @@ use crate::{
     episode_mutations::{CreateEpisodeInput, MutateEpisodeResult, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy, EpisodesPage},
     episodes_service::EpisodesService,
+    shows_service::ShowsService,
 };
-use caster_users::{
-    role_grant_model::CreateRoleGrantInput, role_grants_service::RoleGrantsService,
-    user_model::User,
-};
+use caster_users::user_model::User;
 use caster_utils::errors::{as_graphql_error, graphql_error};
 
 /// The Query segment owned by the Episodes library
@@ -74,43 +72,44 @@ impl EpisodesMutation {
         ctx: &Context<'_>,
         input: CreateEpisodeInput,
     ) -> Result<MutateEpisodeResult> {
+        let shows = ctx.data_unchecked::<Arc<dyn ShowsService>>();
         let episodes = ctx.data_unchecked::<Arc<dyn EpisodesService>>();
-        let role_grants = ctx.data_unchecked::<Arc<dyn RoleGrantsService>>();
         let user = ctx.data_unchecked::<Option<User>>();
+        let oso = ctx.data_unchecked::<Oso>();
 
-        // Check to see if the associated User is selected
-        let with_show = ctx.look_ahead().field("episode").field("show").exists();
+        // Retrieve the related Show for authorization
+        let show = shows
+            .get(&input.show_id)
+            .await
+            .map_err(as_graphql_error(
+                "Unable while retrieving Show",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?
+            .ok_or_else(|| graphql_error("Unable to find existing Show", StatusCode::NOT_FOUND))?;
 
-        // Check authorization
+        // Check authentication and authorization
         if let Some(user) = user {
-            let episode = episodes
-                .create(&input, &with_show)
-                .await
-                .map_err(as_graphql_error(
-                    "Error while creating Episode",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ))?;
-
-            // Grant the Admin role to the creator
-            role_grants
-                .create(&CreateRoleGrantInput {
-                    role_key: "admin".to_string(),
-                    user_id: user.id.clone(),
-                    resource_table: "episodes".to_string(),
-                    resource_id: episode.id.clone(),
-                })
-                .await
-                .map_err(as_graphql_error(
-                    "Error while granting the admin role for a Episode",
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                ))?;
-
-            Ok(MutateEpisodeResult {
-                episode: Some(episode),
-            })
+            if !oso.is_allowed(user.clone(), "manage_episodes", show.clone())? {
+                return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
+            }
         } else {
-            Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED))
+            return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
+
+        let episode = episodes
+            .create(&input, &false)
+            .await
+            .map_err(as_graphql_error(
+                "Error while creating Episode",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))?;
+
+        Ok(MutateEpisodeResult {
+            episode: Some(Episode {
+                show: Some(show),
+                ..episode
+            }),
+        })
     }
 
     /// Update an existing Episode
@@ -124,12 +123,9 @@ impl EpisodesMutation {
         let user = ctx.data_unchecked::<Option<User>>();
         let oso = ctx.data_unchecked::<Oso>();
 
-        // Check to see if the associated User is selected
-        let with_show = ctx.look_ahead().field("episode").field("show").exists();
-
         // Retrieve the existing Episode for authorization
-        let (existing, existing_show) = episodes
-            .get_model(&id, &with_show)
+        let (existing, show) = episodes
+            .get_model(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Episode",
@@ -139,9 +135,12 @@ impl EpisodesMutation {
                 graphql_error("Unable to find existing Episode", StatusCode::NOT_FOUND)
             })?;
 
+        let show = show
+            .ok_or_else(|| graphql_error("Unable to find existing Show", StatusCode::NOT_FOUND))?;
+
         // Check authentication and authorization
         if let Some(user) = user {
-            if !oso.is_allowed(user.clone(), "update", existing.clone())? {
+            if !oso.is_allowed(user.clone(), "manage_episodes", show.clone())? {
                 return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
             }
         } else {
@@ -150,7 +149,7 @@ impl EpisodesMutation {
 
         // Use the already retrieved Episode to update the record
         let episode = episodes
-            .update_model(existing, &input, existing_show)
+            .update_model(existing, &input, Some(show))
             .await
             .map_err(as_graphql_error(
                 "Error while updating Profile",
@@ -168,9 +167,9 @@ impl EpisodesMutation {
         let user = ctx.data_unchecked::<Option<User>>();
         let oso = ctx.data_unchecked::<Oso>();
 
-        // Retrieve the existing Episode for authorization
-        let (existing, _) = episodes
-            .get_model(&id, &false)
+        // Retrieve the related Show for authorization
+        let (_, show) = episodes
+            .get_model(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Episode",
@@ -180,9 +179,12 @@ impl EpisodesMutation {
                 graphql_error("Unable to find existing Episode", StatusCode::NOT_FOUND)
             })?;
 
+        let show = show
+            .ok_or_else(|| graphql_error("Unable to find existing Show", StatusCode::NOT_FOUND))?;
+
         // Check authentication and authorization
         if let Some(user) = user {
-            if !oso.is_allowed(user.clone(), "update", existing)? {
+            if !oso.is_allowed(user.clone(), "manage_episodes", show.clone())? {
                 return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
             }
         } else {

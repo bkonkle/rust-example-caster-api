@@ -117,6 +117,10 @@ impl EpisodesService for DefaultEpisodesService {
             if let Some(title) = condition.title {
                 query = query.filter(episode_model::Column::Title.eq(title));
             }
+
+            if let Some(show_id) = condition.show_id {
+                query = query.filter(episode_model::Column::ShowId.eq(show_id));
+            }
         }
 
         if let Some(order_by) = order_by {

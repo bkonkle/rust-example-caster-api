@@ -46,6 +46,9 @@ impl From<ManyResponse<Episode>> for EpisodesPage {
 pub struct EpisodeCondition {
     /// The `Episode`'s title
     pub title: Option<String>,
+
+    /// The associated Show
+    pub show_id: Option<String>,
 }
 
 /// The available ordering values

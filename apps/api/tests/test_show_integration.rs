@@ -107,7 +107,7 @@ async fn test_create_show_requires_title() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_create_show_requires_authz() -> Result<()> {
+async fn test_create_show_requires_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
 
     let Credentials {
