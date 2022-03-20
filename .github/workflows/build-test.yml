@@ -34,11 +34,14 @@ jobs:
         steps:
             - uses: actions/checkout@v2
 
+            - name: Create env file
+              run: cp .env.ci .env
+
             - uses: ./.github/workflows/actions/cache-app
             - uses: ./.github/workflows/actions/setup-docker
 
             - name: Run docker-compose
-              run: cd apps/api && docker-compose -f docker-compose.yml --env-file ../../.env.ci up -d
+              run: cd apps/api && docker-compose -f docker-compose.yml up -d
 
             - run: cargo install --force cargo-make
             - run: cargo install sqlx-cli --no-default-features --features rustls,postgres
