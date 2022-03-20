@@ -35,6 +35,20 @@ cwd = "./apps/api"
 command = "docker-compose"
 args = ["-f", "docker-compose.yml", "--env-file", "../../.env", "${@}"]
 
+[tasks.docker-api-app]
+workspace = false
+cwd = "./apps/api"
+command = "docker-compose"
+args = [
+    "-f",
+    "docker-compose.yml",
+    "-f",
+    "docker-compose.app.yml",
+    "--env-file",
+    "../../.env",
+    "${@}",
+]
+
 [tasks.integration]
 workspace = false
 env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }

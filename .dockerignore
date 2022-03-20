@@ -1,13 +1,18 @@
 # Start by ignoring everything
 *
 
-# Configs
-!config/
-config/local.toml
-config/local.toml.example
-config/test.toml
-config/test.toml.example
+# Package management
+!Cargo.toml
+!Cargo.lock
+!**/Cargo.toml
+!Makefile.toml
 
-# Release
-!target/release/caster*
-!target/release/libcaster*
+# Configs
+!.cargo/
+!config/
+
+# Source
+!apps/
+apps/*/tests/
+!libs/
+libs/*/tests/

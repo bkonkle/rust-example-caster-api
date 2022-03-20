@@ -1,23 +1,24 @@
 name: Cache App
-description:
-    Cache the Node.js npm node_modules directory and the dist directory based on a hash of
-    the yarn.lock.
+description: Cache Rust Cargo and the target directory based on a hash of the Cargo.lock.
 
 runs:
     using: composite
     steps:
-        - name: Cache node_modules
+        - name: Cache Cargo
           uses: actions/cache@v2
           with:
-              path: node_modules
-              key: node-cache-${{ runner.os }}-modules-${{ hashFiles('yarn.lock') }}
+              path: ~/.cargo
+              key: cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
               restore-keys: |
-                  node-cache-${{ runner.os }}-modules-
+                  cargo-registry-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+                  cargo-registry-${{ runner.os }}-
 
-        - name: Cache dist files
+        - name: Cache target
           uses: actions/cache@v2
           with:
-              path: dist
-              key: cache-dist-${{ hashFiles('yarn.lock') }}-${{ github.sha }}
+              path: target
+              key: rust-target-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}
               restore-keys: |
-                  cache-dist-${{ hashFiles('yarn.lock') }}-
+                  rust-target-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-
+                  rust-target-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-
+                  rust-target-${{ runner.os }}-

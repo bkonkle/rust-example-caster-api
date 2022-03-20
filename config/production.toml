@@ -1,4 +1,0 @@
-# Production
-
-run_mode = "production"
-port = 3000
