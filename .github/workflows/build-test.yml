@@ -11,6 +11,9 @@ on:
             - "**.md"
     workflow_dispatch:
 
+env:
+    CARGO_TERM_COLOR: always
+
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -23,15 +26,13 @@ jobs:
             - uses: ./.github/workflows/actions/cache-app
 
             - run: cargo check
-            - run: cargo build
             - run: cargo test
 
     test:
         runs-on: ubuntu-latest
         needs: build
-        environment: ci
+        environment: CI
         env:
-            CARGO_TERM_COLOR: always
             DATABASE_HOSTNAME: localhost
             DATABASE_USERNAME: caster
             DATABASE_PASSWORD: caster
@@ -53,12 +54,12 @@ jobs:
             - run: cargo make db-migrate
             - run: cargo make integration-ci
               env:
-                  OAUTH2_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
-                  OAUTH2_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
-                  TEST_USER: ${{ secrets.TEST_USER }}
-                  TEST_PASS: ${{ secrets.TEST_PASS }}
-                  TEST_ALT_USER: ${{ secrets.TEST_ALT_USER }}
-                  TEST_ALT_PASS: ${{ secrets.TEST_ALT_PASS }}
+                  AUTH_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
+                  AUTH_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
+                  AUTH_TEST_USER_USERNAME: ${{ secrets.TEST_USER }}
+                  AUTH_TEST_USER_PASSWORD: ${{ secrets.TEST_PASS }}
+                  AUTH_TEST_ALT_USERNAME: ${{ secrets.TEST_ALT_USER }}
+                  AUTH_TEST_ALT_PASSPASSWORD: ${{ secrets.TEST_ALT_PASS }}
 
     package:
         runs-on: ubuntu-latest
