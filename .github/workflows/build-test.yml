@@ -38,7 +38,7 @@ jobs:
             - uses: ./.github/workflows/actions/setup-docker
 
             - name: Run docker-compose
-              run: cd apps/api && docker-compose -f docker-compose.yml --env-file .env.ci up -d
+              run: cd apps/api && docker-compose -f docker-compose.yml --env-file ../../.env.ci up -d
 
             - run: cargo make db-create
             - run: cargo make db-migrate
