@@ -11,15 +11,6 @@ on:
             - "**.md"
     workflow_dispatch:
 
-env:
-    CARGO_TERM_COLOR: always
-    DATABASE_HOSTNAME: localhost
-    DATABASE_USERNAME: caster
-    DATABASE_PASSWORD: caster
-    DATABASE_NAME: caster_rust_test
-    DATABASE_PORT: 1701
-    DATABASE_URL: postgresql://caster:caster@localhost:1701/caster_rust_test
-
 jobs:
     build:
         runs-on: ubuntu-latest
@@ -38,6 +29,14 @@ jobs:
     test:
         runs-on: ubuntu-latest
         needs: build
+        env:
+            CARGO_TERM_COLOR: always
+            DATABASE_HOSTNAME: localhost
+            DATABASE_USERNAME: caster
+            DATABASE_PASSWORD: caster
+            DATABASE_NAME: caster_rust_test
+            DATABASE_PORT: 1701
+            DATABASE_URL: postgresql://caster:caster@localhost:1701/caster_rust_test
         steps:
             - uses: actions/checkout@v2
 
