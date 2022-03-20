@@ -40,6 +40,7 @@ jobs:
             - name: Run docker-compose
               run: cd apps/api && docker-compose -f docker-compose.yml --env-file ../../.env.ci up -d
 
+            - run: cargo install --force cargo-make
             - run: cargo make db-create
             - run: cargo make db-migrate
             - run: cargo make integration-ci
