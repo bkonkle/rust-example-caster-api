@@ -13,6 +13,12 @@ on:
 
 env:
     CARGO_TERM_COLOR: always
+    DATABASE_HOSTNAME: localhost
+    DATABASE_USERNAME: caster
+    DATABASE_PASSWORD: caster
+    DATABASE_NAME: caster_rust_test
+    DATABASE_PORT: 1701
+    DATABASE_URL: postgresql://caster:caster@localhost:1701/caster_rust_test
 
 jobs:
     build:
@@ -25,6 +31,7 @@ jobs:
 
             - uses: ./.github/workflows/actions/cache-app
 
+            - run: cargo check
             - run: cargo build
             - run: cargo test
 
