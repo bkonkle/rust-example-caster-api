@@ -39,11 +39,11 @@ jobs:
 
             - uses: ./.github/workflows/actions/cache-app
             - uses: ./.github/workflows/actions/setup-docker
+            - uses: davidB/rust-cargo-make@v1
 
             - name: Run docker-compose
-              run: cd apps/api && docker-compose -f docker-compose.yml up -d
+              run: cd apps/api && docker-compose -f docker-compose.yml --env-file ../../.env up -d
 
-            - run: cargo install --force cargo-make
             - run: cargo install sqlx-cli --no-default-features --features rustls,postgres
             - run: cargo make db-create
             - run: cargo make db-migrate
