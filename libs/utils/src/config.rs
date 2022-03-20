@@ -23,7 +23,7 @@ pub struct DbPool {
 #[derive(Debug, Deserialize)]
 pub struct Database {
     /// Database hostname/IP
-    pub host: String,
+    pub hostname: String,
     /// Database username
     pub username: String,
     /// Database password

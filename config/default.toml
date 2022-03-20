@@ -4,7 +4,7 @@ run_mode = "development"
 port = 0
 
 [database]
-host = "localhost"
+hostname = "localhost"
 username = "caster"
 password = "caster"
 name = "caster_rust"
