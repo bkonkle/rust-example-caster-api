@@ -115,7 +115,32 @@ impl Config {
             // Load run mode overrides
             .merge(Toml::file(format!("config/{}.toml", run_mode)))
             // Load environment variables
-            .merge(Env::raw())
+            .merge(
+                // Support the nested structure of the config manually
+                Env::raw()
+                    // Split the Database variables
+                    .map(|key| {
+                        key.as_str()
+                            .replace("DATABASE_POOL_", "DATABASE.POOL.")
+                            .into()
+                    })
+                    .map(|key| key.as_str().replace("DATABASE_", "DATABASE.").into())
+                    // Split the Redis variables
+                    .map(|key| key.as_str().replace("REDIS_", "REDIS.").into())
+                    // Split the Auth variables
+                    .map(|key| {
+                        key.as_str()
+                            .replace("AUTH_TEST_USER_", "AUTH.TEST.USER.")
+                            .into()
+                    })
+                    .map(|key| {
+                        key.as_str()
+                            .replace("AUTH_TEST_ALT_", "AUTH.TEST.ALT.")
+                            .into()
+                    })
+                    .map(|key| key.as_str().replace("AUTH_CLIENT_", "AUTH.CLIENT.").into())
+                    .map(|key| key.as_str().replace("AUTH_", "AUTH.").into()),
+            )
             // Serialize and freeze
             .extract()?;
 

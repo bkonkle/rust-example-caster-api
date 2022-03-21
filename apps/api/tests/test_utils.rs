@@ -59,6 +59,8 @@ impl TestUtils {
         let _ = pretty_env_logger::try_init();
 
         let config = get_config();
+        println!("DATABASE_URL: {}", std::env::var("DATABASE_URL").unwrap());
+        println!("config: {:?}", config);
 
         let http_client = &HTTP_CLIENT;
         let addr = run_server(config).await?;
