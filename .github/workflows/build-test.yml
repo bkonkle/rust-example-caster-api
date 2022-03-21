@@ -31,7 +31,7 @@ jobs:
     test:
         runs-on: ubuntu-latest
         needs: build
-        environment: CI
+        environment: ci
         env:
             DATABASE_HOSTNAME: localhost
             DATABASE_USERNAME: caster
@@ -54,12 +54,12 @@ jobs:
             - run: cargo make db-migrate
             - run: cargo make integration-ci
               env:
-                  AUTH_CLIENT_ID: ${{ secrets.OAUTH2_CLIENT_ID }}
-                  AUTH_CLIENT_SECRET: ${{ secrets.OAUTH2_CLIENT_SECRET }}
-                  AUTH_TEST_USER_USERNAME: ${{ secrets.TEST_USER }}
-                  AUTH_TEST_USER_PASSWORD: ${{ secrets.TEST_PASS }}
-                  AUTH_TEST_ALT_USERNAME: ${{ secrets.TEST_ALT_USER }}
-                  AUTH_TEST_ALT_PASSPASSWORD: ${{ secrets.TEST_ALT_PASS }}
+                  AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
+                  AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
+                  AUTH_TEST_USER_USERNAME: ${{ secrets.AUTH_TEST_USER_USERNAME }}
+                  AUTH_TEST_USER_PASSWORD: ${{ secrets.AUTH_TEST_USER_PASSWORD }}
+                  AUTH_TEST_ALT_USERNAME: ${{ secrets.AUTH_TEST_ALT_USERNAME }}
+                  AUTH_TEST_ALT_PASSWORD: ${{ secrets.AUTH_TEST_ALT_PASSWORD }}
 
     package:
         runs-on: ubuntu-latest
