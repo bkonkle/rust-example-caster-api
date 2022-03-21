@@ -1,0 +1,82 @@
+name: build-test
+
+on:
+    pull_request:
+        paths-ignore:
+            - "**.md"
+    push:
+        branches:
+            - main
+        paths-ignore:
+            - "**.md"
+    workflow_dispatch:
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - uses: ./.github/workflows/actions/cache-app
+
+            - run: cargo check
+            - run: cargo test
+
+    test:
+        runs-on: ubuntu-latest
+        needs: build
+        environment: ci
+        env:
+            DATABASE_HOSTNAME: localhost
+            DATABASE_USERNAME: caster
+            DATABASE_PASSWORD: caster
+            DATABASE_NAME: caster_rust_test
+            DATABASE_PORT: 1701
+            DATABASE_URL: postgresql://caster:caster@localhost:1701/caster_rust_test
+        steps:
+            - uses: actions/checkout@v2
+
+            - uses: ./.github/workflows/actions/cache-app
+            - uses: ./.github/workflows/actions/setup-docker
+            - uses: davidB/rust-cargo-make@v1
+
+            - name: Run docker-compose
+              run: docker-compose -f apps/api/docker-compose.yml up -d
+
+            - run: cargo install sqlx-cli --no-default-features --features rustls,postgres
+            - run: cargo make db-create
+            - run: cargo make db-migrate
+            - run: cargo make integration-ci
+              env:
+                  AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
+                  AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
+                  AUTH_TEST_USER_USERNAME: ${{ secrets.AUTH_TEST_USER_USERNAME }}
+                  AUTH_TEST_USER_PASSWORD: ${{ secrets.AUTH_TEST_USER_PASSWORD }}
+                  AUTH_TEST_ALT_USERNAME: ${{ secrets.AUTH_TEST_ALT_USERNAME }}
+                  AUTH_TEST_ALT_PASSWORD: ${{ secrets.AUTH_TEST_ALT_PASSWORD }}
+
+    package:
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - uses: actions/checkout@v2
+            - uses: ./.github/workflows/actions/cache-app
+            - uses: ./.github/workflows/actions/setup-docker
+
+            - name: Docker build
+              id: docker_build
+              uses: docker/build-push-action@v2
+              with:
+                  context: ./
+                  file: ./apps/api/Dockerfile
+                  push: false
+                  tags: caster-api:latest
+
+            - name: Image digest
+              run: echo ${{ steps.docker_build.outputs.digest }}

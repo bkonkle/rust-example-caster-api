@@ -1,7 +1,5 @@
 # CI testing
 
-run_mode = "ci"
-
 [database]
 name = "caster_rust_test"
 url = "postgresql://caster:caster@localhost:1701/caster_rust_test"

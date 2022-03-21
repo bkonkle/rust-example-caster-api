@@ -3,7 +3,7 @@
 port = 3000
 
 [database]
-host = "localhost"
+hostname = "localhost"
 url = "postgresql://caster:caster@localhost:1701/caster_rust"
 debug = false
 

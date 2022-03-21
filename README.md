@@ -144,3 +144,44 @@ cargo make db-reset
 ```
 
 You can restore the original values in your `.env` afterwards.
+
+## Deployment
+
+### Building Docker Containers Locally
+
+To build locally, use Buildkit:
+
+```sh
+DOCKER_BUILDKIT=1 docker build -t caster-api -f apps/api/Dockerfile .
+```
+
+To clear the build cache:
+
+```sh
+docker builder prune --filter type=exec.cachemount
+```
+
+To inspect the local filesystem:
+
+```sh
+docker run --rm -it --entrypoint=/bin/bash caster-api
+```
+
+To inspect the full build context:
+
+```sh
+docker image build --no-cache -t build-context -f - . <<EOF
+FROM busybox
+WORKDIR /build-context
+COPY . .
+CMD find .
+EOF
+
+docker container run --rm build-context
+```
+
+And to clean up the build context test image:
+
+```sh
+docker image rm build-context
+```
