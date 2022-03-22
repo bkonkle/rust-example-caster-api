@@ -1,5 +1,5 @@
 use caster_shows::shows_service::{DefaultShowsService, ShowsService};
-use sea_orm::{tests_cfg::*, DatabaseBackend, MockDatabase};
+use sea_orm::{DatabaseBackend, MockDatabase};
 use std::sync::Arc;
 
 mod factories;
@@ -7,12 +7,6 @@ mod factories;
 #[tokio::test]
 async fn test_shows_service_get_show() {
     let show = factories::create_show();
-
-    // shows_repo
-    //     .expect_get()
-    //     .times(1)
-    //     .with(eq(String::from(&show.id)))
-    //     .returning(move |_| Ok(Some(response.clone())));
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
