@@ -34,10 +34,6 @@ pub mod episode_mutations;
 /// Authorization rules
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");
 
-/// Show tests
-#[cfg(test)]
-mod tests;
-
 /// Error macros
 #[macro_use]
 extern crate anyhow;
