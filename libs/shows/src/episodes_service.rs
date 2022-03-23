@@ -69,8 +69,8 @@ pub struct DefaultEpisodesService {
 /// The default `EpisodesService` implementation
 impl DefaultEpisodesService {
     /// Create a new `EpisodesService` instance
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        Self { db: db.clone() }
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
+        Self { db }
     }
 }
 

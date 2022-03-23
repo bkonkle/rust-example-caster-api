@@ -29,6 +29,12 @@ extern crate log;
 
 /// Dependencies needed by the resolvers
 pub struct Dependencies {
+    /// The app config
+    pub config: &'static Config,
+
+    /// The database connections
+    pub db: Arc<DatabaseConnection>,
+
     /// The `User` entity service
     pub users: Arc<dyn UsersService>,
 
@@ -48,21 +54,28 @@ pub struct Dependencies {
 /// Intialize dependencies
 impl Dependencies {
     /// Create a new set of dependencies based on the given shared resources
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        // Services
-        let users = Arc::new(DefaultUsersService::new(db)) as Arc<dyn UsersService>;
-        let profiles = Arc::new(DefaultProfilesService::new(db)) as Arc<dyn ProfilesService>;
-        let role_grants = Arc::new(DefaultRoleGrantsService::new(db)) as Arc<dyn RoleGrantsService>;
-        let shows = Arc::new(DefaultShowsService::new(db)) as Arc<dyn ShowsService>;
-        let episodes = Arc::new(DefaultEpisodesService::new(db)) as Arc<dyn EpisodesService>;
+    pub async fn init(config: &'static Config) -> Result<Self> {
+        let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
 
-        Self {
+        // Services
+        let users = Arc::new(DefaultUsersService::new(db.clone())) as Arc<dyn UsersService>;
+        let profiles =
+            Arc::new(DefaultProfilesService::new(db.clone())) as Arc<dyn ProfilesService>;
+        let role_grants =
+            Arc::new(DefaultRoleGrantsService::new(db.clone())) as Arc<dyn RoleGrantsService>;
+        let shows = Arc::new(DefaultShowsService::new(db.clone())) as Arc<dyn ShowsService>;
+        let episodes =
+            Arc::new(DefaultEpisodesService::new(db.clone())) as Arc<dyn EpisodesService>;
+
+        Ok(Self {
+            config,
+            db,
             users,
             profiles,
             role_grants,
             shows,
             episodes,
-        }
+        })
     }
 }
 
@@ -71,11 +84,10 @@ pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Out
     let port = config.port;
     let jwks = get_jwks(config).await;
 
-    let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
-    let deps = Dependencies::new(&db);
+    let deps = Dependencies::init(config).await?;
     let users = deps.users.clone();
 
-    let schema = create_schema(deps, config)?;
+    let schema = create_schema(deps)?;
     let router = create_routes(users, schema, jwks);
 
     Ok(warp::serve(

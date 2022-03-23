@@ -16,7 +16,6 @@ use caster_users::{
     users_resolver::{UsersMutation, UsersQuery},
     AUTHORIZATION as PROFILES_AUTHZ,
 };
-use caster_utils::config::Config;
 
 use crate::Dependencies;
 
@@ -36,13 +35,15 @@ pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
 /// Initialize all necessary dependencies to create a `GraphQLSchema`. Very simple dependency
 /// injection based on async-graphql's `.data()` calls.
-pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<GraphQLSchema> {
+pub fn create_schema(deps: Dependencies) -> Result<GraphQLSchema> {
     let Dependencies {
+        config,
         users,
         profiles,
         shows,
         episodes,
         role_grants,
+        ..
     } = deps;
 
     // Set up authorization

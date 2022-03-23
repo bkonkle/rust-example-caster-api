@@ -80,8 +80,8 @@ pub struct DefaultProfilesService {
 /// The default `ProfilesService` implementation
 impl DefaultProfilesService {
     /// Create a new `ProfilesService` instance
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        Self { db: db.clone() }
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
+        Self { db }
     }
 }
 

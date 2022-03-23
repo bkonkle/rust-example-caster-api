@@ -70,17 +70,17 @@ impl TestUtils {
             port = addr.port()
         ));
 
-        // This needs to be created anew each time because it can't be shared when the Tokio runtime
-        // is being stopped and re-started between tests
-        let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
-
+        // This needs to be created anew each time because the database connection  can't be shared
+        // when the Tokio runtime is being stopped and re-started between tests
         let Dependencies {
+            db,
             users,
             profiles,
             role_grants,
             shows,
             episodes,
-        } = Dependencies::new(&db);
+            ..
+        } = Dependencies::init(config).await?;
 
         Ok(TestUtils {
             config,

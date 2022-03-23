@@ -53,8 +53,8 @@ pub struct DefaultShowsService {
 /// The default `ShowsService` implementation
 impl DefaultShowsService {
     /// Create a new `ShowsService` instance
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        Self { db: db.clone() }
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
+        Self { db }
     }
 }
 
