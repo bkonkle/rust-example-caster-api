@@ -75,7 +75,7 @@ impl Context {
         oso.register_class(Show::get_polar_class_builder().name("Show").build())?;
         oso.register_class(Episode::get_polar_class_builder().name("Episode").build())?;
 
-        oso.load_str(&format!("{}\n{}", PROFILES_AUTHZ, SHOWS_AUTHZ))?;
+        oso.load_str(&[PROFILES_AUTHZ, SHOWS_AUTHZ].join("\n"))?;
 
         Ok(Self {
             config,
