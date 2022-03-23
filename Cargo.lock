@@ -417,6 +417,7 @@ dependencies = [
  "fake",
  "hyper",
  "jsonpath_lib",
+ "maplit",
  "mockall",
  "oso",
  "oso-derive",

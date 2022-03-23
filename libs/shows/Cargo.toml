@@ -38,3 +38,4 @@ fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 jsonpath_lib = "0.3.0"
 mockall = "0.11"
 rand = "0.8"
+maplit = { version = "^1" }

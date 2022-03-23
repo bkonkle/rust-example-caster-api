@@ -1,4 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// A paginated response for an entity
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct ManyResponse<Model> {
     /// The page of data being returned
     pub data: Vec<Model>,
