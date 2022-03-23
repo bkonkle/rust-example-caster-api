@@ -1,6 +1,9 @@
 # Rust Async-GraphQL Example: Caster API
 
-[<img alt="Rust" src="https://img.shields.io/badge/rust-2021-a72145?logo=rust&style=flat" />](https://www.rust-lang.org/)
+[<img alt="Rust" src="https://img.shields.io/badge/rust-2021-a72145?logo=rust&style=flat" />](https://www.rust-lang.org)
+[<img alt="GraphQL" src="https://img.shields.io/badge/graphql-e10098?logo=graphql&style=flat" />](https://graphql.org)
+[<img alt="SeaORM" src="https://img.shields.io/badge/SeaORM-032846?logo=postgresql&style=flat" />](https://github.com/SeaQL/sea-orm)
+[<img alt="Tokio" src="https://img.shields.io/badge/tokio-463103?logo=rust&style=flat" />](https://tokio.rs)
 
 This is an example app for the upcoming Rust video series by [Brandon Konkle](https://github.com/bkonkle). It implements a basic API to support a number of hypothetical frontends for the imaginary "Caster" app, a tool to help podcasters, broadcasters, and streamers coordinate show content with their co-hosts and guests. Limited to just the API to support the front end.
 
