@@ -44,6 +44,7 @@ const CREATE_EPISODE: &str = "
 #[ignore]
 async fn test_create_episode() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -52,12 +53,11 @@ async fn test_create_episode() -> Result<()> {
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
     // Create a user and a show
-    let user = utils.users.create(username).await?;
-    let show = utils.shows.create(&dummy_show("Test Show")).await?;
+    let user = ctx.users.create(username).await?;
+    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
 
     // Grant the manager role to this user for this episode's show
-    utils
-        .role_grants
+    ctx.role_grants
         .create(&CreateRoleGrantInput {
             role_key: "manager".to_string(),
             user_id: user.id.clone(),
@@ -91,12 +91,11 @@ async fn test_create_episode() -> Result<()> {
     assert_eq!(json_show["id"], show.id.clone());
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils
-        .episodes
+    ctx.users.delete(&user.id).await?;
+    ctx.episodes
         .delete(json_episode["id"].as_str().unwrap())
         .await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -161,11 +160,11 @@ async fn test_create_episode_authn() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
-        shows,
+        ctx,
         ..
     } = TestUtils::init().await?;
 
-    let show = shows.create(&dummy_show("Test Show")).await?;
+    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
 
     let req = graphql.query(
         CREATE_EPISODE,
@@ -189,7 +188,7 @@ async fn test_create_episode_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    shows.delete(&show.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -199,6 +198,7 @@ async fn test_create_episode_authn() -> Result<()> {
 #[ignore]
 async fn test_create_episode_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -206,10 +206,10 @@ async fn test_create_episode_authz() -> Result<()> {
         ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    let show = utils.shows.create(&dummy_show("Test Show")).await?;
+    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
 
     // Create a user with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let req = utils.graphql.query(
         CREATE_EPISODE,
@@ -233,8 +233,8 @@ async fn test_create_episode_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -263,6 +263,7 @@ const GET_EPISODE: &str = "
 #[ignore]
 async fn test_get_episode() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -292,8 +293,8 @@ async fn test_get_episode() -> Result<()> {
     assert_eq!(json_show["id"], show.id);
 
     // Clean up
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -368,6 +369,7 @@ const GET_MANY_EPISODES: &str = "
 #[ignore]
 async fn test_get_many_episodes() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -414,10 +416,10 @@ async fn test_get_many_episodes() -> Result<()> {
     assert_eq!(json_other_show["id"], other_show.id);
 
     // Clean up
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
-    utils.episodes.delete(&other_episode.id).await?;
-    utils.shows.delete(&other_show.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
+    ctx.episodes.delete(&other_episode.id).await?;
+    ctx.shows.delete(&other_show.id).await?;
 
     Ok(())
 }
@@ -448,6 +450,7 @@ const UPDATE_EPISODE: &str = "
 #[ignore]
 async fn test_update_episode() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -456,15 +459,14 @@ async fn test_update_episode() -> Result<()> {
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
         .await?;
 
     // Grant the manager role to this user for this episode's show
-    utils
-        .role_grants
+    ctx.role_grants
         .create(&CreateRoleGrantInput {
             role_key: "manager".to_string(),
             user_id: user.id.clone(),
@@ -501,9 +503,9 @@ async fn test_update_episode() -> Result<()> {
     assert_eq!(json_show["id"], show.id);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -550,6 +552,7 @@ async fn test_update_episode_not_found() -> Result<()> {
 #[ignore]
 async fn test_update_episode_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -577,8 +580,8 @@ async fn test_update_episode_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -588,6 +591,7 @@ async fn test_update_episode_authn() -> Result<()> {
 #[ignore]
 async fn test_update_episode_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -596,7 +600,7 @@ async fn test_update_episode_authz() -> Result<()> {
     } = utils.oauth.get_credentials(TestUser::Alt).await;
 
     // Create a user with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show 2", "Test Episode 1")
@@ -624,9 +628,9 @@ async fn test_update_episode_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -646,6 +650,7 @@ const DELETE_EPISODE: &str = "
 #[ignore]
 async fn test_delete_episode() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -654,15 +659,14 @@ async fn test_delete_episode() -> Result<()> {
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
         .await?;
 
     // Grant the manager role to this user for this episode's show
-    utils
-        .role_grants
+    ctx.role_grants
         .create(&CreateRoleGrantInput {
             role_key: "manager".to_string(),
             user_id: user.id.clone(),
@@ -685,8 +689,8 @@ async fn test_delete_episode() -> Result<()> {
     assert!(json["data"]["deleteEpisode"].as_bool().unwrap());
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -724,6 +728,7 @@ async fn test_delete_episode_not_found() -> Result<()> {
 #[ignore]
 async fn test_delete_episode_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -744,8 +749,8 @@ async fn test_delete_episode_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -755,6 +760,7 @@ async fn test_delete_episode_authn() -> Result<()> {
 #[ignore]
 async fn test_delete_episode_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -763,7 +769,7 @@ async fn test_delete_episode_authz() -> Result<()> {
     } = utils.oauth.get_credentials(TestUser::Alt).await;
 
     // Create a user with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show 2", "Test Episode 1")
@@ -784,9 +790,9 @@ async fn test_delete_episode_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.episodes.delete(&episode.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.episodes.delete(&episode.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }

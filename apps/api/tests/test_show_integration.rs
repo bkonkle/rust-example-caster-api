@@ -32,6 +32,7 @@ const CREATE_SHOW: &str = "
 #[ignore]
 async fn test_create_show() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -64,12 +65,9 @@ async fn test_create_show() -> Result<()> {
     assert_eq!(json_show["title"], "Test Show");
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
-    utils
-        .shows
-        .delete(json_show["id"].as_str().unwrap())
-        .await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
+    ctx.shows.delete(json_show["id"].as_str().unwrap()).await?;
 
     Ok(())
 }
@@ -78,18 +76,21 @@ async fn test_create_show() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_create_show_requires_title() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ..
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
-    let req = utils
-        .graphql
-        .query(CREATE_SHOW, json!({ "input": {}}), Some(token))?;
+    let req = graphql.query(CREATE_SHOW, json!({ "input": {}}), Some(token))?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -108,14 +109,19 @@ async fn test_create_show_requires_title() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_create_show_requires_authn() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ..
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         CREATE_SHOW,
         json!({
             "input": {
@@ -125,7 +131,7 @@ async fn test_create_show_requires_authn() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -158,14 +164,19 @@ const GET_SHOW: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_get_show() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -175,11 +186,9 @@ async fn test_get_show() -> Result<()> {
         })
         .await?;
 
-    let req = utils
-        .graphql
-        .query(GET_SHOW, json!({ "id": show.id,}), Some(token))?;
+    let req = graphql.query(GET_SHOW, json!({ "id": show.id,}), Some(token))?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -192,7 +201,7 @@ async fn test_get_show() -> Result<()> {
     assert_eq!(json_show["title"], "Test Show");
 
     // Clean up
-    utils.shows.delete(&show.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -263,9 +272,14 @@ const GET_MANY_SHOWS: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_get_many_shows() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        graphql,
+        ctx,
+        ..
+    } = TestUtils::init().await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -275,7 +289,7 @@ async fn test_get_many_shows() -> Result<()> {
         })
         .await?;
 
-    let other_show = utils
+    let other_show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show 2".to_string(),
@@ -285,8 +299,8 @@ async fn test_get_many_shows() -> Result<()> {
         })
         .await?;
 
-    let req = utils.graphql.query(GET_MANY_SHOWS, Value::Null, None)?;
-    let resp = utils.http_client.request(req).await?;
+    let req = graphql.query(GET_MANY_SHOWS, Value::Null, None)?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -313,8 +327,8 @@ async fn test_get_many_shows() -> Result<()> {
     assert_eq!(json_other_show["summary"], Value::Null);
 
     // Clean up
-    utils.shows.delete(&show.id).await?;
-    utils.shows.delete(&other_show.id).await?;
+    ctx.shows.delete(&show.id).await?;
+    ctx.shows.delete(&other_show.id).await?;
 
     Ok(())
 }
@@ -341,18 +355,23 @@ const UPDATE_SHOW: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_update_show() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a User
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -363,8 +382,7 @@ async fn test_update_show() -> Result<()> {
         .await?;
 
     // Grant the admin role to this User for this Show
-    utils
-        .role_grants
+    ctx.role_grants
         .create(&CreateRoleGrantInput {
             role_key: "admin".to_string(),
             user_id: user.id.clone(),
@@ -373,7 +391,7 @@ async fn test_update_show() -> Result<()> {
         })
         .await?;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         UPDATE_SHOW,
         json!({
             "id": show.id,
@@ -383,7 +401,7 @@ async fn test_update_show() -> Result<()> {
         }),
         Some(token),
     )?;
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -399,8 +417,8 @@ async fn test_update_show() -> Result<()> {
     assert_eq!(json_show["summary"], "Something else");
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -443,9 +461,14 @@ async fn test_update_show_not_found() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_update_show_requires_authn() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        graphql,
+        ctx,
+        ..
+    } = TestUtils::init().await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -455,7 +478,7 @@ async fn test_update_show_requires_authn() -> Result<()> {
         })
         .await?;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         UPDATE_SHOW,
         json!({
             "id": show.id,
@@ -465,7 +488,7 @@ async fn test_update_show_requires_authn() -> Result<()> {
         }),
         None,
     )?;
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -477,7 +500,7 @@ async fn test_update_show_requires_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.shows.delete(&show.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -486,18 +509,23 @@ async fn test_update_show_requires_authn() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_update_show_requires_authz() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a User
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -507,7 +535,7 @@ async fn test_update_show_requires_authz() -> Result<()> {
         })
         .await?;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         UPDATE_SHOW,
         json!({
             "id": show.id,
@@ -517,7 +545,7 @@ async fn test_update_show_requires_authz() -> Result<()> {
         }),
         Some(token),
     )?;
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -529,8 +557,8 @@ async fn test_update_show_requires_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -549,18 +577,23 @@ const DELETE_SHOW: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_delete_show() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a User
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -571,8 +604,7 @@ async fn test_delete_show() -> Result<()> {
         .await?;
 
     // Grant the admin role to this User for this Show
-    utils
-        .role_grants
+    ctx.role_grants
         .create(&CreateRoleGrantInput {
             role_key: "admin".to_string(),
             user_id: user.id.clone(),
@@ -581,10 +613,8 @@ async fn test_delete_show() -> Result<()> {
         })
         .await?;
 
-    let req = utils
-        .graphql
-        .query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
-    let resp = utils.http_client.request(req).await?;
+    let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -595,7 +625,7 @@ async fn test_delete_show() -> Result<()> {
     assert!(json["data"]["deleteShow"].as_bool().unwrap());
 
     // Clean up
-    utils.users.delete(&user.id).await?;
+    ctx.users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -629,9 +659,14 @@ async fn test_delete_show_not_found() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_delete_show_requires_authn() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        graphql,
+        ctx,
+        ..
+    } = TestUtils::init().await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -641,10 +676,8 @@ async fn test_delete_show_requires_authn() -> Result<()> {
         })
         .await?;
 
-    let req = utils
-        .graphql
-        .query(DELETE_SHOW, json!({"id": show.id}), None)?;
-    let resp = utils.http_client.request(req).await?;
+    let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), None)?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -656,7 +689,7 @@ async fn test_delete_show_requires_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.shows.delete(&show.id).await?;
+    ctx.shows.delete(&show.id).await?;
 
     Ok(())
 }
@@ -665,18 +698,23 @@ async fn test_delete_show_requires_authn() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_delete_show_requires_authz() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a User
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let show = utils
+    let show = ctx
         .shows
         .create(&CreateShowInput {
             title: "Test Show".to_string(),
@@ -686,10 +724,8 @@ async fn test_delete_show_requires_authz() -> Result<()> {
         })
         .await?;
 
-    let req = utils
-        .graphql
-        .query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
-    let resp = utils.http_client.request(req).await?;
+    let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
+    let resp = http_client.request(req).await?;
 
     let status = resp.status();
 
@@ -701,8 +737,8 @@ async fn test_delete_show_requires_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.shows.delete(&show.id).await?;
-    utils.users.delete(&user.id).await?;
+    ctx.shows.delete(&show.id).await?;
+    ctx.users.delete(&user.id).await?;
 
     Ok(())
 }

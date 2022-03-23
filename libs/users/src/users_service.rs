@@ -40,8 +40,8 @@ pub struct DefaultUsersService {
 /// The default `UsersService` implementation
 impl DefaultUsersService {
     /// Create a new `UsersService` instance
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        Self { db: db.clone() }
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
+        Self { db }
     }
 }
 

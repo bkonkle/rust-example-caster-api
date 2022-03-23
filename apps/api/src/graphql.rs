@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_graphql::{EmptySubscription, MergedObject, Schema};
 use oso::{Oso, PolarClass};
+use std::sync::Arc;
 
 use caster_shows::{
     episode_model::Episode,
@@ -16,9 +17,8 @@ use caster_users::{
     users_resolver::{UsersMutation, UsersQuery},
     AUTHORIZATION as PROFILES_AUTHZ,
 };
-use caster_utils::config::Config;
 
-use crate::Dependencies;
+use crate::Context;
 
 #[derive(MergedObject, Default)]
 pub struct Query(UsersQuery, ProfilesQuery, ShowsQuery, EpisodesQuery);
@@ -36,15 +36,7 @@ pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 
 /// Initialize all necessary dependencies to create a `GraphQLSchema`. Very simple dependency
 /// injection based on async-graphql's `.data()` calls.
-pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<GraphQLSchema> {
-    let Dependencies {
-        users,
-        profiles,
-        shows,
-        episodes,
-        role_grants,
-    } = deps;
-
+pub fn create_schema(ctx: Arc<Context>) -> Result<GraphQLSchema> {
     // Set up authorization
     let mut oso = Oso::new();
 
@@ -58,13 +50,13 @@ pub fn create_schema(deps: Dependencies, config: &'static Config) -> Result<Grap
     // Inject the initialized services into the `Schema` instance.
     Ok(
         Schema::build(Query::default(), Mutation::default(), EmptySubscription)
-            .data(config)
+            .data(ctx.config)
             .data(oso)
-            .data(users)
-            .data(profiles)
-            .data(role_grants)
-            .data(shows)
-            .data(episodes)
+            .data(ctx.users.clone())
+            .data(ctx.profiles.clone())
+            .data(ctx.role_grants.clone())
+            .data(ctx.shows.clone())
+            .data(ctx.episodes.clone())
             .finish(),
     )
 }

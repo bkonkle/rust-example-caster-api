@@ -30,8 +30,8 @@ pub struct DefaultRoleGrantsService {
 /// The default `RoleGrantsService` implementation
 impl DefaultRoleGrantsService {
     /// Create a new `RoleGrantsService` instance
-    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
-        Self { db: db.clone() }
+    pub fn new(db: Arc<DatabaseConnection>) -> Self {
+        Self { db }
     }
 }
 
