@@ -31,18 +31,23 @@ const CREATE_PROFILE: &str = "
 #[tokio::test]
 #[ignore]
 async fn test_create_profile() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user and profile with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
@@ -53,7 +58,7 @@ async fn test_create_profile() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -67,9 +72,8 @@ async fn test_create_profile() -> Result<()> {
     assert_eq!(json_user["id"], user.id.clone());
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils
-        .profiles
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles
         .delete(json_profile["id"].as_str().unwrap())
         .await?;
 
@@ -80,19 +84,22 @@ async fn test_create_profile() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_create_profile_requires_email_user_id() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ..
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         email,
         ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
-    let req = utils
-        .graphql
-        .query(CREATE_PROFILE, json!({ "input": {}}), Some(token))?;
+    let req = graphql.query(CREATE_PROFILE, json!({ "input": {}}), Some(token))?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -105,7 +112,7 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
     );
 
     // Now provide the "email" and try again
-    let req = utils.graphql.query(
+    let req = graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
@@ -115,7 +122,7 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -168,18 +175,23 @@ async fn test_create_profile_authn() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_create_profile_authz() -> Result<()> {
-    let utils = TestUtils::init().await?;
+    let TestUtils {
+        http_client,
+        oauth,
+        graphql,
+        ctx,
+    } = TestUtils::init().await?;
 
     let Credentials {
         access_token: token,
         username,
         email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user and profile with this username
-    let user = utils.users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
-    let req = utils.graphql.query(
+    let req = graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
@@ -190,7 +202,7 @@ async fn test_create_profile_authz() -> Result<()> {
         Some(token),
     )?;
 
-    let resp = utils.http_client.request(req).await?;
+    let resp = http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -201,7 +213,7 @@ async fn test_create_profile_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
+    ctx.users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -229,6 +241,7 @@ const GET_PROFILE: &str = "
 #[ignore]
 async fn test_get_profile() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -258,8 +271,8 @@ async fn test_get_profile() -> Result<()> {
     assert_eq!(json_user["id"], user.id);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -272,8 +285,7 @@ async fn test_get_profile_empty() -> Result<()> {
         http_client,
         oauth,
         graphql,
-        users,
-        ..
+        ctx,
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -283,7 +295,7 @@ async fn test_get_profile_empty() -> Result<()> {
     } = oauth.get_credentials(TestUser::Test).await;
 
     // Create a user with this username
-    let user = users.create(username).await?;
+    let user = ctx.users.create(username).await?;
 
     let req = graphql.query(GET_PROFILE, json!({ "id": "dummy-id",}), Some(token))?;
 
@@ -297,7 +309,7 @@ async fn test_get_profile_empty() -> Result<()> {
     assert_eq!(json["data"]["getProfile"], Value::Null);
 
     // Clean up
-    users.delete(&user.id).await?;
+    ctx.users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -307,6 +319,7 @@ async fn test_get_profile_empty() -> Result<()> {
 #[ignore]
 async fn test_get_profile_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         username, email, ..
@@ -333,8 +346,8 @@ async fn test_get_profile_authn() -> Result<()> {
     assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -344,6 +357,7 @@ async fn test_get_profile_authn() -> Result<()> {
 #[ignore]
 async fn test_get_profile_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -374,8 +388,8 @@ async fn test_get_profile_authz() -> Result<()> {
     assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -419,6 +433,7 @@ const GET_MANY_PROFILES: &str = "
 #[ignore]
 async fn test_get_many_profiles() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -465,10 +480,10 @@ async fn test_get_many_profiles() -> Result<()> {
     assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
-    utils.users.delete(&other_user.id).await?;
-    utils.profiles.delete(&other_profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&other_user.id).await?;
+    ctx.profiles.delete(&other_profile.id).await?;
 
     Ok(())
 }
@@ -478,6 +493,7 @@ async fn test_get_many_profiles() -> Result<()> {
 #[ignore]
 async fn test_get_many_profiles_anon() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         username, email, ..
@@ -503,8 +519,8 @@ async fn test_get_many_profiles_anon() -> Result<()> {
     assert_eq!(json_profile["user"], Value::Null);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -534,6 +550,7 @@ const UPDATE_PROFILE: &str = "
 #[ignore]
 async fn test_update_profile() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -572,8 +589,8 @@ async fn test_update_profile() -> Result<()> {
     assert_eq!(json_user["id"], user.id);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -583,6 +600,7 @@ async fn test_update_profile() -> Result<()> {
 #[ignore]
 async fn test_update_profile_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         username, email, ..
@@ -613,8 +631,8 @@ async fn test_update_profile_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -661,6 +679,7 @@ async fn test_update_profile_not_found() -> Result<()> {
 #[ignore]
 async fn test_update_profile_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -698,10 +717,10 @@ async fn test_update_profile_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
-    utils.users.delete(&other_user.id).await?;
-    utils.profiles.delete(&other_profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&other_user.id).await?;
+    ctx.profiles.delete(&other_profile.id).await?;
 
     Ok(())
 }
@@ -721,6 +740,7 @@ const DELETE_PROFILE: &str = "
 #[ignore]
 async fn test_delete_profile() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -745,7 +765,7 @@ async fn test_delete_profile() -> Result<()> {
     assert!(json["data"]["deleteProfile"].as_bool().unwrap());
 
     // Clean up
-    utils.users.delete(&user.id).await?;
+    ctx.users.delete(&user.id).await?;
 
     Ok(())
 }
@@ -755,6 +775,7 @@ async fn test_delete_profile() -> Result<()> {
 #[ignore]
 async fn test_delete_profile_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         username, email, ..
@@ -778,8 +799,8 @@ async fn test_delete_profile_authn() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
 
     Ok(())
 }
@@ -817,6 +838,7 @@ async fn test_delete_profile_not_found() -> Result<()> {
 #[ignore]
 async fn test_delete_profile_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
+    let ctx = utils.ctx.clone();
 
     let Credentials {
         access_token: token,
@@ -847,10 +869,10 @@ async fn test_delete_profile_authz() -> Result<()> {
     assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     // Clean up
-    utils.users.delete(&user.id).await?;
-    utils.profiles.delete(&profile.id).await?;
-    utils.users.delete(&other_user.id).await?;
-    utils.profiles.delete(&other_profile.id).await?;
+    ctx.users.delete(&user.id).await?;
+    ctx.profiles.delete(&profile.id).await?;
+    ctx.users.delete(&other_user.id).await?;
+    ctx.profiles.delete(&other_profile.id).await?;
 
     Ok(())
 }

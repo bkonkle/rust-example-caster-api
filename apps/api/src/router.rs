@@ -6,7 +6,10 @@ use std::{convert::Infallible, sync::Arc};
 use warp::{http::Response as HttpResponse, Rejection};
 use warp::{Filter, Reply};
 
-use crate::graphql::{Mutation, Query};
+use crate::{
+    graphql::{Mutation, Query},
+    Context,
+};
 use caster_auth::{jwks::JWKS, with_auth, Subject};
 
 /// Add context to the GraphQL Request
@@ -35,7 +38,7 @@ async fn with_context(
 
 /// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
 pub fn create_routes(
-    users: Arc<dyn UsersService>,
+    context: Arc<Context>,
     schema: Schema<Query, Mutation, EmptySubscription>,
     jwks: &'static JWKS,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
@@ -43,7 +46,7 @@ pub fn create_routes(
         // Add the Subject to the request handler
         .and(with_auth(jwks))
         // Add the UsersService to the request handler
-        .and(warp::any().map(move || users.clone()))
+        .and(warp::any().map(move || context.users.clone()))
         // Add details to the GraphQL request context
         .and_then(with_context);
 

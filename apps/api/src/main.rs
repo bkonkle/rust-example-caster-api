@@ -1,10 +1,12 @@
 //! # A GraphQL server written in Rust
 #![forbid(unsafe_code)]
 
+use std::sync::Arc;
+
 use anyhow::Result;
 use dotenv::dotenv;
 
-use caster_api::run;
+use caster_api::{run, Context};
 use caster_utils::config::get_config;
 
 #[macro_use]
@@ -20,8 +22,9 @@ async fn main() -> Result<()> {
     pretty_env_logger::init();
 
     let config = get_config();
+    let context = Arc::new(Context::init(config).await?);
 
-    let (addr, server) = run(config).await?;
+    let (addr, server) = run(context).await?;
 
     if config.is_dev() {
         info!("Started at: http://localhost:{port}", port = addr.port());

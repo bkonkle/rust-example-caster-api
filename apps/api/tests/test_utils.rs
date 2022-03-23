@@ -2,23 +2,19 @@ use anyhow::Result;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
-use sea_orm::DatabaseConnection;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
-use caster_api::{run, Dependencies};
+use caster_api::{run, Context};
 use caster_shows::{
-    episode_model::Episode, episode_mutations::CreateEpisodeInput,
-    episodes_service::EpisodesService, show_model::Show, show_mutations::CreateShowInput,
-    shows_service::ShowsService,
+    episode_model::Episode, episode_mutations::CreateEpisodeInput, show_model::Show,
+    show_mutations::CreateShowInput,
 };
 use caster_users::{
-    profile_model::Profile, profile_mutations::CreateProfileInput,
-    profiles_service::ProfilesService, role_grants_service::RoleGrantsService, user_model::User,
-    users_service::UsersService,
+    profile_model::Profile, profile_mutations::CreateProfileInput, user_model::User,
 };
 use caster_utils::{
-    config::{get_config, Config},
+    config::get_config,
     http::http_client,
     test::{graphql::GraphQL, oauth2::OAuth2Utils},
 };
@@ -26,8 +22,8 @@ use caster_utils::{
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 static OAUTH: OnceCell<OAuth2Utils> = OnceCell::new();
 
-pub async fn run_server(config: &'static Config) -> Result<SocketAddr> {
-    let (addr, server) = run(config).await?;
+pub async fn run_server(context: Arc<Context>) -> Result<SocketAddr> {
+    let (addr, server) = run(context).await?;
 
     // Spawn the server in the background
     tokio::spawn(server);
@@ -41,16 +37,10 @@ pub async fn run_server(config: &'static Config) -> Result<SocketAddr> {
 
 /// Common test utils
 pub struct TestUtils {
-    pub config: &'static Config,
     pub http_client: &'static Client<HttpsConnector<HttpConnector>>,
     pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
-    pub db: Arc<DatabaseConnection>,
-    pub users: Arc<dyn UsersService>,
-    pub profiles: Arc<dyn ProfilesService>,
-    pub role_grants: Arc<dyn RoleGrantsService>,
-    pub shows: Arc<dyn ShowsService>,
-    pub episodes: Arc<dyn EpisodesService>,
+    pub ctx: Arc<Context>,
 }
 
 impl TestUtils {
@@ -60,39 +50,25 @@ impl TestUtils {
 
         let config = get_config();
 
-        let http_client = &HTTP_CLIENT;
-        let addr = run_server(config).await?;
+        // This needs to be created anew each time because the database connection can't be shared
+        // when the Tokio runtime is being stopped and re-started between tests
+        let ctx = Arc::new(Context::init(config).await?);
 
         let oauth = OAUTH.get_or_init(|| OAuth2Utils::new(config));
+
+        let http_client = &HTTP_CLIENT;
+        let addr = run_server(ctx.clone()).await?;
 
         let graphql = GraphQL::new(format!(
             "http://localhost:{port}/graphql",
             port = addr.port()
         ));
 
-        // This needs to be created anew each time because the database connection  can't be shared
-        // when the Tokio runtime is being stopped and re-started between tests
-        let Dependencies {
-            db,
-            users,
-            profiles,
-            role_grants,
-            shows,
-            episodes,
-            ..
-        } = Dependencies::init(config).await?;
-
         Ok(TestUtils {
-            config,
             http_client,
             oauth,
             graphql,
-            db,
-            users,
-            profiles,
-            role_grants,
-            shows,
-            episodes,
+            ctx,
         })
     }
 
@@ -103,9 +79,10 @@ impl TestUtils {
         username: &str,
         email: &str,
     ) -> Result<(User, Profile)> {
-        let user = self.users.create(username).await?;
+        let user = self.ctx.users.create(username).await?;
 
         let profile = self
+            .ctx
             .profiles
             .create(
                 &CreateProfileInput {
@@ -132,6 +109,7 @@ impl TestUtils {
         episode_title: &str,
     ) -> Result<(Show, Episode)> {
         let show = self
+            .ctx
             .shows
             .create(&CreateShowInput {
                 title: show_title.to_string(),
@@ -142,6 +120,7 @@ impl TestUtils {
             .await?;
 
         let episode = self
+            .ctx
             .episodes
             .create(
                 &CreateEpisodeInput {

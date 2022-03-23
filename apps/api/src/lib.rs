@@ -28,7 +28,7 @@ mod router;
 extern crate log;
 
 /// Dependencies needed by the resolvers
-pub struct Dependencies {
+pub struct Context {
     /// The app config
     pub config: &'static Config,
 
@@ -52,43 +52,30 @@ pub struct Dependencies {
 }
 
 /// Intialize dependencies
-impl Dependencies {
+impl Context {
     /// Create a new set of dependencies based on the given shared resources
     pub async fn init(config: &'static Config) -> Result<Self> {
         let db = Arc::new(sea_orm::Database::connect(&config.database.url).await?);
 
-        // Services
-        let users = Arc::new(DefaultUsersService::new(db.clone())) as Arc<dyn UsersService>;
-        let profiles =
-            Arc::new(DefaultProfilesService::new(db.clone())) as Arc<dyn ProfilesService>;
-        let role_grants =
-            Arc::new(DefaultRoleGrantsService::new(db.clone())) as Arc<dyn RoleGrantsService>;
-        let shows = Arc::new(DefaultShowsService::new(db.clone())) as Arc<dyn ShowsService>;
-        let episodes =
-            Arc::new(DefaultEpisodesService::new(db.clone())) as Arc<dyn EpisodesService>;
-
         Ok(Self {
             config,
+            users: Arc::new(DefaultUsersService::new(db.clone())),
+            profiles: Arc::new(DefaultProfilesService::new(db.clone())),
+            role_grants: Arc::new(DefaultRoleGrantsService::new(db.clone())),
+            shows: Arc::new(DefaultShowsService::new(db.clone())),
+            episodes: Arc::new(DefaultEpisodesService::new(db.clone())),
             db,
-            users,
-            profiles,
-            role_grants,
-            shows,
-            episodes,
         })
     }
 }
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(config: &'static Config) -> Result<(SocketAddr, impl Future<Output = ()>)> {
-    let port = config.port;
-    let jwks = get_jwks(config).await;
+pub async fn run(context: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+    let port = context.config.port;
+    let jwks = get_jwks(context.config).await;
 
-    let deps = Dependencies::init(config).await?;
-    let users = deps.users.clone();
-
-    let schema = create_schema(deps)?;
-    let router = create_routes(users, schema, jwks);
+    let schema = create_schema(context.clone())?;
+    let router = create_routes(context, schema, jwks);
 
     Ok(warp::serve(
         router

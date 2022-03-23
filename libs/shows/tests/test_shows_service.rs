@@ -34,7 +34,7 @@ async fn test_shows_service_get_show() -> Result<()> {
             DatabaseBackend::Postgres,
             r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."id" = $1 LIMIT $2"#,
             vec!["test-show".into(), 1u64.into()]
-        ),]
+        )]
     );
 
     Ok(())
