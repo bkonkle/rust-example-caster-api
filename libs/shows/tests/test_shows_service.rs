@@ -12,7 +12,7 @@ mod shows_factory;
 
 #[tokio::test]
 async fn test_shows_service_get_model() -> Result<()> {
-    let show = shows_factory::create_show();
+    let show = shows_factory::create_show("Test Show");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -46,7 +46,7 @@ async fn test_shows_service_get_model() -> Result<()> {
 
 #[tokio::test]
 async fn test_shows_service_get() -> Result<()> {
-    let show = shows_factory::create_show();
+    let show = shows_factory::create_show("Test Show");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -80,8 +80,8 @@ async fn test_shows_service_get() -> Result<()> {
 
 #[tokio::test]
 async fn test_shows_service_get_many() -> Result<()> {
-    let show = shows_factory::create_show();
-    let other_show = shows_factory::create_show();
+    let show = shows_factory::create_show("Test Show");
+    let other_show = shows_factory::create_show("Test Show");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -94,7 +94,7 @@ async fn test_shows_service_get_many() -> Result<()> {
     let result = service
         .get_many(
             Some(ShowCondition {
-                title: Some("Test Title".to_string()),
+                title: Some("Test Show".to_string()),
             }),
             None,
             None,
@@ -124,7 +124,7 @@ async fn test_shows_service_get_many() -> Result<()> {
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
             r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."title" = $1"#,
-            vec!["Test Title".into()]
+            vec!["Test Show".into()]
         )]
     );
 
@@ -134,19 +134,23 @@ async fn test_shows_service_get_many() -> Result<()> {
 #[tokio::test]
 async fn test_shows_service_get_many_pagination() -> Result<()> {
     let shows = vec![
-        shows_factory::create_show(),
-        shows_factory::create_show(),
-        shows_factory::create_show(),
-        shows_factory::create_show(),
-        shows_factory::create_show(),
+        shows_factory::create_show("Test Show 1"),
+        shows_factory::create_show("Test Show 2"),
+        shows_factory::create_show("Test Show 3"),
+        shows_factory::create_show("Test Show 4"),
+        shows_factory::create_show("Test Show 5"),
     ];
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
             .append_query_results(vec![vec![maplit::btreemap! {
-                "num_items" => Into::<Value>::into(11),
+                // First query result
+                "num_items" => Into::<Value>::into(11i64),
             }]])
-            .append_query_results(vec![shows.clone()])
+            .append_query_results(vec![
+                // Second query result
+                shows.clone(),
+            ])
             .into_connection(),
     );
 
@@ -156,8 +160,8 @@ async fn test_shows_service_get_many_pagination() -> Result<()> {
         .get_many(
             None,
             Some(vec![ShowsOrderBy::CreatedAtDesc]),
-            Some(5),
             Some(2),
+            Some(5),
         )
         .await?;
 
@@ -170,21 +174,28 @@ async fn test_shows_service_get_many_pagination() -> Result<()> {
         result,
         ManyResponse {
             data: shows,
-            count: 11,
-            total: 2,
-            page: 1,
-            page_count: 1,
+            count: 5,
+            total: 11,
+            page: 2,
+            page_count: 3,
         }
     );
 
     // Check the transaction log
     assert_eq!(
         db.into_transaction_log(),
-        vec![Transaction::from_sql_and_values(
-            DatabaseBackend::Postgres,
-            r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."title" = $1"#,
-            vec!["Test Title".into()]
-        )]
+        vec![
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"SELECT COUNT(*) AS num_items FROM (SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" ORDER BY "shows"."created_at" DESC) AS "sub_query""#,
+                vec![]
+            ),
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" ORDER BY "shows"."created_at" DESC LIMIT $1 OFFSET $2"#,
+                vec![5u64.into(), 5u64.into()]
+            )
+        ]
     );
 
     Ok(())

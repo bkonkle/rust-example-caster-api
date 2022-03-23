@@ -1,11 +1,12 @@
 use fake::{Fake, Faker};
+use slug::slugify;
 
 use caster_shows::{episode_model::Episode, show_model::Show};
 
-pub fn create_show() -> Show {
+pub fn create_show(title: &str) -> Show {
     Show {
-        id: String::from("test-show"),
-        title: String::from("Test Show"),
+        id: slugify(title),
+        title: title.to_string(),
         summary: Faker.fake(),
         picture: Faker.fake(),
         content: None,
@@ -15,12 +16,12 @@ pub fn create_show() -> Show {
 }
 
 #[allow(dead_code)]
-pub fn create_episode_from_show_option(show: Option<Show>) -> Episode {
-    let show = show.unwrap_or_else(create_show);
+pub fn create_episode_from_show_option(title: &str, show: Option<Show>) -> Episode {
+    let show = show.unwrap_or_else(|| create_show(title));
 
     Episode {
-        id: String::from("test-episode"),
-        title: String::from("Test Episode"),
+        id: slugify(title),
+        title: title.to_string(),
         summary: Faker.fake(),
         picture: Faker.fake(),
         content: None,
@@ -32,11 +33,11 @@ pub fn create_episode_from_show_option(show: Option<Show>) -> Episode {
 }
 
 #[allow(dead_code)]
-pub fn create_episode_from_show(show: Show) -> Episode {
-    create_episode_from_show_option(Some(show))
+pub fn create_episode_from_show(title: &str, show: Show) -> Episode {
+    create_episode_from_show_option(title, Some(show))
 }
 
 #[allow(dead_code)]
-pub fn create_episode() -> Episode {
-    create_episode_from_show_option(None)
+pub fn create_episode(title: &str) -> Episode {
+    create_episode_from_show_option(title, None)
 }
