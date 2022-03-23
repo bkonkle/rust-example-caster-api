@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sea_orm::{DatabaseBackend, MockDatabase};
+use sea_orm::{DatabaseBackend, MockDatabase, Transaction};
 use std::sync::Arc;
 
 use caster_shows::shows_service::{DefaultShowsService, ShowsService};
@@ -20,13 +20,22 @@ async fn test_shows_service_get_show() -> Result<()> {
 
     let result = service.get_model(&show.id).await?;
 
-    // println!("{:?}", db.into_transaction_log());
+    // Destroy the service to clean up the reference count
+    drop(service);
 
-    if let Some(result_show) = result {
-        assert_eq!(result_show, show);
-    } else {
-        panic!("Result was None");
-    }
+    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
+
+    assert_eq!(result, Some(show));
+
+    // Check the transaction log
+    assert_eq!(
+        db.into_transaction_log(),
+        vec![Transaction::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."id" = $1 LIMIT $2"#,
+            vec!["test-show".into(), 1u64.into()]
+        ),]
+    );
 
     Ok(())
 }
