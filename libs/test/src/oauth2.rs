@@ -4,8 +4,8 @@ use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
 
-use crate::config::Config;
-use crate::http::http_client;
+use caster_utils::config::Config;
+use caster_utils::http::http_client;
 
 static TEST_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
 static ALT_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();

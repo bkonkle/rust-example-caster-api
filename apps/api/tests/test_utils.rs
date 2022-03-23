@@ -10,14 +10,11 @@ use caster_shows::{
     episode_model::Episode, episode_mutations::CreateEpisodeInput, show_model::Show,
     show_mutations::CreateShowInput,
 };
+use caster_test::{graphql::GraphQL, oauth2::OAuth2Utils};
 use caster_users::{
     profile_model::Profile, profile_mutations::CreateProfileInput, user_model::User,
 };
-use caster_utils::{
-    config::get_config,
-    http::http_client,
-    test::{graphql::GraphQL, oauth2::OAuth2Utils},
-};
+use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 static OAUTH: OnceCell<OAuth2Utils> = OnceCell::new();
