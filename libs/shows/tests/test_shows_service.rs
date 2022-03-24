@@ -1,9 +1,11 @@
 use anyhow::Result;
 use caster_utils::pagination::ManyResponse;
-use sea_orm::{DatabaseBackend, JsonValue, MockDatabase, Transaction, Value};
+use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
 use caster_shows::{
+    show_model::Show,
+    show_mutations::{CreateShowInput, UpdateShowInput},
     show_queries::{ShowCondition, ShowsOrderBy},
     shows_service::{DefaultShowsService, ShowsService},
 };
@@ -194,6 +196,198 @@ async fn test_shows_service_get_many_pagination() -> Result<()> {
                 DatabaseBackend::Postgres,
                 r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" ORDER BY "shows"."created_at" DESC LIMIT $1 OFFSET $2"#,
                 vec![5u64.into(), 5u64.into()]
+            )
+        ]
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_shows_service_create() -> Result<()> {
+    let show = shows_factory::create_show("Test Show");
+
+    let db = Arc::new(
+        MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results(vec![vec![show.clone()]])
+            .into_connection(),
+    );
+
+    let service = DefaultShowsService::new(db.clone());
+
+    let result = service
+        .create(&CreateShowInput {
+            title: show.title.clone(),
+            summary: show.summary.clone(),
+            picture: show.picture.clone(),
+            content: show.content.clone(),
+        })
+        .await?;
+
+    // Destroy the service to clean up the reference count
+    drop(service);
+
+    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
+
+    assert_eq!(result, show);
+
+    // Check the transaction log
+    assert_eq!(
+        db.into_transaction_log(),
+        vec![Transaction::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            r#"INSERT INTO "shows" ("title", "summary", "picture", "content") VALUES ($1, $2, $3, $4) RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content""#,
+            vec![
+                show.title.into(),
+                show.summary.into(),
+                show.picture.into(),
+                show.content.into()
+            ]
+        )]
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_shows_service_update_model() -> Result<()> {
+    let show = shows_factory::create_show("Test Show");
+    let updated = Show {
+        title: "Updated Show".to_string(),
+        ..show.clone()
+    };
+
+    let db = Arc::new(
+        MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results(vec![vec![updated.clone()]])
+            .into_connection(),
+    );
+
+    let service = DefaultShowsService::new(db.clone());
+
+    let result = service
+        .update_model(
+            show.clone(),
+            &UpdateShowInput {
+                title: Some(updated.title.clone()),
+                summary: None,
+                picture: None,
+                content: None,
+            },
+        )
+        .await?;
+
+    // Destroy the service to clean up the reference count
+    drop(service);
+
+    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
+
+    assert_eq!(result, updated.clone());
+
+    // Check the transaction log
+    assert_eq!(
+        db.into_transaction_log(),
+        vec![Transaction::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            r#"UPDATE "shows" SET "title" = $1 WHERE "shows"."id" = $2 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content""#,
+            vec![updated.title.into(), show.id.into()]
+        )]
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_shows_service_update() -> Result<()> {
+    let show = shows_factory::create_show("Test Show");
+    let updated = Show {
+        title: "Updated Show".to_string(),
+        ..show.clone()
+    };
+
+    let db = Arc::new(
+        MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results(vec![vec![show.clone()], vec![updated.clone()]])
+            .into_connection(),
+    );
+
+    let service = DefaultShowsService::new(db.clone());
+
+    let result = service
+        .update(
+            &show.id,
+            &UpdateShowInput {
+                title: Some(updated.title.clone()),
+                summary: None,
+                picture: None,
+                content: None,
+            },
+        )
+        .await?;
+
+    // Destroy the service to clean up the reference count
+    drop(service);
+
+    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
+
+    assert_eq!(result, updated.clone());
+
+    // Check the transaction log
+    assert_eq!(
+        db.into_transaction_log(),
+        vec![
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."id" = $1 LIMIT $2"#,
+                vec![show.id.clone().into(), 1u64.into()]
+            ),
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"UPDATE "shows" SET "title" = $1 WHERE "shows"."id" = $2 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content""#,
+                vec![updated.title.into(), show.id.into()]
+            )
+        ]
+    );
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_shows_service_delete() -> Result<()> {
+    let show = shows_factory::create_show("Test Show");
+
+    let db = Arc::new(
+        MockDatabase::new(DatabaseBackend::Postgres)
+            .append_query_results(vec![vec![show.clone()]])
+            .append_exec_results(vec![MockExecResult {
+                last_insert_id: 0,
+                rows_affected: 1,
+            }])
+            .into_connection(),
+    );
+
+    let service = DefaultShowsService::new(db.clone());
+
+    service.delete(&show.id).await?;
+
+    // Destroy the service to clean up the reference count
+    drop(service);
+
+    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
+
+    // Check the transaction log
+    assert_eq!(
+        db.into_transaction_log(),
+        vec![
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."id" = $1 LIMIT $2"#,
+                vec![show.id.clone().into(), 1u64.into()]
+            ),
+            Transaction::from_sql_and_values(
+                DatabaseBackend::Postgres,
+                r#"DELETE FROM "shows" WHERE "shows"."id" = $1"#,
+                vec![show.id.into()]
             )
         ]
     );
