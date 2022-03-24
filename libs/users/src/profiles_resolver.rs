@@ -40,7 +40,7 @@ impl ProfilesQuery {
                 // If the User and Profile are present, censor the Profile based on the User id
                 profile.map(|p| {
                     Profile {
-                        user: Box::new(Some(user.clone())),
+                        user: Some(user.clone()),
                         ..p
                     }
                     .censor(&Some(user_id))

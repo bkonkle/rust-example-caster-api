@@ -459,6 +459,7 @@ dependencies = [
  "hyper",
  "jsonpath_lib",
  "jsonwebtoken",
+ "maplit",
  "mockall",
  "once_cell",
  "oso",
@@ -467,6 +468,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "slug",
  "sqlx",
  "tokio",
 ]

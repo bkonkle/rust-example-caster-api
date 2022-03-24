@@ -36,7 +36,7 @@ tokio = { version = "1", features = ["full"] }
 [dev-dependencies]
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 jsonpath_lib = "0.3.0"
+maplit = { version = "^1" }
 mockall = "0.11"
 rand = "0.8"
 slug = "0.1.4"
-maplit = { version = "^1" }
