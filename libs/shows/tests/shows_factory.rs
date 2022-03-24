@@ -16,7 +16,7 @@ pub fn create_show(title: &str) -> Show {
 }
 
 #[allow(dead_code)]
-pub fn create_episode_from_show_option(title: &str, show: Option<Show>) -> Episode {
+pub fn create_episode_for_show_option(title: &str, show: Option<Show>) -> Episode {
     let show = show.unwrap_or_else(|| create_show(title));
 
     Episode {
@@ -33,11 +33,11 @@ pub fn create_episode_from_show_option(title: &str, show: Option<Show>) -> Episo
 }
 
 #[allow(dead_code)]
-pub fn create_episode_from_show(title: &str, show: Show) -> Episode {
-    create_episode_from_show_option(title, Some(show))
+pub fn create_episode_for_show(title: &str, show: Show) -> Episode {
+    create_episode_for_show_option(title, Some(show))
 }
 
 #[allow(dead_code)]
 pub fn create_episode(title: &str) -> Episode {
-    create_episode_from_show_option(title, None)
+    create_episode_for_show_option(title, None)
 }
