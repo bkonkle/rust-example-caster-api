@@ -108,6 +108,24 @@ pub struct Model {
     pub user_id: Option<String>,
 }
 
+impl Model {
+    pub fn into_profile_with_user(self, user: User) -> Profile {
+        Profile {
+            id: self.id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+            email: Some(self.email),
+            display_name: self.display_name,
+            picture: self.picture,
+            content: self.content,
+            city: self.city,
+            state_province: self.state_province,
+            user_id: Some(user.id.clone()),
+            user: Some(user),
+        }
+    }
+}
+
 /// `Profile` entity relationships
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
