@@ -10,7 +10,10 @@ use crate::{
     graphql::{Mutation, Query},
     Context,
 };
-use caster_auth::{jwks::JWKS, with_auth, Subject};
+use caster_auth::{
+    authenticate::{with_auth, Subject},
+    jwks::JWKS,
+};
 
 /// Add context to the GraphQL Request
 async fn with_context(

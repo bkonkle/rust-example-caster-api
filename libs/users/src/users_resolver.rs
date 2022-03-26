@@ -9,7 +9,7 @@ use crate::{
     user_mutations::{CreateUserInput, MutateUserResult, UpdateUserInput},
     users_service::UsersService,
 };
-use caster_auth::Subject;
+use caster_auth::authenticate::Subject;
 use caster_utils::errors::{as_graphql_error, graphql_error};
 
 /// The Query segment for Users
