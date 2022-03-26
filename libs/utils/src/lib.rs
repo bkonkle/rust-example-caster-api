@@ -7,9 +7,6 @@ pub mod config;
 /// Utilities for working with http/https requests
 pub mod http;
 
-/// Test utilities - not for use in Production code
-pub mod test;
-
 /// Error helpers for GraphQL
 pub mod errors;
 

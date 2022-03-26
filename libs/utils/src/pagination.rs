@@ -1,4 +1,7 @@
+use serde::{Deserialize, Serialize};
+
 /// A paginated response for an entity
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct ManyResponse<Model> {
     /// The page of data being returned
     pub data: Vec<Model>,
@@ -21,7 +24,8 @@ impl<Model> ManyResponse<Model> {
         page_size: Option<usize>,
     ) -> ManyResponse<Model> {
         let count = data.len();
-        let page_count = page_size.map(|page_size| total / page_size);
+        let page_count = page_size
+            .map(|page_size| total / page_size + if total % page_size != 0 { 1 } else { 0 });
 
         Self {
             data,

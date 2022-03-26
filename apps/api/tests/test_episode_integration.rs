@@ -4,7 +4,7 @@ use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
 use caster_shows::show_mutations::CreateShowInput;
-use caster_utils::test::oauth2::{Credentials, User as TestUser};
+use caster_test::oauth2::{Credentials, User as TestUser};
 
 mod test_utils;
 use test_utils::TestUtils;

@@ -46,7 +46,7 @@ pub struct Profile {
     pub user_id: Option<String>,
 
     /// The associated `User`
-    pub user: Box<Option<User>>,
+    pub user: Option<User>,
 }
 
 impl Profile {
@@ -67,7 +67,7 @@ impl Profile {
         } else {
             profile.email = None;
             profile.user_id = None;
-            profile.user = Box::new(None);
+            profile.user = None;
         }
 
         profile
@@ -108,6 +108,24 @@ pub struct Model {
     pub user_id: Option<String>,
 }
 
+impl Model {
+    pub fn into_profile_with_user(self, user: User) -> Profile {
+        Profile {
+            id: self.id,
+            created_at: self.created_at,
+            updated_at: self.updated_at,
+            email: Some(self.email),
+            display_name: self.display_name,
+            picture: self.picture,
+            content: self.content,
+            city: self.city,
+            state_province: self.state_province,
+            user_id: Some(user.id.clone()),
+            user: Some(user),
+        }
+    }
+}
+
 /// `Profile` entity relationships
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
@@ -142,7 +160,7 @@ impl From<Model> for Profile {
             city: model.city,
             state_province: model.state_province,
             user_id: model.user_id,
-            user: Box::new(None),
+            user: None,
         }
     }
 }
@@ -173,7 +191,7 @@ impl From<Vec<(Model, Option<User>)>> for ProfileList {
         ProfileList(
             data.into_iter()
                 .map(|(profile, user)| Profile {
-                    user: Box::new(user),
+                    user,
                     ..profile.into()
                 })
                 .collect(),
@@ -200,7 +218,7 @@ impl From<Option<Model>> for ProfileOption {
 impl From<Option<(Model, Option<User>)>> for ProfileOption {
     fn from(data: Option<(Model, Option<User>)>) -> ProfileOption {
         ProfileOption(data.map(|(profile, user)| Profile {
-            user: Box::new(user),
+            user,
             ..profile.into()
         }))
     }

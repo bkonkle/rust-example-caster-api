@@ -241,7 +241,7 @@ impl ProfilesService for DefaultProfilesService {
             .one(&*self.db)
             .await?;
 
-        created.user = Box::new(user);
+        created.user = user;
 
         Ok(created)
     }
@@ -300,7 +300,7 @@ impl ProfilesService for DefaultProfilesService {
         let mut updated: Profile = profile.update(&*self.db).await?.into();
 
         // Add back the User from above
-        updated.user = Box::new(user);
+        updated.user = user;
 
         Ok(updated)
     }

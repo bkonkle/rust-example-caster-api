@@ -27,8 +27,8 @@ pub trait ShowsService: Sync + Send {
         &self,
         condition: Option<ShowCondition>,
         order_by: Option<Vec<ShowsOrderBy>>,
-        page_size: Option<usize>,
         page: Option<usize>,
+        page_size: Option<usize>,
     ) -> Result<ManyResponse<Show>>;
 
     /// Create a `Show` with the given input

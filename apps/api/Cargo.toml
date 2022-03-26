@@ -43,6 +43,7 @@ warp = "0.3"
 
 [dev-dependencies]
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
+caster-test = { path = "../../libs/test" }
 hyper = "0.14"
 hyper-tls = "0.5"
 jsonpath_lib = "0.3.0"

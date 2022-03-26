@@ -1,4 +1,5 @@
 use anyhow::Result;
+use fake::{Fake, Faker};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
@@ -10,14 +11,11 @@ use caster_shows::{
     episode_model::Episode, episode_mutations::CreateEpisodeInput, show_model::Show,
     show_mutations::CreateShowInput,
 };
+use caster_test::{graphql::GraphQL, oauth2::OAuth2Utils};
 use caster_users::{
     profile_model::Profile, profile_mutations::CreateProfileInput, user_model::User,
 };
-use caster_utils::{
-    config::get_config,
-    http::http_client,
-    test::{graphql::GraphQL, oauth2::OAuth2Utils},
-};
+use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 static OAUTH: OnceCell<OAuth2Utils> = OnceCell::new();
@@ -88,11 +86,11 @@ impl TestUtils {
                 &CreateProfileInput {
                     email: email.to_string(),
                     user_id: user.id.clone(),
-                    display_name: None,
-                    picture: None,
+                    display_name: Faker.fake(),
+                    picture: Faker.fake(),
                     content: None,
-                    city: None,
-                    state_province: None,
+                    city: Faker.fake(),
+                    state_province: Faker.fake(),
                 },
                 &false,
             )
@@ -113,8 +111,8 @@ impl TestUtils {
             .shows
             .create(&CreateShowInput {
                 title: show_title.to_string(),
-                summary: None,
-                picture: None,
+                summary: Faker.fake(),
+                picture: Faker.fake(),
                 content: None,
             })
             .await?;
@@ -125,8 +123,8 @@ impl TestUtils {
             .create(
                 &CreateEpisodeInput {
                     title: episode_title.to_string(),
-                    summary: None,
-                    picture: None,
+                    summary: Faker.fake(),
+                    picture: Faker.fake(),
                     content: None,
                     show_id: show.id.clone(),
                 },
