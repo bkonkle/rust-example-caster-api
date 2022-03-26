@@ -47,7 +47,7 @@ pub fn create_profile(email: &str) -> ProfileModel {
 #[allow(dead_code)]
 pub fn create_role_grant_for_user(table: &str, id: &str, user: User) -> RoleGrant {
     RoleGrant {
-        id: Faker.fake(),
+        id: format!("{}-{}", user.id, id),
         created_at: Faker.fake(),
         updated_at: Faker.fake(),
         role_key: Faker.fake(),
