@@ -205,8 +205,8 @@ async fn test_profiles_service_get_many() -> Result<()> {
         db.into_transaction_log(),
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
-            r#"SELECT "profiles"."id", "profiles"."created_at", "profiles"."updated_at", "profiles"."email", "profiles"."display_name", "profiles"."picture", "profiles"."content", "profiles"."city", "profiles"."state_province", "profiles"."user_id" FROM "profiles" WHERE "profiles"."title" = $1"#,
-            vec!["test-profile-com".into()]
+            r#"SELECT "profiles"."id", "profiles"."created_at", "profiles"."updated_at", "profiles"."email", "profiles"."display_name", "profiles"."picture", "profiles"."content", "profiles"."city", "profiles"."state_province", "profiles"."user_id" FROM "profiles" WHERE "profiles"."email" = $1"#,
+            vec!["test@profile.com".into()]
         )]
     );
 
@@ -273,8 +273,8 @@ async fn test_profiles_service_get_many_with_related() -> Result<()> {
         db.into_transaction_log(),
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
-            r#"SELECT "profiles"."id" AS "A_id", "profiles"."created_at" AS "A_created_at", "profiles"."updated_at" AS "A_updated_at", "profiles"."email" AS "A_email", "profiles"."display_name" AS "A_display_name", "profiles"."picture" AS "A_picture", "profiles"."content" AS "A_content", "profiles"."city" AS "A_city", "profiles"."state_province" AS "A_state_province", "profiles"."user_id" AS "A_user_id", "users"."id" AS "B_id", "users"."created_at" AS "B_created_at", "users"."updated_at" AS "B_updated_at", "users"."username" AS "B_username", "users"."is_active" AS "B_is_active" FROM "profiles" LEFT JOIN "users" ON "profiles"."user_id" = "users"."id" WHERE "profiles"."title" = $1"#,
-            vec!["test-profile-com".into()]
+            r#"SELECT "profiles"."id" AS "A_id", "profiles"."created_at" AS "A_created_at", "profiles"."updated_at" AS "A_updated_at", "profiles"."email" AS "A_email", "profiles"."display_name" AS "A_display_name", "profiles"."picture" AS "A_picture", "profiles"."content" AS "A_content", "profiles"."city" AS "A_city", "profiles"."state_province" AS "A_state_province", "profiles"."user_id" AS "A_user_id", "users"."id" AS "B_id", "users"."created_at" AS "B_created_at", "users"."updated_at" AS "B_updated_at", "users"."username" AS "B_username", "users"."is_active" AS "B_is_active" FROM "profiles" LEFT JOIN "users" ON "profiles"."user_id" = "users"."id" WHERE "profiles"."email" = $1"#,
+            vec!["test@profile.com".into()]
         )]
     );
 
@@ -499,7 +499,7 @@ async fn test_profiles_service_create() -> Result<()> {
         db.into_transaction_log(),
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
-            r#"INSERT INTO "profiles" ("title", "summary", "picture", "content", "user_id") VALUES ($1, $2, $3, $4, $5) RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+            r#"INSERT INTO "profiles" ("email", "display_name", "picture", "content", "city", "state_province", "user_id") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
             vec![
                 profile.email.into(),
                 profile.display_name.into(),
@@ -557,7 +557,7 @@ async fn test_profiles_service_create_with_related() -> Result<()> {
         vec![
             Transaction::from_sql_and_values(
                 DatabaseBackend::Postgres,
-                r#"INSERT INTO "profiles" ("title", "summary", "picture", "content", "user_id") VALUES ($1, $2, $3, $4, $5) RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+                r#"INSERT INTO "profiles" ("email", "display_name", "picture", "content", "city", "state_province", "user_id") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
                 vec![
                     profile.email.into(),
                     profile.display_name.into(),
@@ -570,8 +570,8 @@ async fn test_profiles_service_create_with_related() -> Result<()> {
             ),
             Transaction::from_sql_and_values(
                 DatabaseBackend::Postgres,
-                r#"SELECT "users"."id", "users"."created_at", "users"."updated_at", "users"."title", "users"."summary", "users"."picture", "users"."content" FROM "users" WHERE "users"."id" = $1 LIMIT $2"#,
-                vec!["test-user".into(), 1u64.into()]
+                r#"SELECT "users"."id", "users"."created_at", "users"."updated_at", "users"."username", "users"."is_active" FROM "users" WHERE "users"."id" = $1 LIMIT $2"#,
+                vec!["test-username".into(), 1u64.into()]
             )
         ]
     );
@@ -625,7 +625,7 @@ async fn test_profiles_service_update_model() -> Result<()> {
         db.into_transaction_log(),
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
-            r#"UPDATE "profiles" SET "title" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+            r#"UPDATE "profiles" SET "email" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
             vec![updated.email.into(), user.id.into(), profile.id.into()]
         )]
     );
@@ -680,7 +680,7 @@ async fn test_profiles_service_update_model_with_related() -> Result<()> {
         db.into_transaction_log(),
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
-            r#"UPDATE "profiles" SET "title" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+            r#"UPDATE "profiles" SET "email" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
             vec![updated.email.into(), user.id.into(), profile.id.into()]
         )]
     );
@@ -740,7 +740,7 @@ async fn test_profiles_service_update() -> Result<()> {
             ),
             Transaction::from_sql_and_values(
                 DatabaseBackend::Postgres,
-                r#"UPDATE "profiles" SET "title" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+                r#"UPDATE "profiles" SET "email" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
                 vec![updated.email.into(), user.id.into(), profile.id.into()]
             )
         ]
@@ -789,7 +789,7 @@ async fn test_profiles_service_update_with_related() -> Result<()> {
 
     let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
 
-    assert_eq!(result, updated.clone().into());
+    assert_eq!(result, updated.clone().into_profile_with_user(user.clone()));
 
     // Check the transaction log
     assert_eq!(
@@ -802,7 +802,7 @@ async fn test_profiles_service_update_with_related() -> Result<()> {
             ),
             Transaction::from_sql_and_values(
                 DatabaseBackend::Postgres,
-                r#"UPDATE "profiles" SET "title" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content", "user_id""#,
+                r#"UPDATE "profiles" SET "email" = $1, "user_id" = $2 WHERE "profiles"."id" = $3 RETURNING "id", "created_at", "updated_at", "email", "display_name", "picture", "content", "city", "state_province", "user_id""#,
                 vec![updated.email.into(), user.id.into(), profile.id.into()]
             )
         ]
