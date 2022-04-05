@@ -3,7 +3,7 @@ use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
 use caster_users::{
-    role_grant_model::{CreateRoleGrantInput, RoleGrant},
+    role_grant_model::{CreateRoleGrantInput},
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
 };
 
