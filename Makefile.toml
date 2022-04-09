@@ -13,35 +13,35 @@ args = ["run"]
 
 [tasks.db-create]
 workspace = false
-cwd = "./apps/api"
+cwd = "./"
 command = "sqlx"
 args = ["db", "create"]
 
 [tasks.db-migrate]
 workspace = false
-cwd = "./apps/api"
+cwd = "./"
 command = "sqlx"
 args = ["migrate", "run"]
 
 [tasks.db-reset]
 workspace = false
-cwd = "./apps/api"
+cwd = "./"
 command = "sqlx"
 args = ["db", "reset"]
+
+[tasks.docker]
+workspace = false
+cwd = "./"
+command = "docker-compose"
+args = ["-f", "docker-compose.yml", "${@}"]
 
 [tasks.docker-api]
 workspace = false
 cwd = "./apps/api"
 command = "docker-compose"
-args = ["-f", "docker-compose.yml", "--env-file", "../../.env", "${@}"]
-
-[tasks.docker-api-app]
-workspace = false
-cwd = "./apps/api"
-command = "docker-compose"
 args = [
     "-f",
-    "docker-compose.yml",
+    "../../docker-compose.yml",
     "-f",
     "docker-compose.app.yml",
     "--env-file",

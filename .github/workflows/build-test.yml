@@ -47,7 +47,7 @@ jobs:
             - uses: davidB/rust-cargo-make@v1
 
             - name: Run docker-compose
-              run: docker-compose -f apps/api/docker-compose.yml up -d
+              run: docker-compose -f docker-compose.yml up -d
 
             - run: cargo install sqlx-cli --no-default-features --features rustls,postgres
             - run: cargo make db-create
