@@ -16,7 +16,6 @@ use crate::role_grant_model::{self, RoleGrant};
 pub struct Model {
     /// The User id
     #[sea_orm(primary_key, column_type = "Text")]
-    #[serde(skip_deserializing)]
     #[polar(attribute)]
     pub id: String,
 

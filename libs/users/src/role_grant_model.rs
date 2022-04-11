@@ -14,7 +14,6 @@ use super::user_model;
 pub struct Model {
     /// The RoleGrant id
     #[sea_orm(primary_key, column_type = "Text")]
-    #[serde(skip_deserializing)]
     #[polar(attribute)]
     pub id: String,
 
