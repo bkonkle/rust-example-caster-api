@@ -73,9 +73,8 @@ impl From<Option<(Model, Vec<RoleGrant>)>> for UserOption {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Option<User>> for UserOption {
-    fn into(self) -> Option<User> {
-        self.0
+impl From<UserOption> for Option<User> {
+    fn from(user: UserOption) -> Option<User> {
+        user.0
     }
 }

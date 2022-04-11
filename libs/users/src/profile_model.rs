@@ -5,7 +5,7 @@ use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::user_model::User;
+use crate::user_model::{self, User};
 
 /// The `Profile` GraphQL model
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
@@ -129,11 +129,9 @@ impl Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user_model::Entity",
+        belongs_to = "user_model::Entity",
         from = "Column::UserId",
-        to = "super::user_model::Column::Id",
-        on_update = "Cascade",
-        on_delete = "SetNull"
+        to = "user_model::Column::Id"
     )]
     User,
 }
@@ -198,10 +196,9 @@ impl From<Vec<(Model, Option<User>)>> for ProfileList {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Vec<Profile>> for ProfileList {
-    fn into(self) -> Vec<Profile> {
-        self.0
+impl From<ProfileList> for Vec<Profile> {
+    fn from(profiles: ProfileList) -> Vec<Profile> {
+        profiles.0
     }
 }
 
@@ -223,9 +220,8 @@ impl From<Option<(Model, Option<User>)>> for ProfileOption {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Option<Profile>> for ProfileOption {
-    fn into(self) -> Option<Profile> {
-        self.0
+impl From<ProfileOption> for Option<Profile> {
+    fn from(profile: ProfileOption) -> Option<Profile> {
+        profile.0
     }
 }

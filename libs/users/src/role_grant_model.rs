@@ -122,9 +122,8 @@ impl From<Vec<Model>> for RoleList {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Vec<Role>> for RoleList {
-    fn into(self) -> Vec<Role> {
-        self.0
+impl From<RoleList> for Vec<Role> {
+    fn from(roles: RoleList) -> Vec<Role> {
+        roles.0
     }
 }

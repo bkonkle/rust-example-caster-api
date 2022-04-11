@@ -59,9 +59,7 @@ pub enum Relation {
     #[sea_orm(
         belongs_to = "show_model::Entity",
         from = "Column::ShowId",
-        to = "show_model::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+        to = "show_model::Column::Id"
     )]
     Show,
 }
@@ -105,10 +103,9 @@ impl From<Vec<(Model, Option<Show>)>> for EpisodeList {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Vec<Episode>> for EpisodeList {
-    fn into(self) -> Vec<Episode> {
-        self.0
+impl From<EpisodeList> for Vec<Episode> {
+    fn from(episodes: EpisodeList) -> Vec<Episode> {
+        episodes.0
     }
 }
 
@@ -127,9 +124,8 @@ impl From<Option<(Model, Option<Show>)>> for EpisodeOption {
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<Option<Episode>> for EpisodeOption {
-    fn into(self) -> Option<Episode> {
-        self.0
+impl From<EpisodeOption> for Option<Episode> {
+    fn from(episode: EpisodeOption) -> Option<Episode> {
+        episode.0
     }
 }
