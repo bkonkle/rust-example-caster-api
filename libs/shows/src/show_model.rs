@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     /// The Show id
     #[sea_orm(primary_key, column_type = "Text")]
-    #[serde(skip_deserializing)]
     #[polar(attribute)]
     pub id: String,
 

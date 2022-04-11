@@ -79,7 +79,6 @@ impl Profile {
 #[sea_orm(table_name = "profiles")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Text")]
-    #[serde(skip_deserializing)]
     pub id: String,
 
     pub created_at: DateTime,
