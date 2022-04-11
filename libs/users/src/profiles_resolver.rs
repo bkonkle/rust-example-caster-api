@@ -137,8 +137,8 @@ impl ProfilesMutation {
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
 
         // Retrieve the existing Profile for authorization
-        let (existing, existing_user) = profiles
-            .get_model(&id, &true)
+        let existing = profiles
+            .get(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Profile",
@@ -153,7 +153,7 @@ impl ProfilesMutation {
 
         if let Some(user_id) = user_id {
             // Make sure the current request User id matches the existing user
-            if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+            if existing.user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
                 return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
             }
         } else {
@@ -161,9 +161,12 @@ impl ProfilesMutation {
             return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
 
+        // Check to see if the associated User is selected
+        let with_user = ctx.look_ahead().field("profile").field("user").exists();
+
         // Use the already retrieved Profile to update the record
         let profile = profiles
-            .update_model(existing, &input, existing_user)
+            .update(&existing.id, &input, &with_user)
             .await
             .map_err(as_graphql_error(
                 "Error while updating Profile",
@@ -181,8 +184,8 @@ impl ProfilesMutation {
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
 
         // Retrieve the existing Profile for authorization
-        let (_, existing_user) = profiles
-            .get_model(&id, &true)
+        let existing = profiles
+            .get(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Profile",
@@ -197,7 +200,7 @@ impl ProfilesMutation {
 
         if let Some(user_id) = user_id {
             // Make sure the current request User id matches the existing user
-            if existing_user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
+            if existing.user.as_ref().map(|u| u.id.clone()) != Some(user_id) {
                 return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
             }
         } else {

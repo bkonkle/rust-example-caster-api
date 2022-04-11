@@ -9,7 +9,7 @@ use crate::{
     profile_model::{self, Profile, ProfileList, ProfileOption},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy},
-    user_model::{self, User},
+    user_model,
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
@@ -17,13 +17,6 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ProfilesService: Sync + Send {
-    /// Get an individual `Profile` by id, returning the Model instance for updating
-    async fn get_model(
-        &self,
-        id: &str,
-        with_user: &bool,
-    ) -> Result<Option<(profile_model::Model, Option<User>)>>;
-
     /// Get an individual `Profile` by id
     async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>>;
 
@@ -50,14 +43,6 @@ pub trait ProfilesService: Sync + Send {
 
     /// Create a `Profile` with the given input
     async fn create(&self, input: &CreateProfileInput, with_user: &bool) -> Result<Profile>;
-
-    /// Update an existing `Profile`
-    async fn update_model(
-        &self,
-        profile: profile_model::Model,
-        input: &UpdateProfileInput,
-        user: Option<User>,
-    ) -> Result<Profile>;
 
     /// Update an existing `Profile` by id
     async fn update(
@@ -87,11 +72,7 @@ impl DefaultProfilesService {
 
 #[async_trait]
 impl ProfilesService for DefaultProfilesService {
-    async fn get_model(
-        &self,
-        id: &str,
-        with_user: &bool,
-    ) -> Result<Option<(profile_model::Model, Option<User>)>> {
+    async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>> {
         let query = profile_model::Entity::find_by_id(id.to_owned());
 
         let profile = if *with_user {
@@ -103,11 +84,7 @@ impl ProfilesService for DefaultProfilesService {
             query.one(&*self.db).await?.map(|u| (u, None))
         };
 
-        Ok(profile)
-    }
-
-    async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>> {
-        let profile: ProfileOption = self.get_model(id, with_user).await?.into();
+        let profile: ProfileOption = profile.into();
 
         Ok(profile.into())
     }
@@ -261,12 +238,26 @@ impl ProfilesService for DefaultProfilesService {
         self.create(input, with_user).await
     }
 
-    async fn update_model(
+    async fn update(
         &self,
-        profile: profile_model::Model,
+        id: &str,
         input: &UpdateProfileInput,
-        user: Option<User>,
+        with_user: &bool,
     ) -> Result<Profile> {
+        let query = profile_model::Entity::find_by_id(id.to_owned());
+
+        // Pull out the `Profile` and the related `User`, if selected
+        let (profile, user) = if *with_user {
+            query
+                .find_also_related(user_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
+            // If the Profile isn't requested, just map to None
+            query.one(&*self.db).await?.map(|p| (p, None))
+        }
+        .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
+
         let mut profile: profile_model::ActiveModel = profile.into();
 
         if let Some(email) = &input.email {
@@ -303,29 +294,6 @@ impl ProfilesService for DefaultProfilesService {
         updated.user = user;
 
         Ok(updated)
-    }
-
-    async fn update(
-        &self,
-        id: &str,
-        input: &UpdateProfileInput,
-        with_user: &bool,
-    ) -> Result<Profile> {
-        let query = profile_model::Entity::find_by_id(id.to_owned());
-
-        // Pull out the `Profile` and the related `User`, if selected
-        let (profile, user) = if *with_user {
-            query
-                .find_also_related(user_model::Entity)
-                .one(&*self.db)
-                .await?
-        } else {
-            // If the Profile isn't requested, just map to None
-            query.one(&*self.db).await?.map(|p| (p, None))
-        }
-        .ok_or_else(|| anyhow!("Unable to find Profile with id: {}", id))?;
-
-        self.update_model(profile, input, user).await
     }
 
     async fn delete(&self, id: &str) -> Result<()> {
