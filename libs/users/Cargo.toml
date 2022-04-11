@@ -15,7 +15,7 @@ hyper = "0.14"
 jsonwebtoken = "8.0"
 oso = "0.26.0"
 oso-derive = "0.26.0"
-sea-orm = { version = "0.6", features = [
+sea-orm = { version = "0.7.1", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "macros",

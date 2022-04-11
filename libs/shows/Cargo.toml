@@ -14,7 +14,7 @@ chrono = { version = "0.4.19", features = ["serde"] }
 hyper = "0.14"
 oso = "0.26.0"
 oso-derive = "0.26.0"
-sea-orm = { version = "0.6", features = [
+sea-orm = { version = "0.7.1", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "macros",
