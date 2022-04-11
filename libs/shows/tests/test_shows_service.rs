@@ -13,40 +13,6 @@ use caster_shows::{
 mod shows_factory;
 
 #[tokio::test]
-async fn test_shows_service_get_model() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-
-    let db = Arc::new(
-        MockDatabase::new(DatabaseBackend::Postgres)
-            .append_query_results(vec![vec![show.clone()]])
-            .into_connection(),
-    );
-
-    let service = DefaultShowsService::new(db.clone());
-
-    let result = service.get_model(&show.id).await?;
-
-    // Destroy the service to clean up the reference count
-    drop(service);
-
-    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
-
-    assert_eq!(result, Some(show));
-
-    // Check the transaction log
-    assert_eq!(
-        db.into_transaction_log(),
-        vec![Transaction::from_sql_and_values(
-            DatabaseBackend::Postgres,
-            r#"SELECT "shows"."id", "shows"."created_at", "shows"."updated_at", "shows"."title", "shows"."summary", "shows"."picture", "shows"."content" FROM "shows" WHERE "shows"."id" = $1 LIMIT $2"#,
-            vec!["test-show".into(), 1u64.into()]
-        )]
-    );
-
-    Ok(())
-}
-
-#[tokio::test]
 async fn test_shows_service_get() -> Result<()> {
     let show = shows_factory::create_show("Test Show");
 
@@ -243,54 +209,6 @@ async fn test_shows_service_create() -> Result<()> {
                 show.picture.into(),
                 show.content.into()
             ]
-        )]
-    );
-
-    Ok(())
-}
-
-#[tokio::test]
-async fn test_shows_service_update_model() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-    let updated = Show {
-        title: "Updated Show".to_string(),
-        ..show.clone()
-    };
-
-    let db = Arc::new(
-        MockDatabase::new(DatabaseBackend::Postgres)
-            .append_query_results(vec![vec![updated.clone()]])
-            .into_connection(),
-    );
-
-    let service = DefaultShowsService::new(db.clone());
-
-    let result = service
-        .update_model(
-            show.clone(),
-            &UpdateShowInput {
-                title: Some(updated.title.clone()),
-                summary: None,
-                picture: None,
-                content: None,
-            },
-        )
-        .await?;
-
-    // Destroy the service to clean up the reference count
-    drop(service);
-
-    let db = Arc::try_unwrap(db).expect("Unable to unwrap the DatabaseConnection");
-
-    assert_eq!(result, updated.clone());
-
-    // Check the transaction log
-    assert_eq!(
-        db.into_transaction_log(),
-        vec![Transaction::from_sql_and_values(
-            DatabaseBackend::Postgres,
-            r#"UPDATE "shows" SET "title" = $1 WHERE "shows"."id" = $2 RETURNING "id", "created_at", "updated_at", "title", "summary", "picture", "content""#,
-            vec![updated.title.into(), show.id.into()]
         )]
     );
 

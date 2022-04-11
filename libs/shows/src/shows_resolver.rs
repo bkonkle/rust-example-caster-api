@@ -112,7 +112,7 @@ impl ShowsMutation {
 
         // Retrieve the existing Show for authorization
         let existing = shows
-            .get_model(&id)
+            .get(&id)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Show",
@@ -145,7 +145,7 @@ impl ShowsMutation {
 
         // Retrieve the existing Show for authorization
         let existing = shows
-            .get_model(&id)
+            .get(&id)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Show",

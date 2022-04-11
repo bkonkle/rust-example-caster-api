@@ -48,7 +48,7 @@ impl EpisodesQuery {
     ) -> Result<EpisodesPage> {
         let episodes = ctx.data_unchecked::<Arc<dyn EpisodesService>>();
 
-        // Check to see if the associated User is selected
+        // Check to see if the associated Show is selected
         let with_show = ctx.look_ahead().field("data").field("show").exists();
 
         let response = episodes
@@ -124,8 +124,8 @@ impl EpisodesMutation {
         let oso = ctx.data_unchecked::<Oso>();
 
         // Retrieve the existing Episode for authorization
-        let (existing, show) = episodes
-            .get_model(&id, &true)
+        let existing = episodes
+            .get(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Episode",
@@ -135,7 +135,8 @@ impl EpisodesMutation {
                 graphql_error("Unable to find existing Episode", StatusCode::NOT_FOUND)
             })?;
 
-        let show = show
+        let show = existing
+            .show
             .ok_or_else(|| graphql_error("Unable to find existing Show", StatusCode::NOT_FOUND))?;
 
         // Check authentication and authorization
@@ -147,9 +148,12 @@ impl EpisodesMutation {
             return Err(graphql_error("Unauthorized", StatusCode::UNAUTHORIZED));
         }
 
+        // Check to see if the associated User is selected
+        let with_show = ctx.look_ahead().field("episode").field("show").exists();
+
         // Use the already retrieved Episode to update the record
         let episode = episodes
-            .update_model(existing, &input, Some(show))
+            .update(&existing.id, &input, &with_show)
             .await
             .map_err(as_graphql_error(
                 "Error while updating Profile",
@@ -168,8 +172,8 @@ impl EpisodesMutation {
         let oso = ctx.data_unchecked::<Oso>();
 
         // Retrieve the related Show for authorization
-        let (_, show) = episodes
-            .get_model(&id, &true)
+        let episode = episodes
+            .get(&id, &true)
             .await
             .map_err(as_graphql_error(
                 "Error while fetching Episode",
@@ -179,7 +183,8 @@ impl EpisodesMutation {
                 graphql_error("Unable to find existing Episode", StatusCode::NOT_FOUND)
             })?;
 
-        let show = show
+        let show = episode
+            .show
             .ok_or_else(|| graphql_error("Unable to find existing Show", StatusCode::NOT_FOUND))?;
 
         // Check authentication and authorization

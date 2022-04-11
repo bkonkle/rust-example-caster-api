@@ -16,9 +16,6 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait ShowsService: Sync + Send {
-    /// Get an individual `Show` by id, returning the Model instance for updating
-    async fn get_model(&self, id: &str) -> Result<Option<show_model::Model>>;
-
     /// Get an individual `Show` by id
     async fn get(&self, id: &str) -> Result<Option<Show>>;
 
@@ -33,9 +30,6 @@ pub trait ShowsService: Sync + Send {
 
     /// Create a `Show` with the given input
     async fn create(&self, input: &CreateShowInput) -> Result<Show>;
-
-    /// Update an existing `Show` using a retrieved `Model` instance
-    async fn update_model(&self, show: show_model::Model, input: &UpdateShowInput) -> Result<Show>;
 
     /// Update an existing `Show` by id
     async fn update(&self, id: &str, input: &UpdateShowInput) -> Result<Show>;
@@ -60,16 +54,10 @@ impl DefaultShowsService {
 
 #[async_trait]
 impl ShowsService for DefaultShowsService {
-    async fn get_model(&self, id: &str) -> Result<Option<show_model::Model>> {
+    async fn get(&self, id: &str) -> Result<Option<show_model::Model>> {
         let query = show_model::Entity::find_by_id(id.to_owned());
 
         let show = query.one(&*self.db).await?;
-
-        Ok(show)
-    }
-
-    async fn get(&self, id: &str) -> Result<Option<Show>> {
-        let show = self.get_model(id).await?;
 
         Ok(show)
     }
@@ -138,7 +126,15 @@ impl ShowsService for DefaultShowsService {
         return Ok(created);
     }
 
-    async fn update_model(&self, show: show_model::Model, input: &UpdateShowInput) -> Result<Show> {
+    async fn update(&self, id: &str, input: &UpdateShowInput) -> Result<Show> {
+        let query = show_model::Entity::find_by_id(id.to_owned());
+
+        // Retrieve the existing Show
+        let show = query
+            .one(&*self.db)
+            .await?
+            .ok_or_else(|| anyhow!("Unable to find Show with id: {}", id))?;
+
         let mut show: show_model::ActiveModel = show.into();
 
         if let Some(title) = &input.title {
@@ -160,18 +156,6 @@ impl ShowsService for DefaultShowsService {
         let updated: Show = show.update(&*self.db).await?;
 
         Ok(updated)
-    }
-
-    async fn update(&self, id: &str, input: &UpdateShowInput) -> Result<Show> {
-        let query = show_model::Entity::find_by_id(id.to_owned());
-
-        // Retrieve the existing Show
-        let show = query
-            .one(&*self.db)
-            .await?
-            .ok_or_else(|| anyhow!("Unable to find Show with id: {}", id))?;
-
-        self.update_model(show, input).await
     }
 
     async fn delete(&self, id: &str) -> Result<()> {

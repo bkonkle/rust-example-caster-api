@@ -9,7 +9,7 @@ use crate::{
     episode_model::{self, Episode, EpisodeList, EpisodeOption},
     episode_mutations::{CreateEpisodeInput, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy},
-    show_model::{self, Show},
+    show_model,
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
@@ -17,13 +17,6 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 #[cfg_attr(test, automock)]
 #[async_trait]
 pub trait EpisodesService: Sync + Send {
-    /// Get an individual `Episode` by id, returning the Model instance for updating
-    async fn get_model(
-        &self,
-        id: &str,
-        with_show: &bool,
-    ) -> Result<Option<(episode_model::Model, Option<Show>)>>;
-
     /// Get an individual `Episode` by id
     async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>>;
 
@@ -39,14 +32,6 @@ pub trait EpisodesService: Sync + Send {
 
     /// Create a `Episode` with the given input
     async fn create(&self, input: &CreateEpisodeInput, with_show: &bool) -> Result<Episode>;
-
-    /// Update an existing `Episode` using a retrieved `Model` instance
-    async fn update_model(
-        &self,
-        episode: episode_model::Model,
-        input: &UpdateEpisodeInput,
-        show: Option<Show>,
-    ) -> Result<Episode>;
 
     /// Update an existing `Episode` by id
     async fn update(
@@ -76,11 +61,7 @@ impl DefaultEpisodesService {
 
 #[async_trait]
 impl EpisodesService for DefaultEpisodesService {
-    async fn get_model(
-        &self,
-        id: &str,
-        with_show: &bool,
-    ) -> Result<Option<(episode_model::Model, Option<Show>)>> {
+    async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>> {
         let query = episode_model::Entity::find_by_id(id.to_owned());
 
         let episode = if *with_show {
@@ -92,11 +73,7 @@ impl EpisodesService for DefaultEpisodesService {
             query.one(&*self.db).await?.map(|u| (u, None))
         };
 
-        Ok(episode)
-    }
-
-    async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>> {
-        let episode: EpisodeOption = self.get_model(id, with_show).await?.into();
+        let episode: EpisodeOption = episode.into();
 
         Ok(episode.into())
     }
@@ -204,13 +181,26 @@ impl EpisodesService for DefaultEpisodesService {
 
         Ok(created)
     }
-
-    async fn update_model(
+    async fn update(
         &self,
-        episode: episode_model::Model,
+        id: &str,
         input: &UpdateEpisodeInput,
-        show: Option<Show>,
+        with_show: &bool,
     ) -> Result<Episode> {
+        let query = episode_model::Entity::find_by_id(id.to_owned());
+
+        // Pull out the `Episode` and the related `Show`, if selected
+        let (episode, show) = if *with_show {
+            query
+                .find_also_related(show_model::Entity)
+                .one(&*self.db)
+                .await?
+        } else {
+            // If the Show isn't requested, just map to None
+            query.one(&*self.db).await?.map(|p| (p, None))
+        }
+        .ok_or_else(|| anyhow!("Unable to find Episode with id: {}", id))?;
+
         let mut episode: episode_model::ActiveModel = episode.into();
 
         if let Some(title) = &input.title {
@@ -239,29 +229,6 @@ impl EpisodesService for DefaultEpisodesService {
         updated.show = show;
 
         Ok(updated)
-    }
-
-    async fn update(
-        &self,
-        id: &str,
-        input: &UpdateEpisodeInput,
-        with_show: &bool,
-    ) -> Result<Episode> {
-        let query = episode_model::Entity::find_by_id(id.to_owned());
-
-        // Pull out the `Episode` and the related `Show`, if selected
-        let (episode, show) = if *with_show {
-            query
-                .find_also_related(show_model::Entity)
-                .one(&*self.db)
-                .await?
-        } else {
-            // If the Show isn't requested, just map to None
-            query.one(&*self.db).await?.map(|p| (p, None))
-        }
-        .ok_or_else(|| anyhow!("Unable to find Episode with id: {}", id))?;
-
-        self.update_model(episode, input, show).await
     }
 
     async fn delete(&self, id: &str) -> Result<()> {
