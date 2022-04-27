@@ -1,6 +1,7 @@
 use anyhow::Result;
 use futures::executor::block_on;
 use hyper::body::to_bytes;
+use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
