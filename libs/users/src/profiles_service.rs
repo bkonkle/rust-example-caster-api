@@ -1,9 +1,10 @@
 use anyhow::Result;
+use async_graphql::{dataloader::Loader, FieldError};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
 use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     profile_model::{self, Profile, ProfileList, ProfileOption},
@@ -19,6 +20,9 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 pub trait ProfilesService: Sync + Send {
     /// Get an individual `Profile` by id
     async fn get(&self, id: &str, with_user: &bool) -> Result<Option<Profile>>;
+
+    /// Get a list of `Profile` results matching the given ids
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Profile>>;
 
     /// Get multiple `Profile` records
     async fn get_many(
@@ -87,6 +91,23 @@ impl ProfilesService for DefaultProfilesService {
         let profile: ProfileOption = profile.into();
 
         Ok(profile.into())
+    }
+
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Profile>> {
+        let mut condition = Condition::any();
+
+        for id in ids {
+            condition = condition.add(user_model::Column::Id.eq(id.clone()));
+        }
+
+        let profiles = profile_model::Entity::find()
+            .filter(condition)
+            .all(&*self.db)
+            .await?;
+
+        let profiles: ProfileList = profiles.into();
+
+        Ok(profiles.into())
     }
 
     async fn get_many(
@@ -305,5 +326,34 @@ impl ProfilesService for DefaultProfilesService {
         let _result = profile.delete(&*self.db).await?;
 
         Ok(())
+    }
+}
+
+/// A dataloader for `Profile` instances
+pub struct ProfileLoader {
+    /// The SeaOrm database connection
+    profiles: Arc<dyn ProfilesService>,
+}
+
+/// The default implementation for the `ProfileLoader`
+impl ProfileLoader {
+    /// Create a new instance
+    pub fn new(profiles: Arc<dyn ProfilesService>) -> Self {
+        Self { profiles }
+    }
+}
+
+#[async_trait]
+impl Loader<String> for ProfileLoader {
+    type Value = Profile;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let profiles = self.profiles.get_by_ids(keys.into()).await?;
+
+        Ok(profiles
+            .into_iter()
+            .map(|profile| (profile.id.clone(), profile))
+            .collect())
     }
 }

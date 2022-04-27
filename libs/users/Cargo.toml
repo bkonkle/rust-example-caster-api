@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "3.0", features = ["chrono"] }
+async-graphql = { version = "3.0", features = ["chrono", "dataloader"] }
 async-trait = "0.1.41"
 caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }

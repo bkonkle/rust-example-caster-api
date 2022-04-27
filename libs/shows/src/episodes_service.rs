@@ -1,9 +1,10 @@
 use anyhow::Result;
+use async_graphql::{dataloader::Loader, FieldError};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
 use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     episode_model::{self, Episode, EpisodeList, EpisodeOption},
@@ -19,6 +20,9 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 pub trait EpisodesService: Sync + Send {
     /// Get an individual `Episode` by id
     async fn get(&self, id: &str, with_show: &bool) -> Result<Option<Episode>>;
+
+    /// Get a list of `Episode` results matching the given ids
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Episode>>;
 
     /// Get multiple `Episode` records
     async fn get_many(
@@ -76,6 +80,21 @@ impl EpisodesService for DefaultEpisodesService {
         let episode: EpisodeOption = episode.into();
 
         Ok(episode.into())
+    }
+
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Episode>> {
+        let mut condition = Condition::any();
+
+        for id in ids {
+            condition = condition.add(episode_model::Column::Id.eq(id.clone()));
+        }
+
+        let episodes = episode_model::Entity::find()
+            .filter(condition)
+            .all(&*self.db)
+            .await?;
+
+        Ok(episodes)
     }
 
     async fn get_many(
@@ -225,7 +244,7 @@ impl EpisodesService for DefaultEpisodesService {
 
         let mut updated: Episode = episode.update(&*self.db).await?;
 
-        // Add back the User from above
+        // Add back the Show from above
         updated.show = show;
 
         Ok(updated)
@@ -240,5 +259,34 @@ impl EpisodesService for DefaultEpisodesService {
         let _result = episode.delete(&*self.db).await?;
 
         Ok(())
+    }
+}
+
+/// A dataloader for `Episode` instances
+pub struct EpisodeLoader {
+    /// The SeaOrm database connection
+    episodes: Arc<dyn EpisodesService>,
+}
+
+/// The default implementation for the `EpisodeLoader`
+impl EpisodeLoader {
+    /// Create a new instance
+    pub fn new(episodes: Arc<dyn EpisodesService>) -> Self {
+        Self { episodes }
+    }
+}
+
+#[async_trait]
+impl Loader<String> for EpisodeLoader {
+    type Value = Episode;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let episodes = self.episodes.get_by_ids(keys.into()).await?;
+
+        Ok(episodes
+            .into_iter()
+            .map(|episode| (episode.id.clone(), episode))
+            .collect())
     }
 }

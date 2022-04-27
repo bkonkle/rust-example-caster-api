@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{dataloader::DataLoader, ComplexObject, Context, Object, Result};
 use hyper::StatusCode;
 use oso::Oso;
 use std::sync::Arc;
@@ -8,7 +8,8 @@ use crate::{
     episode_mutations::{CreateEpisodeInput, MutateEpisodeResult, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy, EpisodesPage},
     episodes_service::EpisodesService,
-    shows_service::ShowsService,
+    show_model::Show,
+    shows_service::{ShowLoader, ShowsService},
 };
 use caster_users::user_model::User;
 use caster_utils::errors::{as_graphql_error, graphql_error};
@@ -202,5 +203,20 @@ impl EpisodesMutation {
         ))?;
 
         Ok(true)
+    }
+}
+
+#[ComplexObject]
+impl Episode {
+    #[graphql(name = "show")]
+    async fn resolve_show(&self, ctx: &Context<'_>) -> Result<Option<Show>> {
+        if let Some(show) = self.show.clone() {
+            return Ok(Some(show));
+        }
+
+        let loader = ctx.data_unchecked::<DataLoader<ShowLoader>>();
+        let show = loader.load_one(self.show_id.clone()).await?;
+
+        Ok(show)
     }
 }

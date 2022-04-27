@@ -10,6 +10,7 @@ use crate::show_model::{self, Show};
 #[derive(
     Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
 )]
+#[graphql(complex)]
 #[graphql(name = "Episode")]
 #[sea_orm(table_name = "episodes")]
 pub struct Model {
@@ -46,6 +47,7 @@ pub struct Model {
 
     /// The associated Show
     #[sea_orm(ignore)]
+    #[graphql(skip)]
     #[polar(attribute)]
     pub show: Option<Show>,
 }

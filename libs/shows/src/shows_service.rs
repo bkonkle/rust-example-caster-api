@@ -1,9 +1,10 @@
 use anyhow::Result;
+use async_graphql::{dataloader::Loader, FieldError};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
 use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     show_model::{self, Show},
@@ -18,6 +19,9 @@ use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 pub trait ShowsService: Sync + Send {
     /// Get an individual `Show` by id
     async fn get(&self, id: &str) -> Result<Option<Show>>;
+
+    /// Get a list of `Show` results matching the given ids
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Show>>;
 
     /// Get multiple `Show` records
     async fn get_many(
@@ -60,6 +64,21 @@ impl ShowsService for DefaultShowsService {
         let show = query.one(&*self.db).await?;
 
         Ok(show)
+    }
+
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<Show>> {
+        let mut condition = Condition::any();
+
+        for id in ids {
+            condition = condition.add(show_model::Column::Id.eq(id.clone()));
+        }
+
+        let shows = show_model::Entity::find()
+            .filter(condition)
+            .all(&*self.db)
+            .await?;
+
+        Ok(shows)
     }
 
     async fn get_many(
@@ -167,5 +186,34 @@ impl ShowsService for DefaultShowsService {
         let _result = show.delete(&*self.db).await?;
 
         Ok(())
+    }
+}
+
+/// A dataloader for `Show` instances
+pub struct ShowLoader {
+    /// The SeaOrm database connection
+    shows: Arc<dyn ShowsService>,
+}
+
+/// The default implementation for the `ShowLoader`
+impl ShowLoader {
+    /// Create a new instance
+    pub fn new(shows: Arc<dyn ShowsService>) -> Self {
+        Self { shows }
+    }
+}
+
+#[async_trait]
+impl Loader<String> for ShowLoader {
+    type Value = Show;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let shows = self.shows.get_by_ids(keys.into()).await?;
+
+        Ok(shows
+            .into_iter()
+            .map(|show| (show.id.clone(), show))
+            .collect())
     }
 }

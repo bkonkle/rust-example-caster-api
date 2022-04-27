@@ -9,6 +9,7 @@ use crate::user_model::{self, User};
 
 /// The `Profile` GraphQL model
 #[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
+#[graphql(complex)]
 pub struct Profile {
     /// The `Profile` id
     #[polar(attribute)]
@@ -46,6 +47,7 @@ pub struct Profile {
     pub user_id: Option<String>,
 
     /// The associated `User`
+    #[graphql(skip)]
     pub user: Option<User>,
 }
 

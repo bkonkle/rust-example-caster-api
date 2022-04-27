@@ -1,9 +1,10 @@
 use anyhow::Result;
+use async_graphql::{dataloader::Loader, FieldError};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
 use sea_orm::{entity::*, query::*, DatabaseConnection, EntityTrait};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     role_grant_model,
@@ -17,6 +18,9 @@ use crate::{
 pub trait UsersService: Sync + Send {
     /// Get an individual `User` by id
     async fn get(&self, id: &str) -> Result<Option<User>>;
+
+    /// Get a list of `User` results matching the given ids
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<User>>;
 
     /// Get an individual `User` by username
     async fn get_by_username(&self, username: &str, with_roles: &bool) -> Result<Option<User>>;
@@ -53,6 +57,21 @@ impl UsersService for DefaultUsersService {
             .await?;
 
         Ok(user)
+    }
+
+    async fn get_by_ids(&self, ids: Vec<String>) -> Result<Vec<User>> {
+        let mut condition = Condition::any();
+
+        for id in ids {
+            condition = condition.add(user_model::Column::Id.eq(id.clone()));
+        }
+
+        let users = user_model::Entity::find()
+            .filter(condition)
+            .all(&*self.db)
+            .await?;
+
+        Ok(users)
     }
 
     async fn get_by_username(&self, username: &str, with_roles: &bool) -> Result<Option<User>> {
@@ -129,5 +148,34 @@ impl UsersService for DefaultUsersService {
         let _result = user.delete(&*self.db).await?;
 
         Ok(())
+    }
+}
+
+/// A dataloader for `User` instances
+pub struct UserLoader {
+    /// The SeaOrm database connection
+    locations: Arc<dyn UsersService>,
+}
+
+/// The default implementation for the `UserLoader`
+impl UserLoader {
+    /// Create a new instance
+    pub fn new(locations: Arc<dyn UsersService>) -> Self {
+        Self { locations }
+    }
+}
+
+#[async_trait]
+impl Loader<String> for UserLoader {
+    type Value = User;
+    type Error = FieldError;
+
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
+        let locations = self.locations.get_by_ids(keys.into()).await?;
+
+        Ok(locations
+            .into_iter()
+            .map(|location| (location.id.clone(), location))
+            .collect())
     }
 }

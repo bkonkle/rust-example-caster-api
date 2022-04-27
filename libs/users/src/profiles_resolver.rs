@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{dataloader::DataLoader, ComplexObject, Context, Object, Result};
 use caster_utils::errors::{as_graphql_error, graphql_error};
 use hyper::StatusCode;
 use std::sync::Arc;
@@ -9,6 +9,7 @@ use crate::{
     profile_queries::{ProfileCondition, ProfilesOrderBy, ProfilesPage},
     profiles_service::ProfilesService,
     user_model::User,
+    users_service::UserLoader,
 };
 
 /// The Query segment for Profiles
@@ -214,5 +215,24 @@ impl ProfilesMutation {
         ))?;
 
         Ok(true)
+    }
+}
+
+#[ComplexObject]
+impl Profile {
+    #[graphql(name = "user")]
+    async fn resolve_user(&self, ctx: &Context<'_>) -> Result<Option<User>> {
+        if let Some(user) = self.user.clone() {
+            return Ok(Some(user));
+        }
+
+        if let Some(user_id) = self.user_id.clone() {
+            let loader = ctx.data_unchecked::<DataLoader<UserLoader>>();
+            let user = loader.load_one(user_id).await?;
+
+            return Ok(user);
+        }
+
+        Ok(None)
     }
 }
