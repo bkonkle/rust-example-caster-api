@@ -1,22 +1,13 @@
 use anyhow::Result;
-use caster_users::role_grant_model::CreateRoleGrantInput;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
-use caster_shows::show_mutations::CreateShowInput;
 use caster_test::oauth2::{Credentials, User as TestUser};
+use caster_test_shows::show_factory;
+use caster_users::role_grant_model::CreateRoleGrantInput;
 
 mod test_utils;
 use test_utils::TestUtils;
-
-fn dummy_show(title: &str) -> CreateShowInput {
-    CreateShowInput {
-        title: title.to_string(),
-        summary: None,
-        picture: None,
-        content: None,
-    }
-}
 
 /***
  * Mutation: `createEpisode`
@@ -54,7 +45,10 @@ async fn test_create_episode() -> Result<()> {
 
     // Create a user and a show
     let user = ctx.users.create(username).await?;
-    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
+    let show = ctx
+        .shows
+        .create(&show_factory::create_show_input("Test Show"))
+        .await?;
 
     // Grant the manager role to this user for this episode's show
     ctx.role_grants
@@ -164,7 +158,10 @@ async fn test_create_episode_authn() -> Result<()> {
         ..
     } = TestUtils::init().await?;
 
-    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
+    let show = ctx
+        .shows
+        .create(&show_factory::create_show_input("Test Show"))
+        .await?;
 
     let req = graphql.query(
         CREATE_EPISODE,
@@ -206,7 +203,10 @@ async fn test_create_episode_authz() -> Result<()> {
         ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    let show = ctx.shows.create(&dummy_show("Test Show")).await?;
+    let show = ctx
+        .shows
+        .create(&show_factory::create_show_input("Test Show"))
+        .await?;
 
     // Create a user with this username
     let user = ctx.users.create(username).await?;

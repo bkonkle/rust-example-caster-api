@@ -1,18 +1,19 @@
 use anyhow::Result;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
+use pretty_assertions::assert_eq;
 
+use crate::{role_grant_factory, user_factory};
 use caster_users::{
-    role_grant_model::{CreateRoleGrantInput},
+    role_grant_model::CreateRoleGrantInput,
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
 };
 
-mod users_factory;
-
 #[tokio::test]
 async fn test_role_grants_service_get() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let grant = users_factory::create_role_grant_for_user("shows", "show-id", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let grant =
+        role_grant_factory::create_role_grant_for_user("profiles", "profile-id", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -37,7 +38,7 @@ async fn test_role_grants_service_get() -> Result<()> {
         vec![Transaction::from_sql_and_values(
             DatabaseBackend::Postgres,
             r#"SELECT "role_grants"."id", "role_grants"."created_at", "role_grants"."updated_at", "role_grants"."role_key", "role_grants"."user_id", "role_grants"."resource_table", "role_grants"."resource_id" FROM "role_grants" WHERE "role_grants"."id" = $1 LIMIT $2"#,
-            vec![format!("{}-{}", user.id, "show-id").into(), 1u64.into()]
+            vec![format!("{}-{}", user.id, "profile-id").into(), 1u64.into()]
         )]
     );
 
@@ -46,8 +47,9 @@ async fn test_role_grants_service_get() -> Result<()> {
 
 #[tokio::test]
 async fn test_role_grants_service_create() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let grant = users_factory::create_role_grant_for_user("shows", "show-id", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let grant =
+        role_grant_factory::create_role_grant_for_user("profiles", "profile-id", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -61,8 +63,8 @@ async fn test_role_grants_service_create() -> Result<()> {
         .create(&CreateRoleGrantInput {
             role_key: grant.role_key.clone(),
             user_id: user.id.clone(),
-            resource_table: "shows".to_string(),
-            resource_id: "show-id".to_string(),
+            resource_table: "profiles".to_string(),
+            resource_id: "profile-id".to_string(),
         })
         .await?;
 
@@ -93,8 +95,9 @@ async fn test_role_grants_service_create() -> Result<()> {
 
 #[tokio::test]
 async fn test_role_grants_service_delete() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let grant = users_factory::create_role_grant_for_user("shows", "show-id", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let grant =
+        role_grant_factory::create_role_grant_for_user("profiles", "profile-id", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)

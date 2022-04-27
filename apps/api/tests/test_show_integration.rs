@@ -1,10 +1,10 @@
 use anyhow::Result;
-use caster_shows::show_mutations::CreateShowInput;
-use caster_users::role_grant_model::CreateRoleGrantInput;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
 use caster_test::oauth2::{Credentials, User as TestUser};
+use caster_test_shows::show_factory;
+use caster_users::role_grant_model::CreateRoleGrantInput;
 
 mod test_utils;
 use test_utils::TestUtils;
@@ -178,12 +178,7 @@ async fn test_get_show() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: None,
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let req = graphql.query(GET_SHOW, json!({ "id": show.id,}), Some(token))?;
@@ -281,22 +276,12 @@ async fn test_get_many_shows() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: Some("Show with a summary".to_string()),
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let other_show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show 2".to_string(),
-            summary: None,
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show 2"))
         .await?;
 
     let req = graphql.query(GET_MANY_SHOWS, Value::Null, None)?;
@@ -320,7 +305,7 @@ async fn test_get_many_shows() -> Result<()> {
 
     assert_eq!(json_show["id"], show.id);
     assert_eq!(json_show["title"], "Test Show");
-    assert_eq!(json_show["summary"], "Show with a summary");
+    assert_eq!(json_show["summary"], show.summary.unwrap());
 
     assert_eq!(json_other_show["id"], other_show.id);
     assert_eq!(json_other_show["title"], "Test Show 2");
@@ -373,12 +358,7 @@ async fn test_update_show() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: Some("Show with a summary".to_string()),
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     // Grant the admin role to this User for this Show
@@ -470,12 +450,7 @@ async fn test_update_show_requires_authn() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: Some("Show with a summary".to_string()),
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let req = graphql.query(
@@ -527,12 +502,7 @@ async fn test_update_show_requires_authz() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: Some("Show with a summary".to_string()),
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let req = graphql.query(
@@ -595,12 +565,7 @@ async fn test_delete_show() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: None,
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     // Grant the admin role to this User for this Show
@@ -668,12 +633,7 @@ async fn test_delete_show_requires_authn() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: None,
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), None)?;
@@ -716,12 +676,7 @@ async fn test_delete_show_requires_authz() -> Result<()> {
 
     let show = ctx
         .shows
-        .create(&CreateShowInput {
-            title: "Test Show".to_string(),
-            summary: None,
-            picture: None,
-            content: None,
-        })
+        .create(&show_factory::create_show_input("Test Show"))
         .await?;
 
     let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;

@@ -54,9 +54,9 @@ pub enum ShowsOrderBy {
     IdAsc,
     /// Order descending by "id"
     IdDesc,
-    /// Order ascending by "displayName"
+    /// Order ascending by "title"
     TitleAsc,
-    /// Order descending by "displayName"
+    /// Order descending by "title"
     TitleDesc,
     /// Order ascending by "createdAt"
     CreatedAtAsc,

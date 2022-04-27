@@ -1,21 +1,21 @@
 use anyhow::Result;
-use caster_utils::pagination::ManyResponse;
+use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
+use crate::{profile_factory, user_factory};
 use caster_users::{
     profile_model::{Model as ProfileModel, ProfileList},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy},
     profiles_service::{DefaultProfilesService, ProfilesService},
 };
-
-mod users_factory;
+use caster_utils::pagination::ManyResponse;
 
 #[tokio::test]
 async fn test_profiles_service_get() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -49,8 +49,8 @@ async fn test_profiles_service_get() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_get_with_related() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -84,11 +84,11 @@ async fn test_profiles_service_get_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_get_many() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user);
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user);
 
-    let other_user = users_factory::create_user("test-user-2");
-    let other_profile = users_factory::create_profile_for_user("test+2@profile.com", other_user);
+    let other_user = user_factory::create_user_with_username("test-user-2");
+    let other_profile = profile_factory::create_profile_for_user("test+2@profile.com", other_user);
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -145,12 +145,12 @@ async fn test_profiles_service_get_many() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_get_many_with_related() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
-    let other_user = users_factory::create_user("test-user-2");
+    let other_user = user_factory::create_user_with_username("test-user-2");
     let other_profile =
-        users_factory::create_profile_for_user("test+2@profile.com", other_user.clone());
+        profile_factory::create_profile_for_user("test+2@profile.com", other_user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -214,18 +214,18 @@ async fn test_profiles_service_get_many_with_related() -> Result<()> {
 #[tokio::test]
 async fn test_profiles_service_get_many_pagination() -> Result<()> {
     let users = vec![
-        users_factory::create_user("test-user-1"),
-        users_factory::create_user("test-user-2"),
-        users_factory::create_user("test-user-3"),
-        users_factory::create_user("test-user-4"),
-        users_factory::create_user("test-user-5"),
+        user_factory::create_user_with_username("test-user-1"),
+        user_factory::create_user_with_username("test-user-2"),
+        user_factory::create_user_with_username("test-user-3"),
+        user_factory::create_user_with_username("test-user-4"),
+        user_factory::create_user_with_username("test-user-5"),
     ];
 
     let profiles: Vec<ProfileModel> = users
         .into_iter()
         .enumerate()
         .map(|(i, user)| {
-            users_factory::create_profile_for_user(&format!("test+{}@profile.com", i), user)
+            profile_factory::create_profile_for_user(&format!("test+{}@profile.com", i), user)
         })
         .collect();
 
@@ -295,32 +295,32 @@ async fn test_profiles_service_get_many_pagination() -> Result<()> {
 #[tokio::test]
 async fn test_profiles_service_get_many_pagination_with_related() -> Result<()> {
     let users = vec![
-        users_factory::create_user("test-user-1"),
-        users_factory::create_user("test-user-2"),
-        users_factory::create_user("test-user-3"),
-        users_factory::create_user("test-user-4"),
-        users_factory::create_user("test-user-5"),
+        user_factory::create_user_with_username("test-user-1"),
+        user_factory::create_user_with_username("test-user-2"),
+        user_factory::create_user_with_username("test-user-3"),
+        user_factory::create_user_with_username("test-user-4"),
+        user_factory::create_user_with_username("test-user-5"),
     ];
 
     let profiles = vec![
         (
-            users_factory::create_profile_for_user("test+1@profile.com", users[0].clone()),
+            profile_factory::create_profile_for_user("test+1@profile.com", users[0].clone()),
             users[0].clone(),
         ),
         (
-            users_factory::create_profile_for_user("test+2@profile.com", users[1].clone()),
+            profile_factory::create_profile_for_user("test+2@profile.com", users[1].clone()),
             users[1].clone(),
         ),
         (
-            users_factory::create_profile_for_user("test+3@profile.com", users[2].clone()),
+            profile_factory::create_profile_for_user("test+3@profile.com", users[2].clone()),
             users[2].clone(),
         ),
         (
-            users_factory::create_profile_for_user("test+4@profile.com", users[3].clone()),
+            profile_factory::create_profile_for_user("test+4@profile.com", users[3].clone()),
             users[3].clone(),
         ),
         (
-            users_factory::create_profile_for_user("test+5@profile.com", users[4].clone()),
+            profile_factory::create_profile_for_user("test+5@profile.com", users[4].clone()),
             users[4].clone(),
         ),
     ];
@@ -391,8 +391,8 @@ async fn test_profiles_service_get_many_pagination_with_related() -> Result<()> 
 
 #[tokio::test]
 async fn test_profiles_service_create() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -447,8 +447,8 @@ async fn test_profiles_service_create() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_create_with_related() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -511,8 +511,8 @@ async fn test_profiles_service_create_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_update() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let updated = ProfileModel {
         email: "test+updated@profile.com".to_string(),
@@ -572,8 +572,8 @@ async fn test_profiles_service_update() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_update_with_related() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let updated = ProfileModel {
         email: "test+updated@profile.com".to_string(),
@@ -634,8 +634,8 @@ async fn test_profiles_service_update_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_profiles_service_delete() -> Result<()> {
-    let user = users_factory::create_user("test-username");
-    let profile = users_factory::create_profile_for_user("test@profile.com", user.clone());
+    let user = user_factory::create_user_with_username("test-username");
+    let profile = profile_factory::create_profile_for_user("test@profile.com", user.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)

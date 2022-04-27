@@ -1,5 +1,4 @@
 use anyhow::Result;
-use fake::{Fake, Faker};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
@@ -7,14 +6,11 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use caster_api::{run, Context};
-use caster_shows::{
-    episode_model::Episode, episode_mutations::CreateEpisodeInput, show_model::Show,
-    show_mutations::CreateShowInput,
-};
+use caster_shows::{episode_model::Episode, show_model::Show};
 use caster_test::{graphql::GraphQL, oauth2::OAuth2Utils};
-use caster_users::{
-    profile_model::Profile, profile_mutations::CreateProfileInput, user_model::User,
-};
+use caster_test_shows::{episode_factory, show_factory};
+use caster_test_users::profile_factory;
+use caster_users::{profile_model::Profile, user_model::User};
 use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
@@ -83,15 +79,7 @@ impl TestUtils {
             .ctx
             .profiles
             .create(
-                &CreateProfileInput {
-                    email: email.to_string(),
-                    user_id: user.id.clone(),
-                    display_name: Faker.fake(),
-                    picture: Faker.fake(),
-                    content: None,
-                    city: Faker.fake(),
-                    state_province: Faker.fake(),
-                },
+                &profile_factory::create_profile_input(&user.id, email),
                 &false,
             )
             .await?;
@@ -109,25 +97,14 @@ impl TestUtils {
         let show = self
             .ctx
             .shows
-            .create(&CreateShowInput {
-                title: show_title.to_string(),
-                summary: Faker.fake(),
-                picture: Faker.fake(),
-                content: None,
-            })
+            .create(&show_factory::create_show_input(show_title))
             .await?;
 
         let episode = self
             .ctx
             .episodes
             .create(
-                &CreateEpisodeInput {
-                    title: episode_title.to_string(),
-                    summary: Faker.fake(),
-                    picture: Faker.fake(),
-                    content: None,
-                    show_id: show.id.clone(),
-                },
+                &episode_factory::create_episode_input(episode_title, &show.id),
                 &false,
             )
             .await?;

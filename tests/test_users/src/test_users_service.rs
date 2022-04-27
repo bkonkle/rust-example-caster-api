@@ -1,18 +1,18 @@
 use anyhow::Result;
+use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
+use crate::user_factory;
 use caster_users::{
     user_model::User,
     user_mutations::UpdateUserInput,
     users_service::{DefaultUsersService, UsersService},
 };
 
-mod users_factory;
-
 #[tokio::test]
 async fn test_users_service_get() -> Result<()> {
-    let user = users_factory::create_user("test-username");
+    let user = user_factory::create_user_with_username("test-username");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -46,7 +46,7 @@ async fn test_users_service_get() -> Result<()> {
 
 #[tokio::test]
 async fn test_users_service_get_by_username() -> Result<()> {
-    let user = users_factory::create_user("test-username");
+    let user = user_factory::create_user_with_username("test-username");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -82,7 +82,7 @@ async fn test_users_service_get_by_username() -> Result<()> {
 
 #[tokio::test]
 async fn test_users_service_create() -> Result<()> {
-    let user = users_factory::create_user("test-username");
+    let user = user_factory::create_user_with_username("test-username");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -116,7 +116,7 @@ async fn test_users_service_create() -> Result<()> {
 
 #[tokio::test]
 async fn test_users_service_update() -> Result<()> {
-    let user = users_factory::create_user("test-username");
+    let user = user_factory::create_user_with_username("test-username");
     let updated = User {
         username: "updated-username".to_string(),
         ..user.clone()
@@ -172,7 +172,7 @@ async fn test_users_service_update() -> Result<()> {
 
 #[tokio::test]
 async fn test_users_service_delete() -> Result<()> {
-    let user = users_factory::create_user("test-username");
+    let user = user_factory::create_user_with_username("test-username");
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)

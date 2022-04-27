@@ -1,9 +1,9 @@
 use anyhow::Result;
-use caster_users::role_grant_model::CreateRoleGrantInput;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
 
 use caster_test::oauth2::{Credentials, User as TestUser};
+use caster_users::role_grant_model::CreateRoleGrantInput;
 
 mod test_utils;
 use test_utils::TestUtils;

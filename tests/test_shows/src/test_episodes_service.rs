@@ -1,23 +1,23 @@
 use anyhow::Result;
-use caster_utils::pagination::ManyResponse;
+use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
+use crate::{episode_factory, show_factory};
 use caster_shows::{
     episode_model::Episode,
     episode_mutations::{CreateEpisodeInput, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy},
     episodes_service::{DefaultEpisodesService, EpisodesService},
 };
-
-mod shows_factory;
+use caster_utils::pagination::ManyResponse;
 
 #[tokio::test]
 async fn test_episodes_service_get() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
+    let show = show_factory::create_show_with_title("Test Show");
     let episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode", show.clone())
+        ..episode_factory::create_episode_for_show("Test Episode", show.clone())
     };
 
     let db = Arc::new(
@@ -52,8 +52,8 @@ async fn test_episodes_service_get() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_get_with_related() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-    let episode = shows_factory::create_episode_for_show("Test Episode", show.clone());
+    let show = show_factory::create_show_with_title("Test Show");
+    let episode = episode_factory::create_episode_for_show("Test Episode", show.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -87,16 +87,16 @@ async fn test_episodes_service_get_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_get_many() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
+    let show = show_factory::create_show_with_title("Test Show");
     let episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode", show)
+        ..episode_factory::create_episode_for_show("Test Episode", show)
     };
 
-    let other_show = shows_factory::create_show("Test Show 2");
+    let other_show = show_factory::create_show_with_title("Test Show 2");
     let other_episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode 2", other_show)
+        ..episode_factory::create_episode_for_show("Test Episode 2", other_show)
     };
 
     let db = Arc::new(
@@ -151,12 +151,12 @@ async fn test_episodes_service_get_many() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_get_many_with_related() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-    let episode = shows_factory::create_episode_for_show("Test Episode", show.clone());
+    let show = show_factory::create_show_with_title("Test Show");
+    let episode = episode_factory::create_episode_for_show("Test Episode", show.clone());
 
-    let other_show = shows_factory::create_show("Test Show 2");
+    let other_show = show_factory::create_show_with_title("Test Show 2");
     let other_episode =
-        shows_factory::create_episode_for_show("Test Episode 2", other_show.clone());
+        episode_factory::create_episode_for_show("Test Episode 2", other_show.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -214,18 +214,18 @@ async fn test_episodes_service_get_many_with_related() -> Result<()> {
 #[tokio::test]
 async fn test_episodes_service_get_many_pagination() -> Result<()> {
     let shows = vec![
-        shows_factory::create_show("Test Show 1"),
-        shows_factory::create_show("Test Show 2"),
-        shows_factory::create_show("Test Show 3"),
-        shows_factory::create_show("Test Show 4"),
-        shows_factory::create_show("Test Show 5"),
+        show_factory::create_show_with_title("Test Show 1"),
+        show_factory::create_show_with_title("Test Show 2"),
+        show_factory::create_show_with_title("Test Show 3"),
+        show_factory::create_show_with_title("Test Show 4"),
+        show_factory::create_show_with_title("Test Show 5"),
     ];
 
     let episodes: Vec<Episode> = shows
         .into_iter()
         .map(|show| Episode {
             show: None,
-            ..shows_factory::create_episode_for_show("Test Episode 1", show)
+            ..episode_factory::create_episode_for_show("Test Episode 1", show)
         })
         .collect();
 
@@ -293,32 +293,32 @@ async fn test_episodes_service_get_many_pagination() -> Result<()> {
 #[tokio::test]
 async fn test_episodes_service_get_many_pagination_with_related() -> Result<()> {
     let shows = vec![
-        shows_factory::create_show("Test Show 1"),
-        shows_factory::create_show("Test Show 2"),
-        shows_factory::create_show("Test Show 3"),
-        shows_factory::create_show("Test Show 4"),
-        shows_factory::create_show("Test Show 5"),
+        show_factory::create_show_with_title("Test Show 1"),
+        show_factory::create_show_with_title("Test Show 2"),
+        show_factory::create_show_with_title("Test Show 3"),
+        show_factory::create_show_with_title("Test Show 4"),
+        show_factory::create_show_with_title("Test Show 5"),
     ];
 
     let episodes = vec![
         (
-            shows_factory::create_episode_for_show("Test Episode 1", shows[0].clone()),
+            episode_factory::create_episode_for_show("Test Episode 1", shows[0].clone()),
             shows[0].clone(),
         ),
         (
-            shows_factory::create_episode_for_show("Test Episode 1", shows[1].clone()),
+            episode_factory::create_episode_for_show("Test Episode 1", shows[1].clone()),
             shows[1].clone(),
         ),
         (
-            shows_factory::create_episode_for_show("Test Episode 1", shows[2].clone()),
+            episode_factory::create_episode_for_show("Test Episode 1", shows[2].clone()),
             shows[2].clone(),
         ),
         (
-            shows_factory::create_episode_for_show("Test Episode 1", shows[3].clone()),
+            episode_factory::create_episode_for_show("Test Episode 1", shows[3].clone()),
             shows[3].clone(),
         ),
         (
-            shows_factory::create_episode_for_show("Test Episode 1", shows[4].clone()),
+            episode_factory::create_episode_for_show("Test Episode 1", shows[4].clone()),
             shows[4].clone(),
         ),
     ];
@@ -389,10 +389,10 @@ async fn test_episodes_service_get_many_pagination_with_related() -> Result<()> 
 
 #[tokio::test]
 async fn test_episodes_service_create() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
+    let show = show_factory::create_show_with_title("Test Show");
     let episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode", show.clone())
+        ..episode_factory::create_episode_for_show("Test Episode", show.clone())
     };
 
     let db = Arc::new(
@@ -444,8 +444,8 @@ async fn test_episodes_service_create() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_create_with_related() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-    let episode = shows_factory::create_episode_for_show("Test Episode", show.clone());
+    let show = show_factory::create_show_with_title("Test Show");
+    let episode = episode_factory::create_episode_for_show("Test Episode", show.clone());
 
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
@@ -504,10 +504,10 @@ async fn test_episodes_service_create_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_update() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
+    let show = show_factory::create_show_with_title("Test Show");
     let episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode", show.clone())
+        ..episode_factory::create_episode_for_show("Test Episode", show.clone())
     };
 
     let updated = Episode {
@@ -566,8 +566,8 @@ async fn test_episodes_service_update() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_update_with_related() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
-    let episode = shows_factory::create_episode_for_show("Test Episode", show.clone());
+    let show = show_factory::create_show_with_title("Test Show");
+    let episode = episode_factory::create_episode_for_show("Test Episode", show.clone());
 
     let updated = Episode {
         title: "Updated Episode".to_string(),
@@ -626,10 +626,10 @@ async fn test_episodes_service_update_with_related() -> Result<()> {
 
 #[tokio::test]
 async fn test_episodes_service_delete() -> Result<()> {
-    let show = shows_factory::create_show("Test Show");
+    let show = show_factory::create_show_with_title("Test Show");
     let episode = Episode {
         show: None,
-        ..shows_factory::create_episode_for_show("Test Episode", show.clone())
+        ..episode_factory::create_episode_for_show("Test Episode", show.clone())
     };
 
     let db = Arc::new(
