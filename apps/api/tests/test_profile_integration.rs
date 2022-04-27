@@ -1,6 +1,8 @@
 use anyhow::Result;
+use futures::executor::block_on;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
+use std::panic;
 
 use caster_test::oauth2::{Credentials, User as TestUser};
 
@@ -206,14 +208,25 @@ async fn test_create_profile_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -260,19 +273,30 @@ async fn test_get_profile() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["getProfile"];
-    let json_user = &json_profile["user"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], email.clone());
-    assert_eq!(json_user["id"], user.id);
+            let json_profile = &json["data"]["getProfile"];
+            let json_user = &json_profile["user"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], email.clone());
+            assert_eq!(json_user["id"], user.id);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -303,13 +327,24 @@ async fn test_get_profile_empty() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["data"]["getProfile"], Value::Null);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["data"]["getProfile"], Value::Null);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -336,18 +371,29 @@ async fn test_get_profile_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["getProfile"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_profile["user"], Value::Null);
+            let json_profile = &json["data"]["getProfile"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], Value::Null);
+            assert_eq!(json_profile["user"], Value::Null);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -378,18 +424,29 @@ async fn test_get_profile_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["getProfile"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_profile["user"], Value::Null);
+            let json_profile = &json["data"]["getProfile"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], Value::Null);
+            assert_eq!(json_profile["user"], Value::Null);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -457,33 +514,44 @@ async fn test_get_many_profiles() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["getManyProfiles"]["data"][0];
-    let json_user = &json_profile["user"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    let json_other_profile = &json["data"]["getManyProfiles"]["data"][1];
+            let json_profile = &json["data"]["getManyProfiles"]["data"][0];
+            let json_user = &json_profile["user"];
 
-    assert_eq!(status, 200);
+            let json_other_profile = &json["data"]["getManyProfiles"]["data"][1];
 
-    assert_eq!(json["data"]["getManyProfiles"]["count"], 2);
-    assert_eq!(json["data"]["getManyProfiles"]["total"], 2);
-    assert_eq!(json["data"]["getManyProfiles"]["page"], 1);
-    assert_eq!(json["data"]["getManyProfiles"]["pageCount"], 1);
+            assert_eq!(status, 200);
 
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], email.clone());
-    assert_eq!(json_user["id"], user.id);
+            assert_eq!(json["data"]["getManyProfiles"]["count"], 2);
+            assert_eq!(json["data"]["getManyProfiles"]["total"], 2);
+            assert_eq!(json["data"]["getManyProfiles"]["page"], 1);
+            assert_eq!(json["data"]["getManyProfiles"]["pageCount"], 1);
 
-    assert_eq!(json_other_profile["id"], other_profile.id);
-    assert_eq!(json_other_profile["email"], Value::Null); // Because of censoring
-    assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], email.clone());
+            assert_eq!(json_user["id"], user.id);
+
+            assert_eq!(json_other_profile["id"], other_profile.id);
+            assert_eq!(json_other_profile["email"], Value::Null); // Because of censoring
+            assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
     ctx.users.delete(&other_user.id).await?;
     ctx.profiles.delete(&other_profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -508,19 +576,30 @@ async fn test_get_many_profiles_anon() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["getManyProfiles"]["data"][0];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
+            let json_profile = &json["data"]["getManyProfiles"]["data"][0];
 
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], Value::Null);
-    assert_eq!(json_profile["user"], Value::Null);
+            assert_eq!(status, 200);
+
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], Value::Null);
+            assert_eq!(json_profile["user"], Value::Null);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -576,21 +655,32 @@ async fn test_update_profile() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_profile = &json["data"]["updateProfile"]["profile"];
-    let json_user = &json_profile["user"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
+            let json_profile = &json["data"]["updateProfile"]["profile"];
+            let json_user = &json_profile["user"];
 
-    assert_eq!(json_profile["id"], profile.id);
-    assert_eq!(json_profile["email"], email.clone());
-    assert_eq!(json_profile["displayName"], "Test Name");
-    assert_eq!(json_user["id"], user.id);
+            assert_eq!(status, 200);
+
+            assert_eq!(json_profile["id"], profile.id);
+            assert_eq!(json_profile["email"], email.clone());
+            assert_eq!(json_profile["displayName"], "Test Name");
+            assert_eq!(json_user["id"], user.id);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -624,15 +714,26 @@ async fn test_update_profile_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Unauthorized");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -710,17 +811,28 @@ async fn test_update_profile_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
     ctx.users.delete(&other_user.id).await?;
     ctx.profiles.delete(&other_profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -759,13 +871,24 @@ async fn test_delete_profile() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert!(json["data"]["deleteProfile"].as_bool().unwrap());
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert!(json["data"]["deleteProfile"].as_bool().unwrap());
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -792,15 +915,26 @@ async fn test_delete_profile_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Unauthorized");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -862,17 +996,28 @@ async fn test_delete_profile_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.profiles.delete(&profile.id).await?;
     ctx.users.delete(&other_user.id).await?;
     ctx.profiles.delete(&other_profile.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }

@@ -7,8 +7,8 @@ use caster_shows::{show_model::Show, show_mutations::CreateShowInput};
 pub fn create_show_input(show_title: &str) -> CreateShowInput {
     CreateShowInput {
         title: show_title.to_string(),
-        summary: Faker.fake(),
-        picture: Faker.fake(),
+        summary: Some(Faker.fake()),
+        picture: Some(Faker.fake()),
         content: None,
     }
 }
@@ -20,8 +20,8 @@ pub fn create_show_factory(title: Option<String>) -> Show {
     Show {
         id: slugify(title.clone()),
         title,
-        summary: Faker.fake(),
-        picture: Faker.fake(),
+        summary: Some(Faker.fake()),
+        picture: Some(Faker.fake()),
         content: None,
         created_at: Faker.fake(),
         updated_at: Faker.fake(),

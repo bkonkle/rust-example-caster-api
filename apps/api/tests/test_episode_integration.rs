@@ -1,6 +1,8 @@
 use anyhow::Result;
+use futures::executor::block_on;
 use hyper::body::to_bytes;
 use serde_json::{json, Value};
+use std::panic;
 
 use caster_test::oauth2::{Credentials, User as TestUser};
 use caster_test_shows::show_factory;
@@ -178,14 +180,25 @@ async fn test_create_episode_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Unauthorized");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -226,15 +239,26 @@ async fn test_create_episode_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -282,19 +306,30 @@ async fn test_get_episode() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_episode = &json["data"]["getEpisode"];
-    let json_show = &json_episode["show"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_episode["id"], episode.id);
-    assert_eq!(json_episode["title"], "Test Episode 1");
-    assert_eq!(json_show["id"], show.id);
+            let json_episode = &json["data"]["getEpisode"];
+            let json_show = &json_episode["show"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_episode["id"], episode.id);
+            assert_eq!(json_episode["title"], "Test Episode 1");
+            assert_eq!(json_show["id"], show.id);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -392,34 +427,45 @@ async fn test_get_many_episodes() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_episode = &json["data"]["getManyEpisodes"]["data"][0];
-    let json_show = &json_episode["show"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    let json_other_episode = &json["data"]["getManyEpisodes"]["data"][1];
-    let json_other_show = &json_other_episode["show"];
+            let json_episode = &json["data"]["getManyEpisodes"]["data"][0];
+            let json_show = &json_episode["show"];
 
-    assert_eq!(status, 200);
+            let json_other_episode = &json["data"]["getManyEpisodes"]["data"][1];
+            let json_other_show = &json_other_episode["show"];
 
-    assert_eq!(json["data"]["getManyEpisodes"]["count"], 2);
-    assert_eq!(json["data"]["getManyEpisodes"]["total"], 2);
-    assert_eq!(json["data"]["getManyEpisodes"]["page"], 1);
-    assert_eq!(json["data"]["getManyEpisodes"]["pageCount"], 1);
+            assert_eq!(status, 200);
 
-    assert_eq!(json_episode["id"], episode.id);
-    assert_eq!(json_episode["title"], "Test Episode 1");
-    assert_eq!(json_show["id"], show.id);
+            assert_eq!(json["data"]["getManyEpisodes"]["count"], 2);
+            assert_eq!(json["data"]["getManyEpisodes"]["total"], 2);
+            assert_eq!(json["data"]["getManyEpisodes"]["page"], 1);
+            assert_eq!(json["data"]["getManyEpisodes"]["pageCount"], 1);
 
-    assert_eq!(json_other_episode["id"], other_episode.id);
-    assert_eq!(json_other_episode["title"], "Test Episode 1");
-    assert_eq!(json_other_show["id"], other_show.id);
+            assert_eq!(json_episode["id"], episode.id);
+            assert_eq!(json_episode["title"], "Test Episode 1");
+            assert_eq!(json_show["id"], show.id);
+
+            assert_eq!(json_other_episode["id"], other_episode.id);
+            assert_eq!(json_other_episode["title"], "Test Episode 1");
+            assert_eq!(json_other_show["id"], other_show.id);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
     ctx.episodes.delete(&other_episode.id).await?;
     ctx.shows.delete(&other_show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -490,22 +536,33 @@ async fn test_update_episode() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_episode = &json["data"]["updateEpisode"]["episode"];
-    let json_show = &json_episode["show"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
+            let json_episode = &json["data"]["updateEpisode"]["episode"];
+            let json_show = &json_episode["show"];
 
-    assert_eq!(json_episode["id"], episode.id);
-    assert_eq!(json_episode["title"], "Test Episode 1");
-    assert_eq!(json_episode["summary"], "Test Summary");
-    assert_eq!(json_show["id"], show.id);
+            assert_eq!(status, 200);
+
+            assert_eq!(json_episode["id"], episode.id);
+            assert_eq!(json_episode["title"], "Test Episode 1");
+            assert_eq!(json_episode["summary"], "Test Summary");
+            assert_eq!(json_show["id"], show.id);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -573,15 +630,26 @@ async fn test_update_episode_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Unauthorized");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -621,16 +689,27 @@ async fn test_update_episode_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -683,14 +762,25 @@ async fn test_delete_episode() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert!(json["data"]["deleteEpisode"].as_bool().unwrap());
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert!(json["data"]["deleteEpisode"].as_bool().unwrap());
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -742,15 +832,26 @@ async fn test_delete_episode_authn() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Unauthorized");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Unauthorized");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -783,16 +884,27 @@ async fn test_delete_episode_authz() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json["errors"][0]["message"], "Forbidden");
-    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
+
+            assert_eq!(status, 200);
+            assert_eq!(json["errors"][0]["message"], "Forbidden");
+            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
     ctx.episodes.delete(&episode.id).await?;
     ctx.shows.delete(&show.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }

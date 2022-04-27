@@ -1,6 +1,9 @@
 use anyhow::Result;
+use futures::executor::block_on;
 use hyper::body::to_bytes;
+use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
+use std::panic;
 
 use caster_test::oauth2::{Credentials, User as TestUser};
 use caster_users::role_grant_model::CreateRoleGrantInput;
@@ -64,19 +67,30 @@ async fn test_get_current_user() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_user = &json["data"]["getCurrentUser"];
-    let json_roles = &json_user["roles"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_user["id"], user.id);
-    assert_eq!(json_user["username"], user.username);
-    assert!(json_user["isActive"].as_bool().unwrap());
-    assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+            let json_user = &json["data"]["getCurrentUser"];
+            let json_roles = &json_user["roles"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_user["id"], user.id);
+            assert_eq!(json_user["username"], user.username);
+            assert!(json_user["isActive"].as_bool().unwrap());
+            assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -173,18 +187,29 @@ async fn test_get_or_create_current_user_existing() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_user = &json["data"]["getOrCreateCurrentUser"]["user"];
-    let json_roles = &json_user["roles"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_user["id"], user.id);
-    assert_eq!(json_user["username"], user.username);
-    assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+            let json_user = &json["data"]["getOrCreateCurrentUser"]["user"];
+            let json_roles = &json_user["roles"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_user["id"], user.id);
+            assert_eq!(json_user["username"], user.username);
+            assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }
@@ -331,18 +356,29 @@ async fn test_update_current_user() -> Result<()> {
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
-    let json: Value = serde_json::from_slice(&body)?;
 
-    let json_user = &json["data"]["updateCurrentUser"]["user"];
-    let json_roles = &json_user["roles"];
+    let result = panic::catch_unwind(|| {
+        block_on(async {
+            let json: Value = serde_json::from_slice(&body)?;
 
-    assert_eq!(status, 200);
-    assert_eq!(json_user["username"], username.to_string());
-    assert!(!json_user["isActive"].as_bool().unwrap());
-    assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+            let json_user = &json["data"]["updateCurrentUser"]["user"];
+            let json_roles = &json_user["roles"];
+
+            assert_eq!(status, 200);
+            assert_eq!(json_user["username"], username.to_string());
+            assert!(!json_user["isActive"].as_bool().unwrap());
+            assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
+
+            Ok(()) as Result<()>
+        })
+    });
 
     // Clean up
     ctx.users.delete(&user.id).await?;
+
+    if let Err(err) = result {
+        panic::resume_unwind(err);
+    }
 
     Ok(())
 }

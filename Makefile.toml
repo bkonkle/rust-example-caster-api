@@ -53,7 +53,7 @@ args = [
 workspace = false
 env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
 command = "cargo"
-args = ["test", "--", "--nocapture", "--ignored"]
+args = ["test", "--", "--nocapture", "--ignored", "${@}"]
 
 [tasks.integration-ci]
 workspace = false
