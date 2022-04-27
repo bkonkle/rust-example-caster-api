@@ -15,4 +15,5 @@
 !apps/
 apps/*/tests/
 !libs/
-libs/*/tests/
+!tests/
+
