@@ -97,7 +97,7 @@ impl ProfilesService for DefaultProfilesService {
         let mut condition = Condition::any();
 
         for id in ids {
-            condition = condition.add(user_model::Column::Id.eq(id.clone()));
+            condition = condition.add(profile_model::Column::Id.eq(id.clone()));
         }
 
         let profiles = profile_model::Entity::find()
