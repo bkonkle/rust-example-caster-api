@@ -18,9 +18,11 @@ use caster_users::{
 
 use crate::Context;
 
+/// The GraphQL top-level Query type
 #[derive(MergedObject, Default)]
 pub struct Query(UsersQuery, ProfilesQuery, ShowsQuery, EpisodesQuery);
 
+/// The GraphQL top-level Mutation type
 #[derive(MergedObject, Default)]
 pub struct Mutation(
     UsersMutation,

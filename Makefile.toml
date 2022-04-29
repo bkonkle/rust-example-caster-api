@@ -49,6 +49,12 @@ args = [
     "${@}",
 ]
 
+[tasks.schema]
+workspace = false
+cwd = "./"
+command = "cargo"
+args = ["run", "--bin", "caster-schema"]
+
 [tasks.integration]
 workspace = false
 env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }

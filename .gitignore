@@ -11,3 +11,6 @@ target/
 
 # Application files
 .env
+
+# Auto-generated Schema
+schema.graphql

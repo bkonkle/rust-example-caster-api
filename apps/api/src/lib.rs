@@ -28,8 +28,10 @@ use caster_utils::config::Config;
 use router::create_routes;
 
 mod errors;
-mod graphql;
 mod router;
+
+/// GraphQL Schema Creation
+pub mod graphql;
 
 #[macro_use]
 extern crate log;

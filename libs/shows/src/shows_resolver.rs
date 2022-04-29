@@ -155,7 +155,7 @@ impl ShowsMutation {
 
         // Check authentication and authorization
         if let Some(user) = user {
-            if !oso.is_allowed(user.clone(), "update", existing)? {
+            if !oso.is_allowed(user.clone(), "delete", existing)? {
                 return Err(graphql_error("Forbidden", StatusCode::FORBIDDEN));
             }
         } else {
