@@ -1,7 +1,6 @@
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql::{EmptySubscription, Schema};
 use async_graphql_warp::{graphql, GraphQLResponse};
-use caster_users::users_service::UsersService;
 use std::{convert::Infallible, sync::Arc};
 use warp::{http::Response as HttpResponse, Rejection};
 use warp::{Filter, Reply};
@@ -14,6 +13,7 @@ use caster_auth::{
     authenticate::{with_auth, Subject},
     jwks::JWKS,
 };
+use caster_users::users_service::UsersService;
 
 /// Add context to the GraphQL Request
 async fn with_context(
