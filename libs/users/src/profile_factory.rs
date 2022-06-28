@@ -5,7 +5,6 @@ use crate::{
     profile_model::Model as ProfileModel, profile_mutations::CreateProfileInput,
     user_factory::create_user_with_username, user_model::User,
 };
-use caster_utils::json::JsonOption;
 
 /// Create a `CreateProfileInput`
 pub fn create_profile_input(user_id: &str, email: &str) -> CreateProfileInput {
@@ -14,7 +13,7 @@ pub fn create_profile_input(user_id: &str, email: &str) -> CreateProfileInput {
         user_id: user_id.to_string(),
         display_name: Faker.fake(),
         picture: Faker.fake(),
-        content: JsonOption::new(None),
+        content: None,
         city: Faker.fake(),
         state_province: Faker.fake(),
     }

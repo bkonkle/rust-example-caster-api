@@ -1,12 +1,10 @@
 use async_graphql::{InputObject, SimpleObject};
-use caster_utils::json::JsonOption;
-use fake::{Dummy, Fake};
-use serde_json;
+use serde_json::Value as Json;
 
 use crate::profile_model::Profile;
 
 /// The `CreateProfileInput` input type
-#[derive(Clone, Dummy, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct CreateProfileInput {
     /// The Profile's email address
     pub email: String,
@@ -18,7 +16,7 @@ pub struct CreateProfileInput {
     pub picture: Option<String>,
 
     /// The Profile json content
-    pub content: JsonOption,
+    pub content: Option<Json>,
 
     /// The Profile's city
     pub city: Option<String>,
@@ -31,7 +29,7 @@ pub struct CreateProfileInput {
 }
 
 /// The `UpdateProfileInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct UpdateProfileInput {
     /// The Profile's email address
     pub email: Option<String>,
@@ -43,7 +41,7 @@ pub struct UpdateProfileInput {
     pub picture: Option<String>,
 
     /// The Profile json content
-    pub content: Option<serde_json::Value>,
+    pub content: Option<Json>,
 
     /// The Profile's city
     pub city: Option<String>,
@@ -56,7 +54,7 @@ pub struct UpdateProfileInput {
 }
 
 /// The `MutateProfileResult` type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Default, Eq, PartialEq, SimpleObject)]
 pub struct MutateProfileResult {
     /// The Profile's subscriber id
     pub profile: Option<Profile>,

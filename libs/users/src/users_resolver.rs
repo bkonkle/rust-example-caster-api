@@ -11,7 +11,6 @@ use crate::{
 };
 use caster_auth::authenticate::Subject;
 use caster_utils::errors::{as_graphql_error, graphql_error};
-use caster_utils::json::JsonOption;
 
 /// The Query segment for Users
 #[derive(Default)]
@@ -72,7 +71,7 @@ impl UsersMutation {
                         email: profile.email,
                         display_name: profile.display_name,
                         picture: profile.picture,
-                        content: JsonOption::new(profile.content),
+                        content: profile.content,
                         city: profile.city,
                         state_province: profile.state_province,
                         user_id: user.id.clone(),

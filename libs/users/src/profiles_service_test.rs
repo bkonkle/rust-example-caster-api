@@ -11,7 +11,7 @@ use crate::{
     profiles_service::{DefaultProfilesService, ProfilesService},
     user_factory,
 };
-use caster_utils::{json::JsonOption, pagination::ManyResponse};
+use caster_utils::pagination::ManyResponse;
 
 #[tokio::test]
 async fn test_profiles_service_get() -> Result<()> {
@@ -409,7 +409,7 @@ async fn test_profiles_service_create() -> Result<()> {
                 email: profile.email.clone(),
                 display_name: profile.display_name.clone(),
                 picture: profile.picture.clone(),
-                content: JsonOption::new(profile.content.clone()),
+                content: profile.content.clone(),
                 city: profile.city.clone(),
                 state_province: profile.state_province.clone(),
                 user_id: user.id.clone(),
@@ -466,7 +466,7 @@ async fn test_profiles_service_create_with_related() -> Result<()> {
                 email: profile.email.clone(),
                 display_name: profile.display_name.clone(),
                 picture: profile.picture.clone(),
-                content: JsonOption::new(profile.content.clone()),
+                content: profile.content.clone(),
                 city: profile.city.clone(),
                 state_province: profile.state_province.clone(),
                 user_id: user.id.clone(),

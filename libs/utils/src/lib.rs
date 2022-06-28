@@ -16,8 +16,5 @@ pub mod pagination;
 /// Ordering utils
 pub mod ordering;
 
-/// JSON utils
-pub mod json;
-
 #[macro_use]
 extern crate anyhow;

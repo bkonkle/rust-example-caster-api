@@ -1,8 +1,7 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
-use caster_utils::json::JsonOption;
-use fake::{Dummy, Fake};
+use chrono::Utc;
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -10,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::user_model::{self, User};
 
 /// The `Profile` GraphQL model
-#[derive(Debug, Dummy, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
 #[graphql(complex)]
 pub struct Profile {
     /// The `Profile` id
@@ -36,7 +35,7 @@ pub struct Profile {
     pub picture: Option<String>,
 
     /// The `Profile` json content
-    pub content: JsonOption,
+    pub content: Option<Json>,
 
     /// The `Profile`'s city
     pub city: Option<String>,
@@ -120,11 +119,28 @@ impl Model {
             email: Some(self.email),
             display_name: self.display_name,
             picture: self.picture,
-            content: JsonOption::new(self.content),
+            content: self.content,
             city: self.city,
             state_province: self.state_province,
             user_id: Some(user.id.clone()),
             user: Some(user),
+        }
+    }
+}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            email: String::default(),
+            display_name: Option::default(),
+            picture: Option::default(),
+            content: Option::default(),
+            city: Option::default(),
+            state_province: Option::default(),
+            user_id: Option::default(),
         }
     }
 }
@@ -157,7 +173,7 @@ impl From<Model> for Profile {
             email: Some(model.email),
             display_name: model.display_name,
             picture: model.picture,
-            content: JsonOption::new(model.content),
+            content: model.content,
             city: model.city,
             state_province: model.state_province,
             user_id: model.user_id,

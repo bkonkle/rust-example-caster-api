@@ -36,7 +36,6 @@ sqlx = { version = "^0.6", features = [
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
-jsonpath_lib = "0.3.0"
 maplit = { version = "^1" }
 mockall = "0.11"
 pretty_assertions = { version = "^1.2" }

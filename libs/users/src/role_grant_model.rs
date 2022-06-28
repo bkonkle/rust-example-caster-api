@@ -1,5 +1,7 @@
 #![allow(missing_docs)]
+
 use async_graphql::SimpleObject;
+use chrono::Utc;
 use fake::{Dummy, Fake};
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
@@ -77,6 +79,20 @@ impl Related<user_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            role_key: String::default(),
+            user_id: String::default(),
+            resource_table: String::default(),
+            resource_id: String::default(),
+        }
+    }
+}
 
 /// The `CreateRoleGrantInput` type
 #[derive(Clone, Eq, PartialEq)]

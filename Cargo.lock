@@ -364,7 +364,6 @@ dependencies = [
  "futures",
  "hyper",
  "hyper-tls",
- "jsonpath_lib",
  "log",
  "mockall",
  "once_cell",
@@ -391,7 +390,6 @@ dependencies = [
  "fake",
  "hyper",
  "hyper-tls",
- "jsonpath_lib",
  "jsonwebtoken",
  "log",
  "mockall",
@@ -417,7 +415,6 @@ dependencies = [
  "chrono",
  "fake",
  "hyper",
- "jsonpath_lib",
  "maplit",
  "mockall",
  "oso",
@@ -1373,17 +1370,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3fac17f7123a73ca62df411b1bf727ccc805daa070338fda671c86dac1bdc27"
 dependencies = [
  "wasm-bindgen",
-]
-
-[[package]]
-name = "jsonpath_lib"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eaa63191d68230cccb81c5aa23abd53ed64d83337cacbb25a7b8c7979523774f"
-dependencies = [
- "log",
- "serde",
- "serde_json",
 ]
 
 [[package]]

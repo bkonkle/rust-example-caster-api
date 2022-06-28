@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
-use fake::{Dummy, Fake};
+use chrono::Utc;
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -10,16 +10,7 @@ use crate::role_grant_model::{self, RoleGrant};
 
 /// The User GraphQL and Database Model
 #[derive(
-    Clone,
-    Debug,
-    Dummy,
-    Eq,
-    PartialEq,
-    DeriveEntityModel,
-    Deserialize,
-    Serialize,
-    SimpleObject,
-    PolarClass,
+    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
 )]
 #[graphql(name = "User")]
 #[sea_orm(table_name = "users")]
@@ -67,6 +58,19 @@ impl Related<role_grant_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            username: String::default(),
+            is_active: bool::default(),
+            roles: Vec::default(),
+        }
+    }
+}
 
 /// A wrapper around `Option<User>` to enable the trait implementations below
 pub struct UserOption(pub Option<User>);
