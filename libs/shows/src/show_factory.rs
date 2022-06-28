@@ -1,7 +1,7 @@
 use fake::{Fake, Faker};
 use slug::slugify;
 
-use caster_shows::{show_model::Show, show_mutations::CreateShowInput};
+use crate::{show_model::Show, show_mutations::CreateShowInput};
 
 /// Create a `CreateShowInput`
 pub fn create_show_input(show_title: &str) -> CreateShowInput {

@@ -37,6 +37,15 @@ pub mod role_grants_service;
 /// Authorization rules
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");
 
+/// User test factories
+pub mod user_factory;
+
+/// Profile test factories
+pub mod profile_factory;
+
+/// Role Grant test factories
+pub mod role_grant_factory;
+
 /// Error macros
 #[macro_use]
 extern crate anyhow;

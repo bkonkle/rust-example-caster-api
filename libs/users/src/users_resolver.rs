@@ -7,7 +7,7 @@ use crate::{
     profiles_service::ProfilesService,
     user_model::User,
     user_mutations::{CreateUserInput, MutateUserResult, UpdateUserInput},
-    users_service::UsersService,
+    users_service::UsersServiceTrait,
 };
 use caster_auth::authenticate::Subject;
 use caster_utils::errors::{as_graphql_error, graphql_error};
@@ -41,7 +41,7 @@ impl UsersMutation {
         input: CreateUserInput,
     ) -> Result<MutateUserResult> {
         let user = ctx.data_unchecked::<Option<User>>();
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let users = ctx.data_unchecked::<Arc<dyn UsersServiceTrait>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();
         let subject = ctx.data_unchecked::<Subject>();
 
@@ -91,7 +91,7 @@ impl UsersMutation {
         input: UpdateUserInput,
     ) -> Result<MutateUserResult> {
         let user = ctx.data_unchecked::<Option<User>>();
-        let users = ctx.data_unchecked::<Arc<dyn UsersService>>();
+        let users = ctx.data_unchecked::<Arc<dyn UsersServiceTrait>>();
 
         // Check to see if the associated Profile is selected
         let with_roles = ctx.look_ahead().field("user").field("roles").exists();

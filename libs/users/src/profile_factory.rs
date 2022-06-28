@@ -1,9 +1,9 @@
 use fake::{Fake, Faker};
 use slug::slugify;
 
-use crate::user_factory::create_user_with_username;
-use caster_users::{
-    profile_model::Model as ProfileModel, profile_mutations::CreateProfileInput, user_model::User,
+use crate::{
+    profile_model::Model as ProfileModel, profile_mutations::CreateProfileInput,
+    user_factory::create_user_with_username, user_model::User,
 };
 
 /// Create a `CreateProfileInput`

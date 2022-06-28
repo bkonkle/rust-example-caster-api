@@ -3,12 +3,13 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use crate::{profile_factory, user_factory};
-use caster_users::{
+use crate::{
+    profile_factory,
     profile_model::{Model as ProfileModel, ProfileList},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy},
     profiles_service::{DefaultProfilesService, ProfilesService},
+    user_factory,
 };
 use caster_utils::pagination::ManyResponse;
 
@@ -23,7 +24,7 @@ async fn test_profiles_service_get() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service.get(&profile.id, &false).await?;
 
@@ -58,7 +59,7 @@ async fn test_profiles_service_get_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service.get(&profile.id, &true).await?;
 
@@ -96,7 +97,7 @@ async fn test_profiles_service_get_many() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .get_many(
@@ -161,7 +162,7 @@ async fn test_profiles_service_get_many_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .get_many(
@@ -242,7 +243,7 @@ async fn test_profiles_service_get_many_pagination() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .get_many(
@@ -338,7 +339,7 @@ async fn test_profiles_service_get_many_pagination_with_related() -> Result<()> 
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .get_many(
@@ -400,7 +401,7 @@ async fn test_profiles_service_create() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .create(
@@ -457,7 +458,7 @@ async fn test_profiles_service_create_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .create(
@@ -525,7 +526,7 @@ async fn test_profiles_service_update() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .update(
@@ -587,7 +588,7 @@ async fn test_profiles_service_update_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     let result = service
         .update(
@@ -647,7 +648,7 @@ async fn test_profiles_service_delete() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultProfilesService::new(db.clone());
+    let service = DefaultProfilesService::new(&db);
 
     service.delete(&profile.id).await?;
 

@@ -3,11 +3,11 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
-use crate::user_factory;
-use caster_users::{
+use crate::{
+    user_factory,
     user_model::User,
     user_mutations::UpdateUserInput,
-    users_service::{DefaultUsersService, UsersService},
+    users_service::{UsersService, UsersServiceTrait},
 };
 
 #[tokio::test]
@@ -20,7 +20,7 @@ async fn test_users_service_get() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultUsersService::new(db.clone());
+    let service = UsersService::new(&db);
 
     let result = service.get(&user.id).await?;
 
@@ -54,7 +54,7 @@ async fn test_users_service_get_by_username() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultUsersService::new(db.clone());
+    let service = UsersService::new(&db);
 
     let result = service.get_by_username(&user.username, &false).await?;
 
@@ -90,7 +90,7 @@ async fn test_users_service_create() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultUsersService::new(db.clone());
+    let service = UsersService::new(&db);
 
     let result = service.create(&user.username).await?;
 
@@ -128,7 +128,7 @@ async fn test_users_service_update() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultUsersService::new(db.clone());
+    let service = UsersService::new(&db);
 
     let result = service
         .update(
@@ -184,7 +184,7 @@ async fn test_users_service_delete() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultUsersService::new(db.clone());
+    let service = UsersService::new(&db);
 
     service.delete(&user.id).await?;
 

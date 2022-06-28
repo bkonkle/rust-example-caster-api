@@ -21,7 +21,7 @@ use caster_users::{
     profiles_service::{DefaultProfilesService, ProfilesService},
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
     user_model::User,
-    users_service::{DefaultUsersService, UsersService},
+    users_service::{UsersService, UsersServiceTrait},
     AUTHORIZATION as PROFILES_AUTHZ,
 };
 use caster_utils::config::Config;
@@ -48,7 +48,7 @@ pub struct Context {
     pub oso: Oso,
 
     /// The `User` entity service
-    pub users: Arc<dyn UsersService>,
+    pub users: Arc<dyn UsersServiceTrait>,
 
     /// The `Profile` entity service
     pub profiles: Arc<dyn ProfilesService>,
@@ -81,11 +81,11 @@ impl Context {
 
         Ok(Self {
             config,
-            users: Arc::new(DefaultUsersService::new(db.clone())),
-            profiles: Arc::new(DefaultProfilesService::new(db.clone())),
-            role_grants: Arc::new(DefaultRoleGrantsService::new(db.clone())),
-            shows: Arc::new(DefaultShowsService::new(db.clone())),
-            episodes: Arc::new(DefaultEpisodesService::new(db.clone())),
+            users: Arc::new(UsersService::new(&db)),
+            profiles: Arc::new(DefaultProfilesService::new(&db)),
+            role_grants: Arc::new(DefaultRoleGrantsService::new(&db)),
+            shows: Arc::new(DefaultShowsService::new(&db)),
+            episodes: Arc::new(DefaultEpisodesService::new(&db)),
             oso,
             db,
         })

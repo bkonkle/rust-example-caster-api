@@ -13,6 +13,10 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
+#[cfg(test)]
+#[path = "./shows_service_test.rs"]
+mod shows_service_test;
+
 /// A ShowsService applies business logic to a dynamic ShowsRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
@@ -51,8 +55,8 @@ pub struct DefaultShowsService {
 /// The default `ShowsService` implementation
 impl DefaultShowsService {
     /// Create a new `ShowsService` instance
-    pub fn new(db: Arc<DatabaseConnection>) -> Self {
-        Self { db }
+    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
+        Self { db: db.clone() }
     }
 }
 
@@ -198,8 +202,10 @@ pub struct ShowLoader {
 /// The default implementation for the `ShowLoader`
 impl ShowLoader {
     /// Create a new instance
-    pub fn new(shows: Arc<dyn ShowsService>) -> Self {
-        Self { shows }
+    pub fn new(shows: &Arc<dyn ShowsService>) -> Self {
+        Self {
+            shows: shows.clone(),
+        }
     }
 }
 

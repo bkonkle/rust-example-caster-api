@@ -355,8 +355,6 @@ dependencies = [
  "async-graphql-warp",
  "caster-auth",
  "caster-shows",
- "caster-test-shows",
- "caster-test-users",
  "caster-testing",
  "caster-users",
  "caster-utils",
@@ -424,6 +422,7 @@ dependencies = [
  "mockall",
  "oso",
  "oso-derive",
+ "pretty_assertions",
  "rand",
  "sea-orm",
  "serde",
@@ -434,49 +433,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "caster-test-shows"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "caster-shows",
- "caster-utils",
- "fake",
- "jsonpath_lib",
- "maplit",
- "mockall",
- "pretty_assertions",
- "rand",
- "sea-orm",
- "slug",
- "tokio",
-]
-
-[[package]]
-name = "caster-test-users"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "caster-users",
- "caster-utils",
- "fake",
- "maplit",
- "mockall",
- "pretty_assertions",
- "rand",
- "sea-orm",
- "slug",
- "tokio",
-]
-
-[[package]]
 name = "caster-testing"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "caster-utils",
- "fake",
  "hyper",
  "hyper-tls",
+ "mockall",
+ "oso",
  "serde",
  "serde_derive",
  "serde_json",
@@ -493,15 +458,19 @@ dependencies = [
  "caster-auth",
  "caster-utils",
  "chrono",
+ "fake",
  "hyper",
  "jsonwebtoken",
+ "maplit",
  "mockall",
  "once_cell",
  "oso",
  "oso-derive",
+ "pretty_assertions",
  "sea-orm",
  "serde",
  "serde_json",
+ "slug",
  "sqlx 0.6.0",
  "tokio",
 ]

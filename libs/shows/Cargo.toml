@@ -11,9 +11,12 @@ async-trait = "0.1.41"
 caster-users = { path = "../users" }
 caster-utils = { path = "../utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
+fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 hyper = "0.14"
+mockall = "0.11"
 oso = "0.26.0"
 oso-derive = "0.26.0"
+pretty_assertions = { version = "^1.2" }
 sea-orm = { version = "^0.8", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
@@ -22,6 +25,7 @@ sea-orm = { version = "^0.8", features = [
 ], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+slug = "0.1.4"
 sqlx = { version = "^0.6", features = [
     "chrono",
     "json",
@@ -34,9 +38,6 @@ sqlx = { version = "^0.6", features = [
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
-fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 jsonpath_lib = "0.3.0"
 maplit = { version = "^1" }
-mockall = "0.11"
 rand = "0.8"
-slug = "0.1.4"

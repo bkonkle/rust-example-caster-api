@@ -3,12 +3,13 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use crate::{episode_factory, show_factory};
-use caster_shows::{
+use crate::{
+    episode_factory,
     episode_model::Episode,
     episode_mutations::{CreateEpisodeInput, UpdateEpisodeInput},
     episode_queries::{EpisodeCondition, EpisodesOrderBy},
     episodes_service::{DefaultEpisodesService, EpisodesService},
+    show_factory,
 };
 use caster_utils::pagination::ManyResponse;
 
@@ -26,7 +27,7 @@ async fn test_episodes_service_get() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service.get(&episode.id, &false).await?;
 
@@ -61,7 +62,7 @@ async fn test_episodes_service_get_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service.get(&episode.id, &true).await?;
 
@@ -105,7 +106,7 @@ async fn test_episodes_service_get_many() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .get_many(
@@ -167,7 +168,7 @@ async fn test_episodes_service_get_many_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .get_many(
@@ -242,7 +243,7 @@ async fn test_episodes_service_get_many_pagination() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .get_many(
@@ -336,7 +337,7 @@ async fn test_episodes_service_get_many_pagination_with_related() -> Result<()> 
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .get_many(
@@ -401,7 +402,7 @@ async fn test_episodes_service_create() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .create(
@@ -454,7 +455,7 @@ async fn test_episodes_service_create_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .create(
@@ -521,7 +522,7 @@ async fn test_episodes_service_update() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .update(
@@ -581,7 +582,7 @@ async fn test_episodes_service_update_with_related() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     let result = service
         .update(
@@ -642,7 +643,7 @@ async fn test_episodes_service_delete() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultEpisodesService::new(db.clone());
+    let service = DefaultEpisodesService::new(&db);
 
     service.delete(&episode.id).await?;
 

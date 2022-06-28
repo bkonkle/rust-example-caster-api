@@ -1,7 +1,7 @@
 use fake::{Fake, Faker};
 use slug::slugify;
 
-use caster_users::user_model::User;
+use crate::user_model::User;
 
 /// Create a `User`
 pub fn create_user_factory(username: Option<String>) -> User {

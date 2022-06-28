@@ -34,8 +34,8 @@ pub struct DefaultRoleGrantsService {
 /// The default `RoleGrantsService` implementation
 impl DefaultRoleGrantsService {
     /// Create a new `RoleGrantsService` instance
-    pub fn new(db: Arc<DatabaseConnection>) -> Self {
-        Self { db }
+    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
+        Self { db: db.clone() }
     }
 }
 
@@ -101,8 +101,10 @@ pub struct RoleGrantLoader {
 /// The default implementation for the `RoleGrantLoader`
 impl RoleGrantLoader {
     /// Create a new instance
-    pub fn new(role_grants: Arc<dyn RoleGrantsService>) -> Self {
-        Self { role_grants }
+    pub fn new(role_grants: &Arc<dyn RoleGrantsService>) -> Self {
+        Self {
+            role_grants: role_grants.clone(),
+        }
     }
 }
 

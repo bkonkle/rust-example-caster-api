@@ -13,7 +13,7 @@ use caster_auth::{
     authenticate::{with_auth, Subject},
     jwks::JWKS,
 };
-use caster_users::users_service::UsersService;
+use caster_users::users_service::UsersServiceTrait;
 
 /// Add context to the GraphQL Request
 async fn with_context(
@@ -22,7 +22,7 @@ async fn with_context(
         async_graphql::Request,
     ),
     sub: Subject,
-    users: Arc<dyn UsersService>,
+    users: Arc<dyn UsersServiceTrait>,
 ) -> Result<GraphQLResponse, Infallible> {
     // Retrieve the request User, if username is present
     let user = if let Subject(Some(ref username)) = sub {

@@ -5,7 +5,7 @@ use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
-use caster_test_shows::show_factory;
+use caster_shows::show_factory;
 use caster_testing::oauth2::{Credentials, User as TestUser};
 use caster_users::role_grant_model::CreateRoleGrantInput;
 

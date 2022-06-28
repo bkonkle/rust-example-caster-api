@@ -3,8 +3,8 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use crate::show_factory;
-use caster_shows::{
+use crate::{
+    show_factory,
     show_model::Show,
     show_mutations::{CreateShowInput, UpdateShowInput},
     show_queries::{ShowCondition, ShowsOrderBy},
@@ -22,7 +22,7 @@ async fn test_shows_service_get() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     let result = service.get(&show.id).await?;
 
@@ -57,7 +57,7 @@ async fn test_shows_service_get_many() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     let result = service
         .get_many(
@@ -122,7 +122,7 @@ async fn test_shows_service_get_many_pagination() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     let result = service
         .get_many(
@@ -179,7 +179,7 @@ async fn test_shows_service_create() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     let result = service
         .create(&CreateShowInput {
@@ -229,7 +229,7 @@ async fn test_shows_service_update() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     let result = service
         .update(
@@ -284,7 +284,7 @@ async fn test_shows_service_delete() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultShowsService::new(db.clone());
+    let service = DefaultShowsService::new(&db);
 
     service.delete(&show.id).await?;
 

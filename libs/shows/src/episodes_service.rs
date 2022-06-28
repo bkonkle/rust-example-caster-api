@@ -14,6 +14,10 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
+#[cfg(test)]
+#[path = "./episodes_service_test.rs"]
+mod episodes_service_test;
+
 /// An EpisodesService applies business logic to a dynamic EpisodesRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
@@ -58,8 +62,8 @@ pub struct DefaultEpisodesService {
 /// The default `EpisodesService` implementation
 impl DefaultEpisodesService {
     /// Create a new `EpisodesService` instance
-    pub fn new(db: Arc<DatabaseConnection>) -> Self {
-        Self { db }
+    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
+        Self { db: db.clone() }
     }
 }
 
@@ -271,8 +275,10 @@ pub struct EpisodeLoader {
 /// The default implementation for the `EpisodeLoader`
 impl EpisodeLoader {
     /// Create a new instance
-    pub fn new(episodes: Arc<dyn EpisodesService>) -> Self {
-        Self { episodes }
+    pub fn new(episodes: &Arc<dyn EpisodesService>) -> Self {
+        Self {
+            episodes: episodes.clone(),
+        }
     }
 }
 

@@ -1,10 +1,11 @@
 use anyhow::Result;
+use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
-use pretty_assertions::assert_eq;
 
-use crate::{role_grant_factory, user_factory};
-use caster_users::{
+use crate::{
+    role_grant_factory,
+    user_factory,
     role_grant_model::CreateRoleGrantInput,
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
 };
@@ -21,7 +22,7 @@ async fn test_role_grants_service_get() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultRoleGrantsService::new(db.clone());
+    let service = DefaultRoleGrantsService::new(&db);
 
     let result = service.get(&grant.id).await?;
 
@@ -57,7 +58,7 @@ async fn test_role_grants_service_create() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultRoleGrantsService::new(db.clone());
+    let service = DefaultRoleGrantsService::new(&db);
 
     let result = service
         .create(&CreateRoleGrantInput {
@@ -109,7 +110,7 @@ async fn test_role_grants_service_delete() -> Result<()> {
             .into_connection(),
     );
 
-    let service = DefaultRoleGrantsService::new(db.clone());
+    let service = DefaultRoleGrantsService::new(&db);
 
     service.delete(&grant.id).await?;
 

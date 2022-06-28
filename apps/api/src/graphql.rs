@@ -38,11 +38,11 @@ pub type GraphQLSchema = Schema<Query, Mutation, EmptySubscription>;
 /// injection based on async-graphql's `.data()` calls.
 pub fn create_schema(ctx: Arc<Context>) -> Result<GraphQLSchema> {
     // Instantiate loaders
-    let user_loader = UserLoader::new(ctx.users.clone());
-    let profile_loader = ProfileLoader::new(ctx.profiles.clone());
-    let role_grant_loader = RoleGrantLoader::new(ctx.role_grants.clone());
-    let show_loader = ShowLoader::new(ctx.shows.clone());
-    let episode_loader = EpisodeLoader::new(ctx.episodes.clone());
+    let user_loader = UserLoader::new(&ctx.users);
+    let profile_loader = ProfileLoader::new(&ctx.profiles);
+    let role_grant_loader = RoleGrantLoader::new(&ctx.role_grants);
+    let show_loader = ShowLoader::new(&ctx.shows);
+    let episode_loader = EpisodeLoader::new(&ctx.episodes);
 
     // Inject the initialized services into the `Schema` instance.
     Ok(

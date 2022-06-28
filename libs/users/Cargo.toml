@@ -11,10 +11,14 @@ async-trait = "0.1.41"
 caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
+fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 hyper = "0.14"
 jsonwebtoken = "8.0"
+mockall = "0.11"
+once_cell = "1.9"
 oso = "0.26.0"
 oso-derive = "0.26.0"
+pretty_assertions = { version = "^1.2" }
 sea-orm = { version = "^0.8", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
@@ -23,6 +27,7 @@ sea-orm = { version = "^0.8", features = [
 ], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+slug = "0.1.4"
 sqlx = { version = "^0.6", features = [
     "chrono",
     "json",
@@ -33,7 +38,6 @@ sqlx = { version = "^0.6", features = [
     "uuid",
 ] }
 tokio = { version = "1", features = ["full"] }
-once_cell = "1.9"
 
 [dev-dependencies]
-mockall = "0.11"
+maplit = { version = "^1" }

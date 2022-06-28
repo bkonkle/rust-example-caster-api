@@ -14,6 +14,10 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
+#[cfg(test)]
+#[path = "./profiles_service_test.rs"]
+mod profiles_service_test;
+
 /// A ProfilesService applies business logic to a dynamic ProfilesRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
@@ -69,8 +73,8 @@ pub struct DefaultProfilesService {
 /// The default `ProfilesService` implementation
 impl DefaultProfilesService {
     /// Create a new `ProfilesService` instance
-    pub fn new(db: Arc<DatabaseConnection>) -> Self {
-        Self { db }
+    pub fn new(db: &Arc<DatabaseConnection>) -> Self {
+        Self { db: db.clone() }
     }
 }
 
@@ -338,8 +342,10 @@ pub struct ProfileLoader {
 /// The default implementation for the `ProfileLoader`
 impl ProfileLoader {
     /// Create a new instance
-    pub fn new(profiles: Arc<dyn ProfilesService>) -> Self {
-        Self { profiles }
+    pub fn new(profiles: &Arc<dyn ProfilesService>) -> Self {
+        Self {
+            profiles: profiles.clone(),
+        }
     }
 }
 
