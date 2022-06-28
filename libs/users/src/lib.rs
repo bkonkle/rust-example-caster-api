@@ -38,12 +38,15 @@ pub mod role_grants_service;
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");
 
 /// User test factories
+#[cfg(test)]
 pub mod user_factory;
 
 /// Profile test factories
+#[cfg(test)]
 pub mod profile_factory;
 
 /// Role Grant test factories
+#[cfg(test)]
 pub mod role_grant_factory;
 
 /// Error macros

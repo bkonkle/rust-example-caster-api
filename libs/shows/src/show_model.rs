@@ -1,12 +1,22 @@
 #![allow(missing_docs)]
 use async_graphql::SimpleObject;
+use fake::{Dummy, Fake};
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// The Show GraphQL and Database Model
 #[derive(
-    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+    Clone,
+    Debug,
+    Dummy,
+    Eq,
+    PartialEq,
+    DeriveEntityModel,
+    Deserialize,
+    Serialize,
+    SimpleObject,
+    PolarClass,
 )]
 #[graphql(name = "Show")]
 #[sea_orm(table_name = "shows")]

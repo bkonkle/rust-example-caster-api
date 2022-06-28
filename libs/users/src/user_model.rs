@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
+use fake::{Dummy, Fake};
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -9,7 +10,16 @@ use crate::role_grant_model::{self, RoleGrant};
 
 /// The User GraphQL and Database Model
 #[derive(
-    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+    Clone,
+    Debug,
+    Dummy,
+    Eq,
+    PartialEq,
+    DeriveEntityModel,
+    Deserialize,
+    Serialize,
+    SimpleObject,
+    PolarClass,
 )]
 #[graphql(name = "User")]
 #[sea_orm(table_name = "users")]

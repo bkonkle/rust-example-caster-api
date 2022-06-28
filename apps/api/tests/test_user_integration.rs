@@ -8,7 +8,9 @@ use std::panic;
 use caster_testing::oauth2::{Credentials, User as TestUser};
 use caster_users::role_grant_model::CreateRoleGrantInput;
 
+#[cfg(test)]
 mod test_utils;
+
 use test_utils::TestUtils;
 
 /***

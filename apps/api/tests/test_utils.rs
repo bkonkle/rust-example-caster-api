@@ -1,4 +1,5 @@
 use anyhow::Result;
+use fake::{Fake, Faker};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
@@ -6,10 +7,11 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use caster_api::{run, Context};
-use caster_shows::{episode_factory, episode_model::Episode, show_factory, show_model::Show};
+use caster_shows::{episode_model::Episode, show_model::Show};
 use caster_testing::{graphql::GraphQL, oauth2::OAuth2Utils};
-use caster_users::profile_factory;
-use caster_users::{profile_model::Profile, user_model::User};
+use caster_users::{
+    profile_model::Profile, profile_mutations::CreateProfileInput, user_model::User,
+};
 use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
@@ -74,14 +76,11 @@ impl TestUtils {
     ) -> Result<(User, Profile)> {
         let user = self.ctx.users.create(username).await?;
 
-        let profile = self
-            .ctx
-            .profiles
-            .create(
-                &profile_factory::create_profile_input(&user.id, email),
-                &false,
-            )
-            .await?;
+        let mut profile_input: CreateProfileInput = Faker.fake();
+        profile_input.user_id = user.id.clone();
+        profile_input.email = email.to_string();
+
+        let profile = self.ctx.profiles.create(&profile_input, &false).await?;
 
         Ok((user, profile))
     }

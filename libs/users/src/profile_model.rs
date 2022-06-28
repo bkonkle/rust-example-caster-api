@@ -1,6 +1,8 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
+use caster_utils::json::JsonOption;
+use fake::{Dummy, Fake};
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -8,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::user_model::{self, User};
 
 /// The `Profile` GraphQL model
-#[derive(Debug, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
+#[derive(Debug, Dummy, Clone, Eq, PartialEq, Deserialize, PolarClass, Serialize, SimpleObject)]
 #[graphql(complex)]
 pub struct Profile {
     /// The `Profile` id
@@ -34,7 +36,7 @@ pub struct Profile {
     pub picture: Option<String>,
 
     /// The `Profile` json content
-    pub content: Option<serde_json::Value>,
+    pub content: JsonOption,
 
     /// The `Profile`'s city
     pub city: Option<String>,
@@ -118,7 +120,7 @@ impl Model {
             email: Some(self.email),
             display_name: self.display_name,
             picture: self.picture,
-            content: self.content,
+            content: JsonOption::new(self.content),
             city: self.city,
             state_province: self.state_province,
             user_id: Some(user.id.clone()),
@@ -155,7 +157,7 @@ impl From<Model> for Profile {
             email: Some(model.email),
             display_name: model.display_name,
             picture: model.picture,
-            content: model.content,
+            content: JsonOption::new(model.content),
             city: model.city,
             state_province: model.state_province,
             user_id: model.user_id,

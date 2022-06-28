@@ -35,9 +35,11 @@ pub mod episode_mutations;
 pub const AUTHORIZATION: &str = include_str!("authorization.polar");
 
 /// Show test factories
+#[cfg(test)]
 pub mod show_factory;
 
 /// Episode test factories
+#[cfg(test)]
 pub mod episode_factory;
 
 /// Error macros

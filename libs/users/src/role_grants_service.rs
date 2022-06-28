@@ -8,6 +8,10 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::role_grant_model::{self, CreateRoleGrantInput, RoleGrant};
 
+#[cfg(test)]
+#[path = "./role_grants_service_test.rs"]
+mod role_grants_service_test;
+
 /// A RoleGrantsService appliies business logic to a dynamic RoleGrantsRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]

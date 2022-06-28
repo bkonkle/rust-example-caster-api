@@ -1,10 +1,12 @@
 use async_graphql::{InputObject, SimpleObject};
+use caster_utils::json::JsonOption;
+use fake::{Dummy, Fake};
 use serde_json;
 
 use crate::profile_model::Profile;
 
 /// The `CreateProfileInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Dummy, Eq, PartialEq, InputObject)]
 pub struct CreateProfileInput {
     /// The Profile's email address
     pub email: String,
@@ -16,7 +18,7 @@ pub struct CreateProfileInput {
     pub picture: Option<String>,
 
     /// The Profile json content
-    pub content: Option<serde_json::Value>,
+    pub content: JsonOption,
 
     /// The Profile's city
     pub city: Option<String>,

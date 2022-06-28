@@ -224,7 +224,7 @@ impl ProfilesService for DefaultProfilesService {
             email: Set(input.email.clone()),
             display_name: Set(input.display_name.clone()),
             picture: Set(input.picture.clone()),
-            content: Set(input.content.clone()),
+            content: Set(input.content.clone().into()),
             city: Set(input.city.clone()),
             state_province: Set(input.state_province.clone()),
             user_id: Set(Some(input.user_id.clone())),
