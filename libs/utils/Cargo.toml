@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "3.0", features = ["chrono"] }
+async-graphql = { version = "^4.0", features = ["chrono"] }
 figment = { version = "0.10.6", features = ["env", "toml"] }
 hyper = "0.14"
 hyper-tls = "0.5"

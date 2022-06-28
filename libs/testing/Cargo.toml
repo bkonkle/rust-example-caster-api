@@ -1,5 +1,5 @@
 [package]
-name = "caster-test"
+name = "caster-testing"
 version = "0.1.0"
 authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"

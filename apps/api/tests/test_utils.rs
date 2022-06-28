@@ -7,9 +7,9 @@ use tokio::time::sleep;
 
 use caster_api::{run, Context};
 use caster_shows::{episode_model::Episode, show_model::Show};
-use caster_test::{graphql::GraphQL, oauth2::OAuth2Utils};
 use caster_test_shows::{episode_factory, show_factory};
 use caster_test_users::profile_factory;
+use caster_testing::{graphql::GraphQL, oauth2::OAuth2Utils};
 use caster_users::{profile_model::Profile, user_model::User};
 use caster_utils::{config::get_config, http::http_client};
 

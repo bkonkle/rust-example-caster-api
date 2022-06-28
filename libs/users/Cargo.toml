@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "3.0", features = ["chrono", "dataloader"] }
+async-graphql = { version = "^4.0", features = ["chrono", "dataloader"] }
 async-trait = "0.1.41"
 caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }
@@ -15,7 +15,7 @@ hyper = "0.14"
 jsonwebtoken = "8.0"
 oso = "0.26.0"
 oso-derive = "0.26.0"
-sea-orm = { version = "0.7.1", features = [
+sea-orm = { version = "^0.8", features = [
     "sqlx-postgres",
     "runtime-tokio-rustls",
     "macros",
@@ -23,7 +23,7 @@ sea-orm = { version = "0.7.1", features = [
 ], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "0.5", features = [
+sqlx = { version = "^0.6", features = [
     "chrono",
     "json",
     "macros",

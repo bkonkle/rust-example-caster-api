@@ -9,7 +9,7 @@ main_project_member = "apps/api"
 workspace = false
 env = { "RUST_LOG" = "info,sqlx::query=warn" }
 command = "cargo"
-args = ["run"]
+args = ["run", "--bin", "caster-api"]
 
 [tasks.db-create]
 workspace = false
