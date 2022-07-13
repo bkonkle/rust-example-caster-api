@@ -11,8 +11,8 @@ pub fn create_episode_input(episode_title: &str, show_id: &str) -> CreateEpisode
         title: episode_title.to_string(),
         summary: Faker.fake(),
         picture: Faker.fake(),
-        content: None,
         show_id: show_id.to_string(),
+        ..Default::default()
     }
 }
 
@@ -26,11 +26,11 @@ pub fn create_episode_factory(title: Option<String>, show: Option<Show>) -> Epis
         title,
         summary: Faker.fake(),
         picture: Faker.fake(),
-        content: None,
         show_id: show.id.clone(),
         show: Some(show),
         created_at: Faker.fake(),
         updated_at: Faker.fake(),
+        ..Default::default()
     }
 }
 

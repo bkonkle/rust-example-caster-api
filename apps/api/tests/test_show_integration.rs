@@ -1,11 +1,12 @@
 use anyhow::Result;
-use caster_shows::show_mutations::CreateShowInput;
+use fake::{Fake, Faker};
 use futures::executor::block_on;
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
+use caster_shows::show_mutations::CreateShowInput;
 use caster_testing::oauth2::{Credentials, User as TestUser};
 use caster_users::role_grant_model::CreateRoleGrantInput;
 
@@ -17,6 +18,8 @@ use test_utils::TestUtils;
 fn create_show_input(title: &str) -> CreateShowInput {
     CreateShowInput {
         title: title.to_string(),
+        summary: Faker.fake(),
+        picture: Faker.fake(),
         ..Default::default()
     }
 }
@@ -323,11 +326,21 @@ async fn test_get_many_shows() -> Result<()> {
 
             assert_eq!(json_show["id"], show.id);
             assert_eq!(json_show["title"], "Test Show");
-            assert_eq!(json_show["summary"], show.summary.unwrap());
+
+            if let Some(summary) = show.summary {
+                assert_eq!(json_show["summary"], summary);
+            } else {
+                assert_eq!(json_show["summary"], serde_json::Value::Null);
+            }
 
             assert_eq!(json_other_show["id"], other_show.id);
             assert_eq!(json_other_show["title"], "Test Show 2");
-            assert_eq!(json_other_show["summary"], other_show.summary.unwrap());
+
+            if let Some(summary) = other_show.summary {
+                assert_eq!(json_other_show["summary"], summary);
+            } else {
+                assert_eq!(json_other_show["summary"], serde_json::Value::Null);
+            }
 
             Ok(()) as Result<()>
         })
