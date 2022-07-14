@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 
 use async_graphql::SimpleObject;
+use chrono::Utc;
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -34,7 +35,7 @@ pub struct Profile {
     pub picture: Option<String>,
 
     /// The `Profile` json content
-    pub content: Option<serde_json::Value>,
+    pub content: Option<Json>,
 
     /// The `Profile`'s city
     pub city: Option<String>,
@@ -123,6 +124,23 @@ impl Model {
             state_province: self.state_province,
             user_id: Some(user.id.clone()),
             user: Some(user),
+        }
+    }
+}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            email: String::default(),
+            display_name: Option::default(),
+            picture: Option::default(),
+            content: Option::default(),
+            city: Option::default(),
+            state_province: Option::default(),
+            user_id: Option::default(),
         }
     }
 }

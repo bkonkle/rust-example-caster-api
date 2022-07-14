@@ -4,11 +4,11 @@ use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value}
 use std::sync::Arc;
 
 use crate::{
-    show_factory,
     show_model::Show,
     show_mutations::{CreateShowInput, UpdateShowInput},
     show_queries::{ShowCondition, ShowsOrderBy},
     shows_service::{DefaultShowsService, ShowsService},
+    tests::show_factory,
 };
 use caster_utils::pagination::ManyResponse;
 

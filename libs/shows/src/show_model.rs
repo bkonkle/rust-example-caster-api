@@ -1,5 +1,7 @@
 #![allow(missing_docs)]
+
 use async_graphql::SimpleObject;
+use chrono::Utc;
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -47,3 +49,17 @@ pub type Show = Model;
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            title: String::default(),
+            summary: Option::default(),
+            picture: Option::default(),
+            content: Option::default(),
+        }
+    }
+}

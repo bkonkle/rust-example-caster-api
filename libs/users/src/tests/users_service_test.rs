@@ -4,7 +4,7 @@ use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
 use crate::{
-    user_factory,
+    tests::user_factory,
     user_model::User,
     user_mutations::UpdateUserInput,
     users_service::{UsersService, UsersServiceTrait},

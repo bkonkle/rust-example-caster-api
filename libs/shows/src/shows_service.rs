@@ -13,10 +13,6 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
-#[cfg(test)]
-#[path = "./shows_service_test.rs"]
-mod shows_service_test;
-
 /// A ShowsService applies business logic to a dynamic ShowsRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]

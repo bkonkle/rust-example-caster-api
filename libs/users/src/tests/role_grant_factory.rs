@@ -1,6 +1,6 @@
 use fake::{Fake, Faker};
 
-use crate::{role_grant_model::RoleGrant, user_factory, user_model::User};
+use crate::{role_grant_model::RoleGrant, tests::user_factory, user_model::User};
 
 /// Create a `RoleGrant`
 pub fn create_role_grant_factory(

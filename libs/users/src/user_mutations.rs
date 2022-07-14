@@ -1,9 +1,10 @@
 use async_graphql::{InputObject, SimpleObject};
+use serde_json::Value as Json;
 
 use crate::user_model::User;
 
 /// The `CreateUserProfileInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct CreateUserProfileInput {
     /// The Profile's email address
     pub email: String,
@@ -15,7 +16,7 @@ pub struct CreateUserProfileInput {
     pub picture: Option<String>,
 
     /// The Profile json content
-    pub content: Option<serde_json::Value>,
+    pub content: Option<Json>,
 
     /// The Profile's city
     pub city: Option<String>,
@@ -25,14 +26,14 @@ pub struct CreateUserProfileInput {
 }
 
 /// The `CreateUserInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct CreateUserInput {
     /// The User's profile
     pub profile: Option<CreateUserProfileInput>,
 }
 
 /// The `UpdateUserInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct UpdateUserInput {
     /// The User's subscriber id
     pub username: Option<String>,
@@ -42,7 +43,7 @@ pub struct UpdateUserInput {
 }
 
 /// The `MutateUserResult` input type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Default, Eq, PartialEq, SimpleObject)]
 pub struct MutateUserResult {
     /// The User's subscriber id
     pub user: Option<User>,

@@ -1,10 +1,10 @@
 use async_graphql::{InputObject, SimpleObject};
-use serde_json;
+use serde_json::Value as Json;
 
 use crate::episode_model::Episode;
 
 /// The `CreateEpisodeInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct CreateEpisodeInput {
     /// The Episode's title
     pub title: String,
@@ -16,14 +16,14 @@ pub struct CreateEpisodeInput {
     pub picture: Option<String>,
 
     /// The Episode json content
-    pub content: Option<serde_json::Value>,
+    pub content: Option<Json>,
 
     /// The Episode's Show id
     pub show_id: String,
 }
 
 /// The `UpdateEpisodeInput` input type
-#[derive(Clone, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct UpdateEpisodeInput {
     /// The Episode's title
     pub title: Option<String>,
@@ -35,14 +35,14 @@ pub struct UpdateEpisodeInput {
     pub picture: Option<String>,
 
     /// The Episode json content
-    pub content: Option<serde_json::Value>,
+    pub content: Option<Json>,
 
     /// The Episode's Show id
     pub show_id: Option<String>,
 }
 
 /// The `MutateEpisodeResult` type
-#[derive(Clone, Eq, PartialEq, SimpleObject)]
+#[derive(Clone, Default, Eq, PartialEq, SimpleObject)]
 pub struct MutateEpisodeResult {
     /// The Episode's subscriber id
     pub episode: Option<Episode>,

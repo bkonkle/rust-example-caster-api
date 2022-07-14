@@ -7,7 +7,9 @@ use std::panic;
 
 use caster_testing::oauth2::{Credentials, User as TestUser};
 
+#[cfg(test)]
 mod test_utils;
+
 use test_utils::TestUtils;
 
 /***

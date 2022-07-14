@@ -3,7 +3,7 @@ use slug::slugify;
 
 use crate::{
     profile_model::Model as ProfileModel, profile_mutations::CreateProfileInput,
-    user_factory::create_user_with_username, user_model::User,
+    tests::user_factory::create_user_with_username, user_model::User,
 };
 
 /// Create a `CreateProfileInput`

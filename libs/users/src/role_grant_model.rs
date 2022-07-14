@@ -1,5 +1,8 @@
 #![allow(missing_docs)]
+
 use async_graphql::SimpleObject;
+use chrono::Utc;
+use fake::{Dummy, Fake};
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -8,7 +11,16 @@ use super::user_model;
 
 /// The `RoleGrant` GraphQL and Database Model
 #[derive(
-    Clone, Debug, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize, SimpleObject, PolarClass,
+    Clone,
+    Debug,
+    Dummy,
+    Eq,
+    PartialEq,
+    DeriveEntityModel,
+    Deserialize,
+    Serialize,
+    SimpleObject,
+    PolarClass,
 )]
 #[sea_orm(table_name = "role_grants")]
 pub struct Model {
@@ -67,6 +79,20 @@ impl Related<user_model::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Default for Model {
+    fn default() -> Self {
+        Self {
+            id: String::default(),
+            created_at: Utc::now().naive_utc(),
+            updated_at: Utc::now().naive_utc(),
+            role_key: String::default(),
+            user_id: String::default(),
+            resource_table: String::default(),
+            resource_id: String::default(),
+        }
+    }
+}
 
 /// The `CreateRoleGrantInput` type
 #[derive(Clone, Eq, PartialEq)]

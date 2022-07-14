@@ -12,10 +12,6 @@ use crate::{
     user_mutations::UpdateUserInput,
 };
 
-#[cfg(test)]
-#[path = "./users_service_test.rs"]
-mod users_service_test;
-
 /// A UsersService appliies business logic to a dynamic UsersRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
