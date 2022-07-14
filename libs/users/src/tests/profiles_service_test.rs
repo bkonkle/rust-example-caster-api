@@ -4,12 +4,11 @@ use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value}
 use std::sync::Arc;
 
 use crate::{
-    profile_factory,
     profile_model::{Model as ProfileModel, ProfileList},
     profile_mutations::{CreateProfileInput, UpdateProfileInput},
     profile_queries::{ProfileCondition, ProfilesOrderBy},
     profiles_service::{DefaultProfilesService, ProfilesService},
-    user_factory,
+    tests::{profile_factory, user_factory},
 };
 use caster_utils::pagination::ManyResponse;
 

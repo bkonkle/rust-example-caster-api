@@ -14,10 +14,6 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
-#[cfg(test)]
-#[path = "./episodes_service_test.rs"]
-mod episodes_service_test;
-
 /// An EpisodesService applies business logic to a dynamic EpisodesRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]

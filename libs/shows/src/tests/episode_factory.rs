@@ -2,7 +2,8 @@ use fake::{Fake, Faker};
 use slug::slugify;
 
 use crate::{
-    episode_model::Episode, episode_mutations::CreateEpisodeInput, show_factory, show_model::Show,
+    episode_model::Episode, episode_mutations::CreateEpisodeInput, show_model::Show,
+    tests::show_factory,
 };
 
 /// Create a `CreateEpisodeInput`

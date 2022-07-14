@@ -4,10 +4,9 @@ use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
 use crate::{
-    role_grant_factory,
-    user_factory,
     role_grant_model::CreateRoleGrantInput,
     role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
+    tests::{role_grant_factory, user_factory},
 };
 
 #[tokio::test]

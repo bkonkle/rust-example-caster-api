@@ -14,10 +14,6 @@ use crate::{
 };
 use caster_utils::{ordering::Ordering, pagination::ManyResponse};
 
-#[cfg(test)]
-#[path = "./profiles_service_test.rs"]
-mod profiles_service_test;
-
 /// A ProfilesService applies business logic to a dynamic ProfilesRepository implementation.
 #[cfg_attr(test, automock)]
 #[async_trait]
