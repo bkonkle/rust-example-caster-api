@@ -1,25 +1,18 @@
 use anyhow::Result;
-use caster_shows::show_mutations::CreateShowInput;
+use fake::{Fake, Faker};
 use futures::executor::block_on;
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
+use caster_domains::{role_grants::model::CreateRoleGrantInput, shows::mutations::CreateShowInput};
 use caster_testing::oauth2::{Credentials, User as TestUser};
-use caster_users::role_grant_model::CreateRoleGrantInput;
 
 #[cfg(test)]
 mod test_utils;
 
 use test_utils::TestUtils;
-
-fn create_show_input(title: &str) -> CreateShowInput {
-    CreateShowInput {
-        title: title.to_string(),
-        ..Default::default()
-    }
-}
 
 /***
  * Mutation: `createEpisode`
@@ -33,7 +26,6 @@ const CREATE_EPISODE: &str = "
                 title
                 summary
                 picture
-                content
                 show {
                     id
                 }
@@ -57,7 +49,11 @@ async fn test_create_episode() -> Result<()> {
 
     // Create a user and a show
     let user = ctx.users.create(username).await?;
-    let show = ctx.shows.create(&create_show_input("Test Show")).await?;
+
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     // Grant the manager role to this user for this episode's show
     ctx.role_grants
@@ -167,7 +163,10 @@ async fn test_create_episode_authn() -> Result<()> {
         ..
     } = TestUtils::init().await?;
 
-    let show = ctx.shows.create(&create_show_input("Test Show")).await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(
         CREATE_EPISODE,
@@ -220,7 +219,10 @@ async fn test_create_episode_authz() -> Result<()> {
         ..
     } = utils.oauth.get_credentials(TestUser::Test).await;
 
-    let show = ctx.shows.create(&create_show_input("Test Show")).await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     // Create a user with this username
     let user = ctx.users.create(username).await?;
@@ -275,7 +277,6 @@ const GET_EPISODE: &str = "
             title
             summary
             picture
-            content
             show {
                 id
             }
@@ -387,7 +388,6 @@ const GET_MANY_EPISODES: &str = "
                 title
                 summary
                 picture
-                content
                 show {
                     id
                 }
@@ -483,7 +483,6 @@ const UPDATE_EPISODE: &str = "
                 title
                 summary
                 picture
-                content
                 show {
                     id
                 }

@@ -5,8 +5,8 @@ use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
+use caster_domains::role_grants::model::CreateRoleGrantInput;
 use caster_testing::oauth2::{Credentials, User as TestUser};
-use caster_users::role_grant_model::CreateRoleGrantInput;
 
 #[cfg(test)]
 mod test_utils;

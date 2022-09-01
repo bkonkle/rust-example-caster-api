@@ -1,13 +1,12 @@
 use anyhow::Result;
-use caster_shows::show_mutations::CreateShowInput;
 use futures::executor::block_on;
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
+use caster_domains::{role_grants::model::CreateRoleGrantInput, shows::mutations::CreateShowInput};
 use caster_testing::oauth2::{Credentials, User as TestUser};
-use caster_users::role_grant_model::CreateRoleGrantInput;
 
 #[cfg(test)]
 mod test_utils;
@@ -33,7 +32,6 @@ const CREATE_SHOW: &str = "
                 title
                 summary
                 picture
-                content
             }
         }
     }
@@ -168,7 +166,6 @@ const GET_SHOW: &str = "
             title
             summary
             picture
-            content
         }
     }
 ";
@@ -274,7 +271,6 @@ const GET_MANY_SHOWS: &str = "
                 title
                 summary
                 picture
-                content
             }
             count
             total
@@ -356,7 +352,6 @@ const UPDATE_SHOW: &str = "
                 title
                 summary
                 picture
-                content
             }
         }
     }

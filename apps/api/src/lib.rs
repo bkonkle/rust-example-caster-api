@@ -9,20 +9,28 @@ use std::{net::SocketAddr, sync::Arc};
 use warp::{Filter, Future};
 
 use caster_auth::jwks::get_jwks;
-use caster_shows::{
-    episode_model::Episode,
-    episodes_service::{DefaultEpisodesService, EpisodesService},
-    show_model::Show,
-    shows_service::{DefaultShowsService, ShowsService},
-    AUTHORIZATION as SHOWS_AUTHZ,
-};
-use caster_users::{
-    profile_model::Profile,
-    profiles_service::{DefaultProfilesService, ProfilesService},
-    role_grants_service::{DefaultRoleGrantsService, RoleGrantsService},
-    user_model::User,
-    users_service::{UsersService, UsersServiceTrait},
-    AUTHORIZATION as PROFILES_AUTHZ,
+use caster_domains::{
+    episodes::{
+        model::Episode,
+        service::{DefaultEpisodesService, EpisodesService},
+        AUTHORIZATION as EPISODES_AUTHZ,
+    },
+    profiles::{
+        model::Profile,
+        service::{DefaultProfilesService, ProfilesService},
+        AUTHORIZATION as PROFILES_AUTHZ,
+    },
+    role_grants::service::{DefaultRoleGrantsService, RoleGrantsService},
+    shows::{
+        model::Show,
+        service::{DefaultShowsService, ShowsService},
+        AUTHORIZATION as SHOWS_AUTHZ,
+    },
+    users::{
+        model::User,
+        service::{UsersService, UsersServiceTrait},
+        AUTHORIZATION as USERS_AUTHZ,
+    },
 };
 use caster_utils::config::Config;
 use router::create_routes;
@@ -77,7 +85,7 @@ impl Context {
         oso.register_class(Show::get_polar_class_builder().name("Show").build())?;
         oso.register_class(Episode::get_polar_class_builder().name("Episode").build())?;
 
-        oso.load_str(&[PROFILES_AUTHZ, SHOWS_AUTHZ].join("\n"))?;
+        oso.load_str(&[USERS_AUTHZ, PROFILES_AUTHZ, SHOWS_AUTHZ, EPISODES_AUTHZ].join("\n"))?;
 
         Ok(Self {
             config,

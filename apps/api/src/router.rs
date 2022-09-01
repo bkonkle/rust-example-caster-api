@@ -13,7 +13,7 @@ use caster_auth::{
     authenticate::{with_auth, Subject},
     jwks::JWKS,
 };
-use caster_users::users_service::UsersServiceTrait;
+use caster_domains::users::service::UsersServiceTrait;
 
 /// Add context to the GraphQL Request
 async fn with_context(
