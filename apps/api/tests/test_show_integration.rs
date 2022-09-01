@@ -290,11 +290,13 @@ async fn test_get_many_shows() -> Result<()> {
 
     let mut show_input: CreateShowInput = Faker.fake();
     show_input.title = "Test Show".to_string();
+    show_input.summary = Some("test-summary".to_string());
 
     let show = ctx.shows.create(&show_input).await?;
 
     let mut other_show_input: CreateShowInput = Faker.fake();
     other_show_input.title = "Test Show 2".to_string();
+    other_show_input.summary = Some("test-summary-2".to_string());
 
     let other_show = ctx.shows.create(&other_show_input).await?;
 
