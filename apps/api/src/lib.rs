@@ -101,12 +101,12 @@ impl Context {
 }
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(context: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
-    let port = context.config.port;
-    let jwks = get_jwks(context.config).await;
+pub async fn run(ctx: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+    let port = ctx.config.port;
+    let jwks = get_jwks(ctx.config).await;
 
-    let schema = create_schema(context.clone())?;
-    let router = create_routes(context, schema, jwks);
+    let schema = create_schema(ctx.clone())?;
+    let router = create_routes(&ctx, schema, jwks);
 
     Ok(warp::serve(
         router
