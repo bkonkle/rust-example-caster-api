@@ -1,15 +1,20 @@
 use anyhow::Result;
+use fake::{Fake, Faker};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
+use std::default::Default;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 use caster_api::{run, Context};
-use caster_shows::{episode_factory, episode_model::Episode, show_factory, show_model::Show};
+use caster_domains::{
+    episodes::{model::Episode, mutations::CreateEpisodeInput},
+    profiles::{model::Profile, mutations::CreateProfileInput},
+    shows::{model::Show, mutations::CreateShowInput},
+    users::model::User,
+};
 use caster_testing::{graphql::GraphQL, oauth2::OAuth2Utils};
-use caster_users::profile_factory;
-use caster_users::{profile_model::Profile, user_model::User};
 use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
@@ -74,14 +79,11 @@ impl TestUtils {
     ) -> Result<(User, Profile)> {
         let user = self.ctx.users.create(username).await?;
 
-        let profile = self
-            .ctx
-            .profiles
-            .create(
-                &profile_factory::create_profile_input(&user.id, email),
-                &false,
-            )
-            .await?;
+        let mut profile_input: CreateProfileInput = Faker.fake();
+        profile_input.user_id = user.id.clone();
+        profile_input.email = email.to_string();
+
+        let profile = self.ctx.profiles.create(&profile_input, &false).await?;
 
         Ok((user, profile))
     }
@@ -93,20 +95,20 @@ impl TestUtils {
         show_title: &str,
         episode_title: &str,
     ) -> Result<(Show, Episode)> {
-        let show = self
-            .ctx
-            .shows
-            .create(&show_factory::create_show_input(show_title))
-            .await?;
+        let show_input = CreateShowInput {
+            title: show_title.to_string(),
+            ..Default::default()
+        };
 
-        let episode = self
-            .ctx
-            .episodes
-            .create(
-                &episode_factory::create_episode_input(episode_title, &show.id),
-                &false,
-            )
-            .await?;
+        let show = self.ctx.shows.create(&show_input).await?;
+
+        let episode_input = CreateEpisodeInput {
+            title: episode_title.to_string(),
+            show_id: show.id.clone(),
+            ..Default::default()
+        };
+
+        let episode = self.ctx.episodes.create(&episode_input, &false).await?;
 
         Ok((show, episode))
     }

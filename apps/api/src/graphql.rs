@@ -2,21 +2,26 @@ use anyhow::Result;
 use async_graphql::{dataloader::DataLoader, EmptySubscription, MergedObject, Schema};
 use std::sync::Arc;
 
-use caster_shows::{
-    episodes_resolver::{EpisodesMutation, EpisodesQuery},
-    episodes_service::EpisodeLoader,
-    shows_resolver::{ShowsMutation, ShowsQuery},
-    shows_service::ShowLoader,
-};
-use caster_users::{
-    profiles_resolver::{ProfilesMutation, ProfilesQuery},
-    profiles_service::ProfileLoader,
-    role_grants_service::RoleGrantLoader,
-    users_resolver::{UsersMutation, UsersQuery},
-    users_service::UserLoader,
-};
-
 use crate::Context;
+use caster_domains::{
+    episodes::{
+        resolver::{EpisodesMutation, EpisodesQuery},
+        service::EpisodeLoader,
+    },
+    profiles::{
+        resolver::{ProfilesMutation, ProfilesQuery},
+        service::ProfileLoader,
+    },
+    role_grants::service::RoleGrantLoader,
+    shows::{
+        resolver::{ShowsMutation, ShowsQuery},
+        service::ShowLoader,
+    },
+    users::{
+        resolver::{UsersMutation, UsersQuery},
+        service::UserLoader,
+    },
+};
 
 /// The GraphQL top-level Query type
 #[derive(MergedObject, Default)]

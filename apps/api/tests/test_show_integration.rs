@@ -1,15 +1,17 @@
 use anyhow::Result;
+use fake::{Fake, Faker};
 use futures::executor::block_on;
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::panic;
 
-use caster_shows::show_factory;
+use caster_domains::{role_grants::model::CreateRoleGrantInput, shows::mutations::CreateShowInput};
 use caster_testing::oauth2::{Credentials, User as TestUser};
-use caster_users::role_grant_model::CreateRoleGrantInput;
 
+#[cfg(test)]
 mod test_utils;
+
 use test_utils::TestUtils;
 
 /***
@@ -24,7 +26,6 @@ const CREATE_SHOW: &str = "
                 title
                 summary
                 picture
-                content
             }
         }
     }
@@ -159,7 +160,6 @@ const GET_SHOW: &str = "
             title
             summary
             picture
-            content
         }
     }
 ";
@@ -180,10 +180,10 @@ async fn test_get_show() -> Result<()> {
         ..
     } = oauth.get_credentials(TestUser::Test).await;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(GET_SHOW, json!({ "id": show.id,}), Some(token))?;
 
@@ -268,7 +268,6 @@ const GET_MANY_SHOWS: &str = "
                 title
                 summary
                 picture
-                content
             }
             count
             total
@@ -289,15 +288,17 @@ async fn test_get_many_shows() -> Result<()> {
         ..
     } = TestUtils::init().await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+    show_input.summary = Some("test-summary".to_string());
 
-    let other_show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show 2"))
-        .await?;
+    let show = ctx.shows.create(&show_input).await?;
+
+    let mut other_show_input: CreateShowInput = Faker.fake();
+    other_show_input.title = "Test Show 2".to_string();
+    other_show_input.summary = Some("test-summary-2".to_string());
+
+    let other_show = ctx.shows.create(&other_show_input).await?;
 
     let req = graphql.query(GET_MANY_SHOWS, Value::Null, None)?;
     let resp = http_client.request(req).await?;
@@ -356,7 +357,6 @@ const UPDATE_SHOW: &str = "
                 title
                 summary
                 picture
-                content
             }
         }
     }
@@ -382,10 +382,10 @@ async fn test_update_show() -> Result<()> {
     // Create a User
     let user = ctx.users.create(username).await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     // Grant the admin role to this User for this Show
     ctx.role_grants
@@ -485,10 +485,10 @@ async fn test_update_show_requires_authn() -> Result<()> {
         ..
     } = TestUtils::init().await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(
         UPDATE_SHOW,
@@ -548,10 +548,10 @@ async fn test_update_show_requires_authz() -> Result<()> {
     // Create a User
     let user = ctx.users.create(username).await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(
         UPDATE_SHOW,
@@ -622,10 +622,10 @@ async fn test_delete_show() -> Result<()> {
     // Create a User
     let user = ctx.users.create(username).await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     // Grant the admin role to this User for this Show
     ctx.role_grants
@@ -701,10 +701,10 @@ async fn test_delete_show_requires_authn() -> Result<()> {
         ..
     } = TestUtils::init().await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), None)?;
     let resp = http_client.request(req).await?;
@@ -755,10 +755,10 @@ async fn test_delete_show_requires_authz() -> Result<()> {
     // Create a User
     let user = ctx.users.create(username).await?;
 
-    let show = ctx
-        .shows
-        .create(&show_factory::create_show_input("Test Show"))
-        .await?;
+    let mut show_input: CreateShowInput = Faker.fake();
+    show_input.title = "Test Show".to_string();
+
+    let show = ctx.shows.create(&show_input).await?;
 
     let req = graphql.query(DELETE_SHOW, json!({"id": show.id}), Some(token))?;
     let resp = http_client.request(req).await?;
