@@ -27,7 +27,8 @@ pub struct EpisodesMutation {}
 /// Queries for the `Episode` model
 #[Object]
 impl EpisodesQuery {
-    async fn get_episode(
+    /// Get a sincle Episode
+    pub async fn get_episode(
         &self,
         ctx: &Context<'_>,
         #[graphql(desc = "The Episode id")] id: String,
@@ -41,7 +42,7 @@ impl EpisodesQuery {
     }
 
     /// Get multiple Episodes
-    async fn get_many_episodes(
+    pub async fn get_many_episodes(
         &self,
         ctx: &Context<'_>,
         r#where: Option<EpisodeCondition>,
@@ -70,7 +71,7 @@ impl EpisodesQuery {
 #[Object]
 impl EpisodesMutation {
     /// Create a new Episode
-    async fn create_episode(
+    pub async fn create_episode(
         &self,
         ctx: &Context<'_>,
         input: CreateEpisodeInput,
@@ -116,7 +117,7 @@ impl EpisodesMutation {
     }
 
     /// Update an existing Episode
-    async fn update_episode(
+    pub async fn update_episode(
         &self,
         ctx: &Context<'_>,
         id: String,
@@ -169,7 +170,7 @@ impl EpisodesMutation {
     }
 
     /// Remove an existing Episode
-    async fn delete_episode(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
+    pub async fn delete_episode(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
         let episodes = ctx.data_unchecked::<Arc<dyn EpisodesService>>();
         let user = ctx.data_unchecked::<Option<User>>();
         let oso = ctx.data_unchecked::<Oso>();

@@ -4,7 +4,7 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use super::super::{
+use crate::shows::{
     model::Show,
     mutations::{CreateShowInput, UpdateShowInput},
     queries::{ShowCondition, ShowsOrderBy},

@@ -413,6 +413,7 @@ dependencies = [
  "async-graphql",
  "async-trait",
  "caster-auth",
+ "caster-testing",
  "caster-utils",
  "chrono",
  "fake",

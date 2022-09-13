@@ -4,13 +4,15 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use super::super::{
-    model::{Model, ProfileList},
-    mutations::{CreateProfileInput, UpdateProfileInput},
-    queries::{ProfileCondition, ProfilesOrderBy},
-    service::{DefaultProfilesService, ProfilesService},
+use crate::{
+    profiles::{
+        model::{Model, ProfileList},
+        mutations::{CreateProfileInput, UpdateProfileInput},
+        queries::{ProfileCondition, ProfilesOrderBy},
+        service::{DefaultProfilesService, ProfilesService},
+    },
+    users::model::User,
 };
-use crate::users::model::User;
 use caster_utils::pagination::ManyResponse;
 
 #[tokio::test]

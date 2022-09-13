@@ -4,13 +4,15 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
 use std::sync::Arc;
 
-use super::super::{
-    model::Episode,
-    mutations::{CreateEpisodeInput, UpdateEpisodeInput},
-    queries::{EpisodeCondition, EpisodesOrderBy},
-    service::{DefaultEpisodesService, EpisodesService},
+use crate::{
+    episodes::{
+        model::Episode,
+        mutations::{CreateEpisodeInput, UpdateEpisodeInput},
+        queries::{EpisodeCondition, EpisodesOrderBy},
+        service::{DefaultEpisodesService, EpisodesService},
+    },
+    shows::model::Show,
 };
-use crate::shows::model::Show;
 use caster_utils::pagination::ManyResponse;
 
 #[tokio::test]

@@ -4,7 +4,7 @@ use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
-use super::super::{
+use crate::users::{
     model::User,
     mutations::UpdateUserInput,
     service::{UsersService, UsersServiceTrait},

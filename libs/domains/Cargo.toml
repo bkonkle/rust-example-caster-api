@@ -10,6 +10,7 @@ async-graphql = { version = "^4.0", features = ["chrono", "dataloader"] }
 async-trait = "0.1.41"
 caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }
+caster-testing = { path = "../testing" }
 chrono = { version = "0.4.19", features = ["serde"] }
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 hyper = "0.14"
