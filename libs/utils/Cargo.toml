@@ -9,7 +9,7 @@ anyhow = "1.0"
 async-graphql = { version = "^4.0", features = ["chrono"] }
 async-graphql-parser = "^4.0"
 async-trait = "0.1.41"
-sea-orm = { version = "^0.8", features = [
+sea-orm = { version = "^0.9", features = [
     "macros",
     "mock",
 ], default-features = false }

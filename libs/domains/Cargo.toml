@@ -17,11 +17,13 @@ hyper = "0.14"
 oso = "0.26.0"
 oso-derive = "0.26.0"
 rand = "0.8"
-sea-orm = { version = "^0.8", features = [
-    "sqlx-postgres",
-    "runtime-tokio-rustls",
+sea-orm = { version = "^0.9", features = [
     "macros",
     "mock",
+    "runtime-tokio-rustls",
+    "sqlx-postgres",
+    "with-chrono",
+    "with-json",
 ], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

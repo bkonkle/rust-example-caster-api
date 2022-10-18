@@ -76,7 +76,7 @@ impl Profile {
 }
 
 /// The `Profile` Database model
-#[derive(Clone, Debug, Dummy, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
+#[derive(Clone, Debug, Dummy, Eq, PartialEq, DeriveEntityModel, Deserialize, Serialize)]
 #[sea_orm(table_name = "profiles")]
 pub struct Model {
     #[sea_orm(primary_key, column_type = "Text")]

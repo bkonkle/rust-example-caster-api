@@ -55,7 +55,19 @@ For CLI tools, however, we have to provide a small `.env` file with a subset of 
 
 ### Running Docker
 
-To run the docker-compose formation for the API app:
+To run the docker-compose formation with just the supporting services needed to run `cargo make dev`:
+
+```sh
+cargo make docker up -d
+```
+
+To shut it down:
+
+```sh
+cargo make docker down
+```
+
+To run docker-compose with the API app included:
 
 ```sh
 cargo make docker-api up -d
@@ -93,12 +105,12 @@ If you want to wipe your database and start over:
 cargo make db-reset
 ```
 
-### Running the Local Server
+### Running the Local dev server
 
-Use `cargo` to run the server locally:
+Use `cargo` to run the dev server locally:
 
 ```sh
-cargo run
+cargo make dev
 ```
 
 ### Update Dependencies
