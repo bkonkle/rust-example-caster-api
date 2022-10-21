@@ -13,6 +13,7 @@ caster-domains = { path = "../../libs/domains" }
 caster-utils = { path = "../../libs/utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
+fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 futures = "0.3"
 hyper = "0.14"
 hyper-tls = "0.5"
@@ -20,6 +21,7 @@ log = "0.4"
 once_cell = "1.9"
 oso = "0.26.0"
 pretty_env_logger = "0.4"
+rand = "0.8"
 sea-orm = { version = "^0.9", features = [
     "macros",
     "mock",
@@ -41,13 +43,13 @@ sqlx = { version = "^0.6", features = [
     "uuid",
 ] }
 tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1.1"
+ulid = "1.0.0"
 warp = "0.3"
 
 [dev-dependencies]
-fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 caster-testing = { path = "../../libs/testing" }
 hyper = "0.14"
 hyper-tls = "0.5"
 mockall = "0.11"
 pretty_assertions = { version = "^1.2" }
-rand = "0.8"

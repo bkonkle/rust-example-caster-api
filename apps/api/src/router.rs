@@ -4,9 +4,10 @@ use async_graphql_warp::{graphql, GraphQLResponse};
 use serde_json::json;
 use std::{convert::Infallible, sync::Arc};
 use warp::{http::Response as HttpResponse, Rejection};
-use warp::{Filter, Reply};
+use warp::{ws, Filter, Reply};
 
 use crate::{
+    events,
     graphql::{Mutation, Query},
     Context,
 };
@@ -113,4 +114,18 @@ async fn execute(
     let response = schema.execute(request).await;
 
     Ok::<_, Infallible>(GraphQLResponse::from(response))
+}
+
+// WebSocket
+// ---------
+
+pub fn events(
+    ctx: &Arc<Context>,
+    jwks: &'static JWKS,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+    warp::path("events")
+        .and(ws())
+        .and(with_context(ctx))
+        .and(with_auth(jwks))
+        .and_then(events::connections::handle)
 }
