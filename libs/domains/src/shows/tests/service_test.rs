@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_graphql::MaybeUndefined;
 use fake::{Fake, Faker};
 use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
@@ -245,9 +246,9 @@ async fn test_shows_service_update() -> Result<()> {
         .update(
             &show.id,
             &UpdateShowInput {
-                title: Some(updated.title.clone()),
-                summary: None,
-                picture: None,
+                title: MaybeUndefined::Value(updated.title.clone()),
+                summary: MaybeUndefined::Undefined,
+                picture: MaybeUndefined::Undefined,
             },
         )
         .await?;
