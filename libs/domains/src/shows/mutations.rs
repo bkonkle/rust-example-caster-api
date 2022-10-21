@@ -1,5 +1,7 @@
-use async_graphql::{InputObject, SimpleObject};
-use fake::{Dummy, Fake};
+use async_graphql::{InputObject, MaybeUndefined, SimpleObject};
+use caster_utils::graphql::dummy_maybe_undef;
+use fake::{Dummy, Fake, Faker};
+use rand::Rng;
 
 use super::model::Show;
 
@@ -17,16 +19,26 @@ pub struct CreateShowInput {
 }
 
 /// The `UpdateShowInput` input type
-#[derive(Clone, Default, Dummy, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct UpdateShowInput {
     /// The Show's title
-    pub title: Option<String>,
+    pub title: MaybeUndefined<String>,
 
     /// The Show's description summary
-    pub summary: Option<String>,
+    pub summary: MaybeUndefined<String>,
 
     /// The Show's picture
-    pub picture: Option<String>,
+    pub picture: MaybeUndefined<String>,
+}
+
+impl Dummy<Faker> for UpdateShowInput {
+    fn dummy_with_rng<R: Rng + ?Sized>(config: &Faker, rng: &mut R) -> Self {
+        UpdateShowInput {
+            title: dummy_maybe_undef(config, rng),
+            summary: dummy_maybe_undef(config, rng),
+            picture: dummy_maybe_undef(config, rng),
+        }
+    }
 }
 
 /// The `MutateShowResult` type

@@ -4,6 +4,9 @@
 /// Config utilities based on config-rs
 pub mod config;
 
+/// GraphQL utilities
+pub mod graphql;
+
 /// Utilities for working with http/https requests
 pub mod http;
 
