@@ -2,7 +2,7 @@ use fake::Dummy;
 use serde::{Deserialize, Serialize};
 use warp::ws::Message;
 
-/// Incoming WebSocket messages from clients
+/// Incoming `WebSocket` messages from clients
 #[derive(Clone, Debug, Dummy, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(tag = "type")]
 pub enum IncomingMessage {
@@ -11,6 +11,7 @@ pub enum IncomingMessage {
 }
 
 impl IncomingMessage {
+    /// Create a new `IncomingMessage` from a `WebSocket` Message
     pub fn from_message(msg: Message) -> Result<Option<Self>, serde_json::Error> {
         let msg = if let Ok(s) = msg.to_str() {
             s
@@ -22,7 +23,7 @@ impl IncomingMessage {
     }
 }
 
-/// Outgoing WebSocket messages to clients
+/// Outgoing `WebSocket` messages to clients
 #[derive(Clone, Debug, Dummy, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(tag = "type")]
 pub enum OutgoingMessage {

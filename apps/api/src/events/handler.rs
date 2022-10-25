@@ -4,11 +4,13 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws;
 
-use crate::Context;
+use crate::{events::router::route_message, Context};
 use caster_auth::authenticate::Subject;
 
 use super::messages::IncomingMessage;
 
+/// Handle `WebSocket` connections by setting up a message handler that deserializes them and
+/// determines how to handle
 pub async fn handle(
     ws: ws::Ws,
     ctx: Arc<Context>,

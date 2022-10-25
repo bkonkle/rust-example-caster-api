@@ -23,7 +23,7 @@ pub fn create_routes(
     schema: Schema<Query, Mutation, EmptySubscription>,
     jwks: &'static JWKS,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    health().or(gql(ctx, schema, jwks))
+    health().or(events(ctx, jwks)).or(gql(ctx, schema, jwks))
 }
 
 // Add the context to the handler
@@ -119,6 +119,7 @@ async fn execute(
 // WebSocket
 // ---------
 
+/// The Warp Filter to handle `WebSocket` upgrade requests
 pub fn events(
     ctx: &Arc<Context>,
     jwks: &'static JWKS,
@@ -127,5 +128,5 @@ pub fn events(
         .and(ws())
         .and(with_context(ctx))
         .and(with_auth(jwks))
-        .and_then(events::connections::handle)
+        .and_then(events::handler::handle)
 }

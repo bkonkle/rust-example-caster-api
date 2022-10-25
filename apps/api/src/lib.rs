@@ -42,7 +42,7 @@ mod router;
 /// GraphQL Schema Creation
 pub mod graphql;
 
-/// WebSocket Events
+/// `WebSocket` Events
 pub mod events;
 
 #[macro_use]

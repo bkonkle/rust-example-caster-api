@@ -1,7 +1,7 @@
 /// Message Types
 pub mod messages;
 
-/// WebSockets Connections
+/// `WebSockets` Connections
 pub mod connections;
 
 /// Event handler
