@@ -1,5 +1,9 @@
 use anyhow::Result;
-use async_graphql::{dataloader::Loader, FieldError};
+use async_graphql::{
+    dataloader::Loader,
+    FieldError,
+    MaybeUndefined::{Null, Undefined, Value},
+};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
@@ -155,16 +159,21 @@ impl ShowsService for DefaultShowsService {
 
         let mut show: model::ActiveModel = show.into();
 
-        if let Some(title) = &input.title {
-            show.title = Set(title.clone());
+        match &input.title {
+            Undefined | Null => (),
+            Value(value) => show.title = Set(value.clone()),
+        };
+
+        match &input.summary {
+            Undefined => (),
+            Null => show.summary = Set(None),
+            Value(value) => show.summary = Set(Some(value.clone())),
         }
 
-        if let Some(summary) = &input.summary {
-            show.summary = Set(Some(summary.clone()));
-        }
-
-        if let Some(picture) = &input.picture {
-            show.picture = Set(Some(picture.clone()));
+        match &input.picture {
+            Undefined => (),
+            Null => show.picture = Set(None),
+            Value(value) => show.picture = Set(Some(value.clone())),
         }
 
         let updated: Show = show.update(&*self.db).await?;
