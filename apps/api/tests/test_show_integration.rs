@@ -104,7 +104,7 @@ async fn test_create_show_requires_title() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "title" of type "CreateShowInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "title" of type "String!" is required but not provided"#
     );
 
     Ok(())

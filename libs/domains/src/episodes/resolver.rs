@@ -38,7 +38,13 @@ impl EpisodesQuery {
         // Check to see if the associated Show is selected
         let with_show = ctx.look_ahead().field("show").exists();
 
-        Ok(episodes.get(&id, &with_show).await?)
+        episodes
+            .get(&id, &with_show)
+            .await
+            .map_err(as_graphql_error(
+                "Error while retrieving Episode",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))
     }
 
     /// Get multiple Episodes

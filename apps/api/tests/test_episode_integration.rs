@@ -123,7 +123,7 @@ async fn test_create_episode_requires_title_show_id() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "title" of type "CreateEpisodeInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "title" of type "String!" is required but not provided"#
     );
 
     // Now provide the "email" and try again
@@ -146,7 +146,7 @@ async fn test_create_episode_requires_title_show_id() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "showId" of type "CreateEpisodeInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "showId" of type "String!" is required but not provided"#
     );
 
     Ok(())
