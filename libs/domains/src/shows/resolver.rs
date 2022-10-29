@@ -42,8 +42,8 @@ impl ShowsQuery {
         ctx: &Context<'_>,
         r#where: Option<ShowCondition>,
         order_by: Option<Vec<ShowsOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<ShowsPage> {
         let shows = ctx.data_unchecked::<Arc<dyn ShowsService>>();
 

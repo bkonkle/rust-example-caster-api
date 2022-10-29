@@ -17,16 +17,16 @@ pub struct ShowsPage {
     data: Vec<Show>,
 
     /// The number of `Shows` returned for the current page
-    count: usize,
+    count: u64,
 
     /// Tne total number of `Shows` available
-    total: usize,
+    total: u64,
 
     /// The current page
-    page: usize,
+    page: u64,
 
     /// The number of pages available
-    page_count: usize,
+    page_count: u64,
 }
 
 impl From<ManyResponse<Show>> for ShowsPage {

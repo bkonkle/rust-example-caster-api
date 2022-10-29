@@ -47,8 +47,8 @@ impl EpisodesQuery {
         ctx: &Context<'_>,
         r#where: Option<EpisodeCondition>,
         order_by: Option<Vec<EpisodesOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<EpisodesPage> {
         let episodes = ctx.data_unchecked::<Arc<dyn EpisodesService>>();
 

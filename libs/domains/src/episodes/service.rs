@@ -29,8 +29,8 @@ pub trait EpisodesService: Sync + Send {
         &self,
         condition: Option<EpisodeCondition>,
         order_by: Option<Vec<EpisodesOrderBy>>,
-        page_size: Option<usize>,
-        page: Option<usize>,
+        page_size: Option<u64>,
+        page: Option<u64>,
         with_show: &bool,
     ) -> Result<ManyResponse<Episode>>;
 
@@ -101,8 +101,8 @@ impl EpisodesService for DefaultEpisodesService {
         &self,
         condition: Option<EpisodeCondition>,
         order_by: Option<Vec<EpisodesOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
         with_show: &bool,
     ) -> Result<ManyResponse<Episode>> {
         let page_num = page.unwrap_or(1);
@@ -159,13 +159,13 @@ impl EpisodesService for DefaultEpisodesService {
                     .await?
                     .into();
 
-                let total = data.len();
+                let total = data.len().try_into().unwrap_or(0);
 
                 (data, total)
             }
             (None, false) => {
                 let data: EpisodeList = query.all(&*self.db).await?.into();
-                let total = data.len();
+                let total = data.len().try_into().unwrap_or(0);
 
                 (data, total)
             }
