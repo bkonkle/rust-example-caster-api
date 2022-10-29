@@ -41,6 +41,7 @@ async fn test_create_profile() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -185,6 +186,7 @@ async fn test_create_profile_authz() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -313,6 +315,7 @@ async fn test_get_profile_empty() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {

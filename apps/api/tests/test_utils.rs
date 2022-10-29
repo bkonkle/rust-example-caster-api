@@ -1,11 +1,18 @@
+#![allow(dead_code)] // Since each test is an independent module, this is needed
+
 use anyhow::Result;
 use fake::{Fake, Faker};
+use futures_util::{stream::SplitStream, Future, SinkExt, StreamExt};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 use once_cell::sync::{Lazy, OnceCell};
 use std::default::Default;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
-use tokio::time::sleep;
+use tokio::{
+    net::TcpStream,
+    time::{sleep, timeout},
+};
+use tokio_tungstenite::{connect_async, tungstenite::Message, MaybeTlsStream, WebSocketStream};
 
 use caster_api::{run, Context};
 use caster_domains::{
@@ -39,6 +46,7 @@ pub struct TestUtils {
     pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
     pub ctx: Arc<Context>,
+    pub addr: SocketAddr,
 }
 
 impl TestUtils {
@@ -67,6 +75,7 @@ impl TestUtils {
             oauth,
             graphql,
             ctx,
+            addr,
         })
     }
 
@@ -111,5 +120,60 @@ impl TestUtils {
         let episode = self.ctx.episodes.create(&episode_input, &false).await?;
 
         Ok((show, episode))
+    }
+
+    /// Send a message with the default timeout
+    pub async fn send_message<T>(
+        &self,
+        message: Message,
+        to_future: fn(SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) -> T,
+    ) -> Result<()>
+    where
+        T: Future,
+    {
+        self.send_to_websocket(message, to_future, None).await
+    }
+
+    /// Send a message with a custom timeout
+    pub async fn send_message_with_timeout<T>(
+        &self,
+        message: Message,
+        to_future: fn(SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) -> T,
+        timer: u64,
+    ) -> Result<()>
+    where
+        T: Future,
+    {
+        self.send_to_websocket(message, to_future, Some(timer))
+            .await
+    }
+
+    async fn send_to_websocket<T>(
+        &self,
+        message: Message,
+        to_future: fn(SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>) -> T,
+        time: Option<u64>,
+    ) -> Result<()>
+    where
+        T: Future,
+    {
+        let url = url::Url::parse(&format!(
+            "ws://localhost:{port}/events",
+            port = self.addr.port()
+        ))?;
+
+        let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
+        let (mut write, read) = ws_stream.split();
+
+        write.send(message).await.unwrap();
+
+        if timeout(Duration::from_millis(time.unwrap_or(1000)), to_future(read))
+            .await
+            .is_err()
+        {
+            panic!("Error: future timed out")
+        }
+
+        Ok(())
     }
 }

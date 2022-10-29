@@ -15,6 +15,10 @@ chrono = { version = "0.4.19", features = ["serde"] }
 dotenv = "0.15.0"
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 futures = "0.3"
+futures-util = { version = "0.3", default-features = false, features = [
+    "sink",
+    "std",
+] }
 hyper = "0.14"
 hyper-tls = "0.5"
 log = "0.4"
@@ -44,6 +48,7 @@ sqlx = { version = "^0.6", features = [
 ] }
 tokio = { version = "1", features = ["full"] }
 tokio-stream = "0.1.1"
+tokio-tungstenite = "0.17.2"
 ulid = "1.0.0"
 warp = "0.3"
 
@@ -53,3 +58,4 @@ hyper = "0.14"
 hyper-tls = "0.5"
 mockall = "0.11"
 pretty_assertions = { version = "^1.2" }
+url = "2.0.0"

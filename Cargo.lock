@@ -333,6 +333,7 @@ dependencies = [
  "dotenv",
  "fake",
  "futures",
+ "futures-util",
  "hyper",
  "hyper-tls",
  "log",
@@ -349,7 +350,9 @@ dependencies = [
  "sqlx",
  "tokio",
  "tokio-stream",
+ "tokio-tungstenite",
  "ulid",
+ "url",
  "warp",
 ]
 
