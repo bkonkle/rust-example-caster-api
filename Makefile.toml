@@ -81,7 +81,8 @@ args = ["llvm-cov", "nextest", "--lcov", "--output-path", "lcov.info"]
 
 [tasks.audit]
 command = "cargo"
-args = ["audit"]
+# Ignore RUSTSEC-2020-0071 due to https://github.com/launchbadge/sqlx/issues/1586
+args = ["audit", "--ignore", "RUSTSEC-2020-0071"]
 
 [tasks.timings]
 script = '''

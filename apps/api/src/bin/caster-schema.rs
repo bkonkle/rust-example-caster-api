@@ -2,7 +2,6 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
-use dotenv::dotenv;
 use std::sync::Arc;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
@@ -12,9 +11,6 @@ use caster_utils::config::get_config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Load variables from .env, failing silently
-    dotenv().ok();
-
     // Set RUST_LOG=info (or your desired loglevel) to see logging
     pretty_env_logger::init();
 

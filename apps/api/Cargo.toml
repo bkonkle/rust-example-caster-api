@@ -12,7 +12,6 @@ caster-auth = { path = "../../libs/auth" }
 caster-domains = { path = "../../libs/domains" }
 caster-utils = { path = "../../libs/utils" }
 chrono = { version = "0.4.19", features = ["serde"] }
-dotenv = "0.15.0"
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 futures = "0.3"
 futures-util = { version = "0.3", default-features = false, features = [

@@ -4,7 +4,6 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use dotenv::dotenv;
 
 use caster_api::{run, Context};
 use caster_utils::config::get_config;
@@ -15,9 +14,6 @@ extern crate log;
 /// Run the server and log where to find it
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Load variables from .env, failing silently
-    dotenv().ok();
-
     // Set RUST_LOG=info (or your desired loglevel) to see logging
     pretty_env_logger::init();
 
