@@ -1,0 +1,30 @@
+name: Security audit
+
+on:
+    schedule:
+        # Runs at 00:00 UTC everyday
+        - cron: "0 0 * * *"
+    push:
+        paths:
+            - "**/Cargo.toml"
+            - "**/Cargo.lock"
+
+jobs:
+    audit:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@stable
+
+            - uses: davidB/rust-cargo-make@v1
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Run security audit
+              run: cargo make audit

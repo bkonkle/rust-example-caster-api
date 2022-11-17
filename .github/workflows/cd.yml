@@ -1,0 +1,52 @@
+name: CD # Continuous Deployment
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    docs:
+        name: Docs
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+                  override: true
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Check documentation
+              env:
+                  RUSTDOCFLAGS: -D warnings
+              uses: actions-rs/cargo@v1
+              with:
+                  command: doc
+                  args: --no-deps --document-private-items --all-features --workspace --examples
+
+    package:
+        runs-on: ubuntu-latest
+        needs: integration
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - uses: ./.github/workflows/actions/setup-docker
+
+            - name: Docker build
+              id: docker_build
+              uses: docker/build-push-action@v2
+              with:
+                  context: ./
+                  file: ./apps/api/Dockerfile
+                  push: false
+                  tags: caster-api:latest
+
+            - name: Image digest
+              run: echo ${{ steps.docker_build.outputs.digest }}

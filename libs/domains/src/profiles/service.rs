@@ -29,8 +29,8 @@ pub trait ProfilesService: Sync + Send {
         &self,
         condition: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
-        page_size: Option<usize>,
-        page: Option<usize>,
+        page_size: Option<u64>,
+        page: Option<u64>,
         with_user: &bool,
     ) -> Result<ManyResponse<Profile>>;
 
@@ -114,8 +114,8 @@ impl ProfilesService for DefaultProfilesService {
         &self,
         condition: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
         with_user: &bool,
     ) -> Result<ManyResponse<Profile>> {
         let page_num = page.unwrap_or(1);
@@ -184,13 +184,13 @@ impl ProfilesService for DefaultProfilesService {
                     .await?
                     .into();
 
-                let total = data.len();
+                let total = data.len().try_into().unwrap_or(0);
 
                 (data, total)
             }
             (None, false) => {
                 let data: ProfileList = query.all(&*self.db).await?.into();
-                let total = data.len();
+                let total = data.len().try_into().unwrap_or(0);
 
                 (data, total)
             }

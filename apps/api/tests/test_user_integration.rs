@@ -41,6 +41,7 @@ async fn test_get_current_user() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -157,6 +158,7 @@ async fn test_get_or_create_current_user_existing() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -225,6 +227,7 @@ async fn test_get_or_create_current_user_create() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -324,6 +327,7 @@ async fn test_update_current_user() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {

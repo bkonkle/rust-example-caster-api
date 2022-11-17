@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "^4.0", features = ["chrono", "dataloader"] }
+async-graphql = { version = "4.0", features = ["chrono", "dataloader"] }
 async-trait = "0.1.41"
 caster-auth = { path = "../auth" }
 caster-utils = { path = "../utils" }
@@ -17,7 +17,7 @@ hyper = "0.14"
 oso = "0.26.0"
 oso-derive = "0.26.0"
 rand = "0.8"
-sea-orm = { version = "^0.9", features = [
+sea-orm = { version = "0.10", features = [
     "macros",
     "mock",
     "runtime-tokio-rustls",
@@ -27,7 +27,7 @@ sea-orm = { version = "^0.9", features = [
 ], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sqlx = { version = "^0.6", features = [
+sqlx = { version = "0.6", features = [
     "chrono",
     "json",
     "macros",
@@ -39,8 +39,8 @@ sqlx = { version = "^0.6", features = [
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]
-maplit = { version = "^1" }
+maplit = { version = "1" }
 mockall = "0.11"
-pretty_assertions = { version = "^1.2" }
+pretty_assertions = { version = "1.2" }
 rand = "0.8"
 slug = "0.1.4"

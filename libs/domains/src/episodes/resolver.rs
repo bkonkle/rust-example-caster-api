@@ -38,7 +38,13 @@ impl EpisodesQuery {
         // Check to see if the associated Show is selected
         let with_show = ctx.look_ahead().field("show").exists();
 
-        Ok(episodes.get(&id, &with_show).await?)
+        episodes
+            .get(&id, &with_show)
+            .await
+            .map_err(as_graphql_error(
+                "Error while retrieving Episode",
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ))
     }
 
     /// Get multiple Episodes
@@ -47,8 +53,8 @@ impl EpisodesQuery {
         ctx: &Context<'_>,
         r#where: Option<EpisodeCondition>,
         order_by: Option<Vec<EpisodesOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<EpisodesPage> {
         let episodes = ctx.data_unchecked::<Arc<dyn EpisodesService>>();
 

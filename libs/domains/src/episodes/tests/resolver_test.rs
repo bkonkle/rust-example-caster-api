@@ -59,6 +59,7 @@ async fn test_episodes_resolver_get_simple() -> Result<()> {
     let mut episode: Episode = Faker.fake();
     episode.id = episode_id.to_string();
     episode.title = episode_title.to_string();
+    episode.show = Some(Faker.fake());
 
     let mut service = MockEpisodesService::new();
     service

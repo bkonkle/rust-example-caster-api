@@ -33,12 +33,28 @@ Configure the `rust-analyzer` VS Code plugin to use it (in _settings.json_):
 }
 ```
 
+### libclang
+
+The `cargo-spellcheck` utility depends on [`libclang`](https://clang.llvm.org/doxygen/group__CINDEX.html).
+
+In Ubuntu, the package to install is `libclang-dev`:
+
+```sh
+sudo apt install libclang-dev
+```
+
 ### Cargo Make
 
 To build scripts from the _Makefile.toml_, install Cargo Make:
 
 ```sh
 cargo install cargo-make
+```
+
+Run "setup" to install some tooling dependencies:
+
+```sh
+cargo make setup
 ```
 
 ### Configuration
@@ -51,7 +67,9 @@ The `local.toml` config is loaded by default in every run mode. In addition, an 
 
 This config is read in as part of a [`lazy_static`](https://docs.rs/lazy_static/latest/lazy_static/) instance that is first initialized when the [`main.rs`](apps/api/src/main.rs) module from the `caster_api` app calls `caster_utils::config::get_config()`.
 
-For CLI tools, however, we have to provide a small `.env` file with a subset of our config values so that tools like `docker-compose` and `sqlx-cli` can read them. Use the `.env.example` as a guide.
+### Environment Variables
+
+For CLI tools, we have to provide a small [direnv](https://direnv.net/) `.envrc` file with a subset of our config values so that tools like `docker-compose` and `sqlx-cli` can read them. Use the `.envrc.example` as a guide.
 
 ### Running Docker
 
@@ -87,7 +105,7 @@ Install the SQLx CLI for running migrations:
 cargo install sqlx-cli --no-default-features --features rustls,postgres
 ```
 
-Create a database based on the `DATABASE_URL` in the `.env`, if you haven't already:
+Create a database based on the `DATABASE_URL` in the `.envrc`, if you haven't already:
 
 ```sh
 cargo make db-create
@@ -152,13 +170,13 @@ url = "postgresql://caster:caster@localhost:1701/caster_rust_test"
 
 Since the `RUN_MODE` environment variable is set by the `tasks.integration` make task to "test", this file will automatically be picked up by the config reader.
 
-NOTE: To manage this test database with the SQLx CLI, you'll need to temporarily edit your `.env` file to match the values above, and then run the command to reset the test database:
+NOTE: To manage this test database with the SQLx CLI, you'll need to temporarily edit your `.envrc` file to match the values above, and then run the command to reset the test database:
 
 ```sh
 cargo make db-reset
 ```
 
-You can restore the original values in your `.env` afterwards.
+You can restore the original values in your `.envrc` afterwards.
 
 ## Deployment
 
