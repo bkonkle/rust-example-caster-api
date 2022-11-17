@@ -45,34 +45,11 @@ jobs:
     test:
         name: Test Suite
         runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  ref: ${{ github.event.pull_request.head.ref }}
-                  fetch-depth: 0
-
-            - name: Install Rust toolchain
-              uses: dtolnay/rust-toolchain@stable
-
-            - uses: davidB/rust-cargo-make@v1
-
-            - uses: Swatinem/rust-cache@v2
-
-            - name: Install nextest
-              uses: taiki-e/install-action@nextest
-
-            - name: Run Unit Tests
-              run: cargo make test
-
-    coverage:
-        name: Collect test coverage
-        runs-on: ubuntu-latest
-        needs: test
         env:
             RUSTFLAGS: -D warnings
         steps:
-            - uses: actions/checkout@v3
+            - name: Checkout repository
+              uses: actions/checkout@v3
               with:
                   ref: ${{ github.event.pull_request.head.ref }}
                   fetch-depth: 0
@@ -86,13 +63,13 @@ jobs:
 
             - uses: Swatinem/rust-cache@v2
 
-            - name: Install latest nextest release
+            - name: Install nextest
               uses: taiki-e/install-action@nextest
 
             - name: Install cargo-llvm-cov
               uses: taiki-e/install-action@cargo-llvm-cov
 
-            - name: Collect coverage data
+            - name: Run Unit Tests
               run: cargo make cov-ci
 
             - name: Upload coverage data to codecov

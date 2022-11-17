@@ -41,14 +41,24 @@ command = "cargo"
 args = ["fmt", "--all", "--", "--check"]
 
 [tasks.test]
-env = { "RUST_LOG" = "info" }
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info" }
 command = "cargo"
 args = ["nextest", "run", "--all-features", "--workspace", "${@}"]
 
 [tasks.test-ci]
-env = { "RUST_LOG" = "info", "RUN_MODE" = "ci" }
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info" }
 command = "cargo"
 args = ["nextest", "run", "--all-features", "--workspace"]
+
+[tasks.cov]
+command = "cargo"
+env = { "RUN_MODE" = "test" }
+args = ["llvm-cov", "nextest", "${@}"]
+
+[tasks.cov-ci]
+command = "cargo"
+env = { "RUN_MODE" = "ci" }
+args = ["llvm-cov", "nextest", "--lcov", "--output-path", "lcov.info"]
 
 [tasks.integration]
 env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
@@ -70,14 +80,6 @@ args = [
     "--workspace",
     "--examples",
 ]
-
-[tasks.cov]
-command = "cargo"
-args = ["llvm-cov", "nextest", "${@}"]
-
-[tasks.cov-ci]
-command = "cargo"
-args = ["llvm-cov", "nextest", "--lcov", "--output-path", "lcov.info"]
 
 [tasks.audit]
 command = "cargo"
