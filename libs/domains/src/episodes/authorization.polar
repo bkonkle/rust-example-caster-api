@@ -12,9 +12,9 @@ resource Episode {
         "episode_chat"
     ];
     roles = [
-        # Able to Chat about an Episode
-        "reader",
         # Able to read chat Messages about an Episode
+        "reader",
+        # Able to Chat about an Episode
         "guest"
     ];
 
