@@ -1,0 +1,199 @@
+name: CI # Continuous Integration
+
+on:
+    pull_request:
+        paths-ignore:
+            - "**.md"
+    push:
+        branches:
+            - main
+        paths-ignore:
+            - "**.md"
+    workflow_dispatch:
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    rustfmt:
+        name: Rustfmt
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+                  components: rustfmt
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Check formatting
+              uses: actions-rs/cargo@v1
+              with:
+                  command: fmt
+                  args: --all -- --check
+
+    clippy:
+        name: Clippy
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+                  components: clippy
+
+            - uses: davidB/rust-cargo-make@v1
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Clippy check
+              uses: actions-rs/cargo@v1
+              with:
+                  command: make
+                  args: check
+
+    test:
+        name: Test Suite
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+
+            - uses: davidB/rust-cargo-make@v1
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Install nextest
+              uses: taiki-e/install-action@nextest
+
+            - name: Run Unit Tests
+              uses: actions-rs/cargo@v1
+              with:
+                  command: make
+                  args: test
+
+    coverage:
+        name: Collect test coverage
+        runs-on: ubuntu-latest
+        needs: test
+        # nightly rust might break from time to time
+        continue-on-error: true
+        env:
+            RUSTFLAGS: -D warnings
+        steps:
+            - uses: actions/checkout@v3
+              with:
+                  ref: ${{ github.event.pull_request.head.ref }}
+                  fetch-depth: 0
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+                  components: llvm-tools-preview
+
+            - uses: davidB/rust-cargo-make@v1
+
+            - uses: Swatinem/rust-cache@v2
+
+            - name: Install latest nextest release
+              uses: taiki-e/install-action@nextest
+
+            - name: Install cargo-llvm-cov
+              uses: taiki-e/install-action@cargo-llvm
+
+            - name: Collect coverage data
+              uses: actions-rs/cargo@v1
+              with:
+                  command: llvm-cov
+                  args: nextest --lcov --output-path lcov.info
+
+            - name: Upload coverage data to codecov
+              uses: codecov/codecov-action@v3
+              with:
+                  files: lcov.info
+
+    integration:
+        name: Integration Test
+        runs-on: ubuntu-latest
+        needs: test
+        environment: ci
+        env:
+            DATABASE_HOSTNAME: localhost
+            DATABASE_USERNAME: caster
+            DATABASE_PASSWORD: caster
+            DATABASE_NAME: caster_rust_test
+            DATABASE_PORT: 1701
+            DATABASE_URL: postgresql://caster:caster@localhost:1701/caster_rust_test
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Install Rust toolchain
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
+                  profile: minimal
+
+            - uses: davidB/rust-cargo-make@v1
+
+            - uses: Swatinem/rust-cache@v2
+
+            - uses: ./.github/workflows/actions/setup-docker
+
+            - name: Run docker-compose
+              run: docker-compose -f docker-compose.yml up -d
+
+            - name: Install SQLx CLI
+              uses: baptiste0928/cargo-install@v1
+              with:
+                  crate: sqlx-cli
+                  args: --no-default-features --features rustls,postgres
+                  version: latest
+
+            - name: Create Database
+              uses: actions-rs/cargo@v1
+              with:
+                  command: make
+                  args: db-create
+
+            - name: Migrate Database
+              uses: actions-rs/cargo@v1
+              with:
+                  command: make
+                  args: db-migrate
+
+            - name: Run Integration Tests
+              run: cargo make integration-ci
+              env:
+                  AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
+                  AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
+                  AUTH_TEST_USER_USERNAME: ${{ secrets.AUTH_TEST_USER_USERNAME }}
+                  AUTH_TEST_USER_PASSWORD: ${{ secrets.AUTH_TEST_USER_PASSWORD }}
+                  AUTH_TEST_ALT_USERNAME: ${{ secrets.AUTH_TEST_ALT_USERNAME }}
+                  AUTH_TEST_ALT_PASSWORD: ${{ secrets.AUTH_TEST_ALT_PASSWORD }}

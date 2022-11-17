@@ -33,12 +33,28 @@ Configure the `rust-analyzer` VS Code plugin to use it (in _settings.json_):
 }
 ```
 
+### libclang
+
+The `cargo-spellcheck` utility depends on [`libclang`](https://clang.llvm.org/doxygen/group__CINDEX.html).
+
+In Ubuntu, the package to install is `libclang-dev`:
+
+```sh
+sudo apt install libclang-dev
+```
+
 ### Cargo Make
 
 To build scripts from the _Makefile.toml_, install Cargo Make:
 
 ```sh
 cargo install cargo-make
+```
+
+Run "setup" to install some tooling dependencies:
+
+```sh
+cargo make setup
 ```
 
 ### Configuration
