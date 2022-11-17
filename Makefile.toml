@@ -36,6 +36,10 @@ args = [
     "--workspace",
 ]
 
+[tasks.format]
+command = "cargo"
+args = ["fmt", "--all", "--", "--check"]
+
 [tasks.test]
 env = { "RUST_LOG" = "info" }
 command = "cargo"
