@@ -33,6 +33,7 @@ use caster_domains::{
     },
 };
 use caster_utils::config::Config;
+use events::connections::Connections;
 use router::create_routes;
 
 mod errors;
@@ -40,6 +41,9 @@ mod router;
 
 /// GraphQL Schema Creation
 pub mod graphql;
+
+/// `WebSocket` Events
+pub mod events;
 
 #[macro_use]
 extern crate log;
@@ -69,6 +73,9 @@ pub struct Context {
 
     /// The `Episode` entity service
     pub episodes: Arc<dyn EpisodesService>,
+
+    /// WebSockets connections currently active on this server
+    pub connections: Connections,
 }
 
 /// Intialize dependencies
@@ -79,6 +86,8 @@ impl Context {
 
         // Set up authorization
         let mut oso = Oso::new();
+
+        let connections = Connections::default();
 
         oso.register_class(User::get_polar_class_builder().name("User").build())?;
         oso.register_class(Profile::get_polar_class_builder().name("Profile").build())?;
@@ -96,6 +105,7 @@ impl Context {
             episodes: Arc::new(DefaultEpisodesService::new(&db)),
             oso,
             db,
+            connections,
         })
     }
 }

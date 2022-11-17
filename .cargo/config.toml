@@ -7,7 +7,7 @@ rustflags = [
     "-Wclippy::checked_conversions",
     "-Wclippy::dbg_macro",
     "-Wclippy::debug_assert_with_mut_call",
-    "-Wclippy::disallowed_method",
+    "-Wclippy::disallowed_methods",
     "-Wclippy::disallowed_type",
     "-Wclippy::doc_markdown",
     "-Wclippy::empty_enum",

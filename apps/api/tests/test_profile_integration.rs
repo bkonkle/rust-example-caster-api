@@ -41,6 +41,7 @@ async fn test_create_profile() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -113,7 +114,7 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "email" of type "CreateProfileInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "email" of type "String!" is required but not provided"#
     );
 
     // Now provide the "email" and try again
@@ -136,7 +137,7 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "userId" of type "CreateProfileInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "userId" of type "String!" is required but not provided"#
     );
 
     Ok(())
@@ -185,6 +186,7 @@ async fn test_create_profile_authz() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -313,6 +315,7 @@ async fn test_get_profile_empty() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {

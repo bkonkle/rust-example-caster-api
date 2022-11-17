@@ -104,7 +104,7 @@ async fn test_create_show_requires_title() -> Result<()> {
     assert_eq!(status, 200);
     assert_eq!(
         json["errors"][0]["message"],
-        r#"Invalid value for argument "input", field "title" of type "CreateShowInput" is required but not provided"#
+        r#"Invalid value for argument "input", field "title" of type "String!" is required but not provided"#
     );
 
     Ok(())
@@ -173,6 +173,7 @@ async fn test_get_show() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -371,6 +372,7 @@ async fn test_update_show() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -537,6 +539,7 @@ async fn test_update_show_requires_authz() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -611,6 +614,7 @@ async fn test_delete_show() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {
@@ -744,6 +748,7 @@ async fn test_delete_show_requires_authz() -> Result<()> {
         oauth,
         graphql,
         ctx,
+        ..
     } = TestUtils::init().await?;
 
     let Credentials {

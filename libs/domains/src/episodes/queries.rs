@@ -18,16 +18,16 @@ pub struct EpisodesPage {
     data: Vec<Episode>,
 
     /// The number of `Episodes` returned for the current page
-    count: usize,
+    count: u64,
 
     /// Tne total number of `Episodes` available
-    total: usize,
+    total: u64,
 
     /// The current page
-    page: usize,
+    page: u64,
 
     /// The number of pages available
-    page_count: usize,
+    page_count: u64,
 }
 
 impl From<ManyResponse<Episode>> for EpisodesPage {

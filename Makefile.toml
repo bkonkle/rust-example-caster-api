@@ -1,42 +1,132 @@
-
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 
 [config]
 main_project_member = "apps/api"
+default_to_workspace = false
+
+[tasks.setup]
+script = '''
+    echo # installing git hooks
+    pre-commit --version || pip install pre-commit
+    pre-commit install || echo "failed to install git hooks!" 1>&2
+
+    echo # things required for `cargo make test`
+    cargo install cargo-nextest
+
+    echo # things required by `cargo make pre-commit`
+    cargo install cargo-spellcheck
+
+    echo # things required by `cargo make coverage`
+    rustup component add llvm-tools-preview
+    cargo install cargo-llvm-cov
+
+    echo # things required by `cargo make audit`
+    cargo install cargo-audit
+'''
+
+[tasks.lint]
+command = "cargo"
+args = [
+    "clippy",
+    "--tests",
+    "--examples",
+    "--all-targets",
+    "--all-features",
+    "--workspace",
+]
+
+[tasks.format]
+command = "cargo"
+args = ["fmt", "--all", "--", "--check"]
+
+[tasks.test]
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info" }
+command = "cargo"
+args = ["nextest", "run", "--all-features", "--workspace", "${@}"]
+
+[tasks.test-ci]
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info" }
+command = "cargo"
+args = ["nextest", "run", "--all-features", "--workspace"]
+
+[tasks.cov]
+command = "cargo"
+env = { "RUN_MODE" = "test" }
+args = ["llvm-cov", "nextest", "${@}"]
+
+[tasks.cov-ci]
+command = "cargo"
+env = { "RUN_MODE" = "ci" }
+args = ["llvm-cov", "nextest", "--lcov", "--output-path", "lcov.info"]
+
+[tasks.integration]
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
+command = "cargo"
+args = ["test", "--", "--nocapture", "--ignored", "${@}"]
+
+[tasks.integration-ci]
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1 }
+command = "cargo"
+args = ["test", "--", "--nocapture", "--ignored"]
+
+[tasks.docs]
+command = "cargo"
+args = [
+    "doc",
+    "--no-deps",
+    "--all-features",
+    "--document-private-items",
+    "--workspace",
+    "--examples",
+]
+
+[tasks.audit]
+command = "cargo"
+# Ignore RUSTSEC-2020-0071 due to https://github.com/launchbadge/sqlx/issues/1586
+args = ["audit", "--ignore", "RUSTSEC-2020-0071"]
+
+[tasks.timings]
+script = '''
+    cargo clean
+    cargo build --release --quiet --timings
+    xdg-open /target/cargo-timings/cargo-timing.html
+'''
+
+[tasks.pre-commit]
+script = '''
+    cargo make test
+    cargo make docs
+    cargo spellcheck fix
+    cargo spellcheck reflow
+'''
 
 [tasks.dev]
-workspace = false
 env = { "RUST_LOG" = "info,sqlx::query=warn" }
 command = "cargo"
 args = ["run", "--bin", "caster-api"]
 
 [tasks.db-create]
-workspace = false
 cwd = "./"
 command = "sqlx"
 args = ["db", "create"]
 
 [tasks.db-migrate]
-workspace = false
 cwd = "./"
 command = "sqlx"
 args = ["migrate", "run"]
 
 [tasks.db-reset]
-workspace = false
 cwd = "./"
 command = "sqlx"
 args = ["db", "reset"]
 
 [tasks.docker]
-workspace = false
 cwd = "./"
 command = "docker-compose"
 args = ["-f", "docker-compose.yml", "${@}"]
 
 [tasks.docker-api]
-workspace = false
 cwd = "./apps/api"
 command = "docker-compose"
 args = [
@@ -50,19 +140,6 @@ args = [
 ]
 
 [tasks.schema]
-workspace = false
 cwd = "./"
 command = "cargo"
 args = ["run", "--bin", "caster-schema"]
-
-[tasks.integration]
-workspace = false
-env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
-command = "cargo"
-args = ["test", "--", "--nocapture", "--ignored", "${@}"]
-
-[tasks.integration-ci]
-workspace = false
-env = { "RUN_MODE" = "ci", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1 }
-command = "cargo"
-args = ["test", "--", "--nocapture", "--ignored"]

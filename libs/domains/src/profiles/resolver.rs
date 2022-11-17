@@ -59,8 +59,8 @@ impl ProfilesQuery {
         ctx: &Context<'_>,
         r#where: Option<ProfileCondition>,
         order_by: Option<Vec<ProfilesOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<ProfilesPage> {
         let user = ctx.data_unchecked::<Option<User>>();
         let profiles = ctx.data_unchecked::<Arc<dyn ProfilesService>>();

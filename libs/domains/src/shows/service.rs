@@ -32,8 +32,8 @@ pub trait ShowsService: Sync + Send {
         &self,
         condition: Option<ShowCondition>,
         order_by: Option<Vec<ShowsOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<ManyResponse<Show>>;
 
     /// Create a `Show` with the given input
@@ -89,8 +89,8 @@ impl ShowsService for DefaultShowsService {
         &self,
         condition: Option<ShowCondition>,
         order_by: Option<Vec<ShowsOrderBy>>,
-        page: Option<usize>,
-        page_size: Option<usize>,
+        page: Option<u64>,
+        page_size: Option<u64>,
     ) -> Result<ManyResponse<Show>> {
         let page_num = page.unwrap_or(1);
 
@@ -125,7 +125,7 @@ impl ShowsService for DefaultShowsService {
             (data, total)
         } else {
             let data: Vec<Show> = query.all(&*self.db).await?;
-            let total = data.len();
+            let total = data.len().try_into().unwrap_or(0);
 
             (data, total)
         };
