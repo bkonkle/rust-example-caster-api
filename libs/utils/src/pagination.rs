@@ -24,8 +24,8 @@ impl<Model> ManyResponse<Model> {
         page_size: Option<u64>,
     ) -> ManyResponse<Model> {
         let count = data.len().try_into().unwrap_or(0);
-        let page_count = page_size
-            .map(|page_size| total / page_size + if total % page_size != 0 { 1 } else { 0 });
+        let page_count =
+            page_size.map(|page_size| total / page_size + u64::from(total % page_size != 0));
 
         Self {
             data,

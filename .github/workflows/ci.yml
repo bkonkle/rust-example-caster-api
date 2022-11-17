@@ -38,7 +38,7 @@ jobs:
               run: cargo make format
 
             - name: Clippy check
-              run: cargo make check
+              run: cargo make lint
 
     test:
         name: Test Suite
