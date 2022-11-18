@@ -2,11 +2,18 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
+use axum::{
+    body::HttpBody,
+    extract::Extension,
+    response::{self, IntoResponse},
+    routing::get,
+    Router, Server,
+};
 use graphql::create_schema;
 use oso::{Oso, PolarClass};
+use router::{graphiql, graphql_handler};
 use sea_orm::DatabaseConnection;
 use std::{net::SocketAddr, sync::Arc};
-use warp::{Filter, Future};
 
 use caster_auth::jwks::get_jwks;
 use caster_domains::{
@@ -34,7 +41,6 @@ use caster_domains::{
 };
 use caster_utils::config::Config;
 use events::connections::Connections;
-use router::create_routes;
 
 mod errors;
 mod router;
@@ -116,12 +122,18 @@ pub async fn run(ctx: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = 
     let jwks = get_jwks(ctx.config).await;
 
     let schema = create_schema(ctx.clone())?;
-    let router = create_routes(&ctx, schema, jwks);
 
-    Ok(warp::serve(
-        router
-            .with(warp::log("caster_api"))
-            .recover(errors::handle_rejection),
-    )
-    .bind_ephemeral(([0, 0, 0, 0], port)))
+    let app = Router::new()
+        .route("/", get(graphiql).post(graphql_handler))
+        .layer(Extension(schema));
+
+    Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+    // Ok(warp::serve(
+    //     router
+    //         .with(warp::log("caster_api"))
+    //         .recover(errors::handle_rejection),
+    // )
+    // .bind_ephemeral(([0, 0, 0, 0], port)))
 }
