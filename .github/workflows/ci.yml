@@ -125,3 +125,5 @@ jobs:
                   AUTH_TEST_USER_PASSWORD: ${{ secrets.AUTH_TEST_USER_PASSWORD }}
                   AUTH_TEST_ALT_USERNAME: ${{ secrets.AUTH_TEST_ALT_USERNAME }}
                   AUTH_TEST_ALT_PASSWORD: ${{ secrets.AUTH_TEST_ALT_PASSWORD }}
+                  AUTH_TEST_ANON_USERNAME: ${{ secrets.AUTH_TEST_ANON_USERNAME }}
+                  AUTH_TEST_ANON_PASSWORD: ${{ secrets.AUTH_TEST_ANON_PASSWORD }}

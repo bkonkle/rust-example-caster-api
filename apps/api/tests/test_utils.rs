@@ -52,7 +52,7 @@ pub struct TestUtils {
 impl TestUtils {
     /// Initialize a new set of utils
     pub async fn init() -> Result<Self> {
-        let _ = pretty_env_logger::try_init();
+        pretty_env_logger::try_init()?;
 
         let config = get_config();
 

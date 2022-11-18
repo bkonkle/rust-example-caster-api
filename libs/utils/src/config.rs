@@ -72,6 +72,8 @@ pub struct AuthTest {
     pub user: AuthTestUser,
     /// Auth alt test user config
     pub alt: AuthTestUser,
+    /// Auth anon test user config
+    pub anon: AuthTestUser,
 }
 
 /// Auth config
@@ -136,6 +138,11 @@ impl Config {
                     .map(|key| {
                         key.as_str()
                             .replace("AUTH_TEST_ALT_", "AUTH.TEST.ALT.")
+                            .into()
+                    })
+                    .map(|key| {
+                        key.as_str()
+                            .replace("AUTH_TEST_ANON_", "AUTH.TEST.ANON.")
                             .into()
                     })
                     .map(|key| key.as_str().replace("AUTH_CLIENT_", "AUTH.CLIENT.").into())

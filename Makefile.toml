@@ -60,8 +60,31 @@ command = "cargo"
 env = { "RUN_MODE" = "ci" }
 args = ["llvm-cov", "nextest", "--lcov", "--output-path", "lcov.info"]
 
+[tasks.int]
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_BACKTRACE" = 1 }
+command = "cargo"
+args = [
+    "nextest",
+    "run",
+    "--all-features",
+    "--workspace",
+    "--run-ignored=ignored-only",
+    "${@}",
+]
+
+[tasks.int-ci]
+env = { "RUN_MODE" = "ci", "RUST_LOG" = "info,sqlx::query=warn" }
+command = "cargo"
+args = [
+    "nextest",
+    "run",
+    "--all-features",
+    "--workspace",
+    "--run-ignored=ignored-only",
+]
+
 [tasks.integration]
-env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 0 }
+env = { "RUN_MODE" = "test", "RUST_LOG" = "info,sqlx::query=warn", "RUST_TEST_THREADS" = 1, "RUST_BACKTRACE" = 1 }
 command = "cargo"
 args = ["test", "--", "--nocapture", "--ignored", "${@}"]
 
