@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_graphql::MaybeUndefined::Undefined;
 use fake::{Fake, Faker};
 use pretty_assertions::assert_eq;
 use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
@@ -125,6 +126,7 @@ async fn test_episodes_service_get_many() -> Result<()> {
             Some(EpisodeCondition {
                 title: Some("Test Episode".to_string()),
                 show_id: None,
+                ids_in: None,
             }),
             None,
             None,
@@ -194,6 +196,7 @@ async fn test_episodes_service_get_many_with_related() -> Result<()> {
             Some(EpisodeCondition {
                 title: Some("Test Episode".to_string()),
                 show_id: None,
+                ids_in: None,
             }),
             None,
             None,
@@ -563,8 +566,8 @@ async fn test_episodes_service_update() -> Result<()> {
             &show.id,
             &UpdateEpisodeInput {
                 title: Some(updated.title.clone()),
-                summary: None,
-                picture: None,
+                summary: Undefined,
+                picture: Undefined,
                 show_id: Some(show.id.clone()),
             },
             &false,
@@ -626,8 +629,8 @@ async fn test_episodes_service_update_with_related() -> Result<()> {
             &show.id,
             &UpdateEpisodeInput {
                 title: Some(updated.title.clone()),
-                summary: None,
-                picture: None,
+                summary: Undefined,
+                picture: Undefined,
                 show_id: Some(show.id.clone()),
             },
             &true,

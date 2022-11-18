@@ -1,5 +1,9 @@
 use anyhow::Result;
-use async_graphql::{dataloader::Loader, FieldError};
+use async_graphql::{
+    dataloader::Loader,
+    FieldError,
+    MaybeUndefined::{Null, Undefined, Value},
+};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
@@ -117,6 +121,16 @@ impl EpisodesService for DefaultEpisodesService {
             if let Some(show_id) = condition.show_id {
                 query = query.filter(model::Column::ShowId.eq(show_id));
             }
+
+            if let Some(ids) = condition.ids_in {
+                let mut condition = Condition::any();
+
+                for id in ids {
+                    condition = condition.add(model::Column::Id.eq(id.clone()));
+                }
+
+                query = query.filter(condition);
+            }
         }
 
         if let Some(order_by) = order_by {
@@ -225,12 +239,16 @@ impl EpisodesService for DefaultEpisodesService {
             episode.title = Set(title.clone());
         }
 
-        if let Some(summary) = &input.summary {
-            episode.summary = Set(Some(summary.clone()));
+        match &input.summary {
+            Undefined => (),
+            Null => episode.summary = Set(None),
+            Value(value) => episode.summary = Set(Some(value.clone())),
         }
 
-        if let Some(picture) = &input.picture {
-            episode.picture = Set(Some(picture.clone()));
+        match &input.picture {
+            Undefined => (),
+            Null => episode.picture = Set(None),
+            Value(value) => episode.picture = Set(Some(value.clone())),
         }
 
         if let Some(show_id) = &input.show_id {

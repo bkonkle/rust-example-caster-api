@@ -1,5 +1,8 @@
-use async_graphql::{InputObject, SimpleObject};
-use fake::{Dummy, Fake};
+use async_graphql::{InputObject, MaybeUndefined, SimpleObject};
+use fake::{faker::internet::en::FreeEmail, Dummy, Fake, Faker};
+use rand::Rng;
+
+use caster_utils::graphql::dummy_maybe_undef;
 
 use super::model::Profile;
 
@@ -26,25 +29,38 @@ pub struct CreateProfileInput {
 }
 
 /// The `UpdateProfileInput` input type
-#[derive(Clone, Default, Dummy, Eq, PartialEq, InputObject)]
+#[derive(Clone, Default, Eq, PartialEq, InputObject)]
 pub struct UpdateProfileInput {
     /// The Profile's email address
     pub email: Option<String>,
 
     /// The Profile's display name
-    pub display_name: Option<String>,
+    pub display_name: MaybeUndefined<String>,
 
     /// The Profile's picture
-    pub picture: Option<String>,
+    pub picture: MaybeUndefined<String>,
 
     /// The Profile's city
-    pub city: Option<String>,
+    pub city: MaybeUndefined<String>,
 
     /// The Profile's state or province
-    pub state_province: Option<String>,
+    pub state_province: MaybeUndefined<String>,
 
     /// The Profile's User id
     pub user_id: Option<String>,
+}
+
+impl Dummy<Faker> for UpdateProfileInput {
+    fn dummy_with_rng<R: Rng + ?Sized>(config: &Faker, rng: &mut R) -> Self {
+        UpdateProfileInput {
+            email: FreeEmail().fake(),
+            display_name: dummy_maybe_undef(config, rng),
+            picture: dummy_maybe_undef(config, rng),
+            city: dummy_maybe_undef(config, rng),
+            state_province: dummy_maybe_undef(config, rng),
+            user_id: Faker.fake(),
+        }
+    }
 }
 
 /// The `MutateProfileResult` type

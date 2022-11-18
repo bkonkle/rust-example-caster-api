@@ -1,5 +1,9 @@
 use anyhow::Result;
-use async_graphql::{dataloader::Loader, FieldError};
+use async_graphql::{
+    dataloader::Loader,
+    FieldError,
+    MaybeUndefined::{Null, Undefined, Value},
+};
 use async_trait::async_trait;
 #[cfg(test)]
 use mockall::automock;
@@ -142,6 +146,16 @@ impl ProfilesService for DefaultProfilesService {
             if let Some(user_id) = condition.user_id {
                 query = query.filter(model::Column::UserId.eq(user_id));
             }
+
+            if let Some(ids) = condition.ids_in {
+                let mut condition = Condition::any();
+
+                for id in ids {
+                    condition = condition.add(model::Column::Id.eq(id.clone()));
+                }
+
+                query = query.filter(condition);
+            }
         }
 
         if let Some(order_by) = order_by {
@@ -283,20 +297,28 @@ impl ProfilesService for DefaultProfilesService {
             profile.email = Set(email.clone());
         }
 
-        if let Some(display_name) = &input.display_name {
-            profile.display_name = Set(Some(display_name.clone()));
+        match &input.display_name {
+            Undefined => (),
+            Null => profile.display_name = Set(None),
+            Value(value) => profile.display_name = Set(Some(value.clone())),
         }
 
-        if let Some(picture) = &input.picture {
-            profile.picture = Set(Some(picture.clone()));
+        match &input.picture {
+            Undefined => (),
+            Null => profile.picture = Set(None),
+            Value(value) => profile.picture = Set(Some(value.clone())),
         }
 
-        if let Some(city) = &input.city {
-            profile.city = Set(Some(city.clone()));
+        match &input.city {
+            Undefined => (),
+            Null => profile.city = Set(None),
+            Value(value) => profile.city = Set(Some(value.clone())),
         }
 
-        if let Some(state_province) = &input.state_province {
-            profile.state_province = Set(Some(state_province.clone()));
+        match &input.state_province {
+            Undefined => (),
+            Null => profile.state_province = Set(None),
+            Value(value) => profile.state_province = Set(Some(value.clone())),
         }
 
         if let Some(user_id) = &input.user_id {

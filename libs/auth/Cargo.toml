@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Brandon Konkle <brandon@konkle.us>"]
 edition = "2021"
 
+[features]
+integration = []
+
 [dependencies]
 caster-utils = { path = "../../libs/utils" }
 anyhow = "1.0"

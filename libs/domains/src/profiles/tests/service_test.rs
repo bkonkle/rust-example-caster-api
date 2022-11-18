@@ -1,7 +1,8 @@
 use anyhow::Result;
+use async_graphql::MaybeUndefined::Undefined;
 use fake::{Fake, Faker};
 use pretty_assertions::assert_eq;
-use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction, Value};
+use sea_orm::{DatabaseBackend, MockDatabase, MockExecResult, Transaction};
 use std::sync::Arc;
 
 use crate::{
@@ -129,6 +130,7 @@ async fn test_profiles_service_get_many() -> Result<()> {
                 city: None,
                 state_province: None,
                 user_id: None,
+                ids_in: None,
             }),
             None,
             None,
@@ -203,6 +205,7 @@ async fn test_profiles_service_get_many_with_related() -> Result<()> {
                 city: None,
                 state_province: None,
                 user_id: None,
+                ids_in: None,
             }),
             None,
             None,
@@ -283,7 +286,7 @@ async fn test_profiles_service_get_many_pagination() -> Result<()> {
         MockDatabase::new(DatabaseBackend::Postgres)
             .append_query_results(vec![vec![maplit::btreemap! {
                 // First query result
-                "num_items" => Into::<Value>::into(11i64),
+                "num_items" => Into::<sea_orm::Value>::into(11i64),
             }]])
             .append_query_results(vec![
                 // Second query result
@@ -382,7 +385,7 @@ async fn test_profiles_service_get_many_pagination_with_related() -> Result<()> 
         MockDatabase::new(DatabaseBackend::Postgres)
             .append_query_results(vec![vec![maplit::btreemap! {
                 // First query result
-                "num_items" => Into::<Value>::into(11i64),
+                "num_items" => Into::<sea_orm::Value>::into(11i64),
             }]])
             .append_query_results(vec![
                 // Second query result
@@ -596,10 +599,10 @@ async fn test_profiles_service_update() -> Result<()> {
             &user.id,
             &UpdateProfileInput {
                 email: Some(updated.email.clone()),
-                display_name: None,
-                picture: None,
-                city: None,
-                state_province: None,
+                display_name: Undefined,
+                picture: Undefined,
+                city: Undefined,
+                state_province: Undefined,
                 user_id: Some(user.id.clone()),
             },
             &false,
@@ -662,10 +665,10 @@ async fn test_profiles_service_update_with_related() -> Result<()> {
             &user.id,
             &UpdateProfileInput {
                 email: Some(updated.email.clone()),
-                display_name: None,
-                picture: None,
-                city: None,
-                state_province: None,
+                display_name: Undefined,
+                picture: Undefined,
+                city: Undefined,
+                state_province: Undefined,
                 user_id: Some(user.id.clone()),
             },
             &true,

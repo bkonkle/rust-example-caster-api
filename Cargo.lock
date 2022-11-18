@@ -325,6 +325,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "async-graphql-warp",
+ "biscuit",
  "caster-auth",
  "caster-domains",
  "caster-testing",

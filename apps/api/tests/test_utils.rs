@@ -1,11 +1,16 @@
 #![allow(dead_code)] // Since each test is an independent module, this is needed
 
 use anyhow::Result;
+use biscuit::{
+    jwa::SignatureAlgorithm,
+    jws::{RegisteredHeader, Secret},
+    ClaimsSet, Empty, RegisteredClaims, SingleOrMultiple, JWT,
+};
 use fake::{Fake, Faker};
 use futures_util::{stream::SplitStream, Future, SinkExt, StreamExt};
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 use std::default::Default;
 use std::{net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
@@ -21,11 +26,10 @@ use caster_domains::{
     shows::{model::Show, mutations::CreateShowInput},
     users::model::User,
 };
-use caster_testing::{graphql::GraphQL, oauth2::OAuth2Utils};
+use caster_testing::graphql::GraphQL;
 use caster_utils::{config::get_config, http::http_client};
 
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
-static OAUTH: OnceCell<OAuth2Utils> = OnceCell::new();
 
 pub async fn run_server(context: Arc<Context>) -> Result<SocketAddr> {
     let (addr, server) = run(context).await?;
@@ -43,7 +47,6 @@ pub async fn run_server(context: Arc<Context>) -> Result<SocketAddr> {
 /// Common test utils
 pub struct TestUtils {
     pub http_client: &'static Client<HttpsConnector<HttpConnector>>,
-    pub oauth: &'static OAuth2Utils,
     pub graphql: GraphQL,
     pub ctx: Arc<Context>,
     pub addr: SocketAddr,
@@ -60,8 +63,6 @@ impl TestUtils {
         // when the Tokio runtime is being stopped and re-started between tests
         let ctx = Arc::new(Context::init(config).await?);
 
-        let oauth = OAUTH.get_or_init(|| OAuth2Utils::new(config));
-
         let http_client = &HTTP_CLIENT;
         let addr = run_server(ctx.clone()).await?;
 
@@ -72,11 +73,39 @@ impl TestUtils {
 
         Ok(TestUtils {
             http_client,
-            oauth,
             graphql,
             ctx,
             addr,
         })
+    }
+
+    /// Create a test JWT token with a dummy secret
+    pub fn create_jwt(&self, username: &str) -> String {
+        let auth = self.ctx.config.auth.clone();
+
+        let expected_claims = ClaimsSet::<Empty> {
+            registered: RegisteredClaims {
+                issuer: Some(auth.url),
+                subject: Some(username.to_string()),
+                audience: Some(SingleOrMultiple::Single(auth.audience)),
+                ..Default::default()
+            },
+            private: Default::default(),
+        };
+
+        let jwt = JWT::new_decoded(
+            From::from(RegisteredHeader {
+                algorithm: SignatureAlgorithm::HS256,
+                ..Default::default()
+            }),
+            expected_claims,
+        );
+
+        let token = jwt
+            .into_encoded(&Secret::Bytes("test-jwt-secret".into()))
+            .unwrap();
+
+        token.unwrap_encoded().to_string()
     }
 
     /// Create a User and Profile together

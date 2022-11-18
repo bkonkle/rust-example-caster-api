@@ -1,15 +1,16 @@
 use anyhow::Result;
+use fake::{faker::internet::en::FreeEmail, Fake};
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 
 use caster_domains::role_grants::model::CreateRoleGrantInput;
-use caster_testing::oauth2::{Credentials, User as TestUser};
 
 #[cfg(test)]
 mod test_utils;
 
 use test_utils::TestUtils;
+use ulid::Ulid;
 
 /***
  * Query: `getCurrentUser`
@@ -30,29 +31,20 @@ const GET_CURRENT_USER: &str = "
     }
 ";
 
-/// It retrieves the currently authenticated user
 #[tokio::test]
 #[ignore]
 async fn test_user_get_current_simple() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.get_or_create(username).await?;
+    let user = utils.ctx.users.create(&username).await?;
 
     // Create a sample RoleGrant to test the relation
-    let role_grant = ctx
+    let role_grant = utils
+        .ctx
         .role_grants
         .create(&CreateRoleGrantInput {
             user_id: user.id.clone(),
@@ -62,9 +54,11 @@ async fn test_user_get_current_simple() -> Result<()> {
         })
         .await?;
 
-    let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
+    let req = utils
+        .graphql
+        .query(GET_CURRENT_USER, Value::Null, Some(&token))?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -83,25 +77,19 @@ async fn test_user_get_current_simple() -> Result<()> {
     Ok(())
 }
 
-/// It returns null when no user is found
 #[tokio::test]
 #[ignore]
 async fn test_user_get_current_no_user() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = oauth.get_credentials(TestUser::Anon).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
-    let req = graphql.query(GET_CURRENT_USER, Value::Null, Some(token))?;
+    let req = utils
+        .graphql
+        .query(GET_CURRENT_USER, Value::Null, Some(&token))?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -134,29 +122,20 @@ const GET_OR_CREATE_CURRENT_USER: &str = "
     }
 ";
 
-/// It retrieves the currently authenticated user
 #[tokio::test]
 #[ignore]
 async fn test_user_get_or_create_current_existing() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user
-    let user = ctx.users.get_or_create(username).await?;
+    let user = utils.ctx.users.get_or_create(&username).await?;
 
     // Create a sample RoleGrant to test the relation
-    let role_grant = ctx
+    let role_grant = utils
+        .ctx
         .role_grants
         .create(&CreateRoleGrantInput {
             user_id: user.id.clone(),
@@ -166,13 +145,13 @@ async fn test_user_get_or_create_current_existing() -> Result<()> {
         })
         .await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         GET_OR_CREATE_CURRENT_USER,
         json!({ "input": {}}),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -190,35 +169,26 @@ async fn test_user_get_or_create_current_existing() -> Result<()> {
     Ok(())
 }
 
-/// It uses the input to create one when no user is found
 #[tokio::test]
 #[ignore]
 async fn test_user_get_or_create_current_create() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         GET_OR_CREATE_CURRENT_USER,
         json!({ "input": {
            "profile": {
                "email": email,
            }
         }}),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -227,12 +197,14 @@ async fn test_user_get_or_create_current_create() -> Result<()> {
     let json_user = &json["data"]["getOrCreateCurrentUser"]["user"];
 
     assert_eq!(status, 200);
-    assert_eq!(json_user["username"], username.to_string());
+    assert_eq!(json_user["username"], username);
 
     let user_id = json_user["id"].as_str().expect("No user id found");
 
     // Ensure that a related Profile was created inline
-    ctx.profiles
+    utils
+        .ctx
+        .profiles
         .get_by_user_id(user_id, &false)
         .await?
         .expect("No profile id found");
@@ -240,7 +212,6 @@ async fn test_user_get_or_create_current_create() -> Result<()> {
     Ok(())
 }
 
-/// It requires authentication
 #[tokio::test]
 #[ignore]
 async fn test_user_get_or_create_current_requires_authn() -> Result<()> {
@@ -285,29 +256,20 @@ const UPDATE_CURRENT_USER: &str = "
     }
 ";
 
-/// It updates the currently authenticated user
 #[tokio::test]
 #[ignore]
 async fn test_user_update_current() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.get_or_create(username).await?;
+    let user = utils.ctx.users.get_or_create(&username).await?;
 
     // Create a sample RoleGrant to test the relation
-    let role_grant = ctx
+    let role_grant = utils
+        .ctx
         .role_grants
         .create(&CreateRoleGrantInput {
             user_id: user.id.clone(),
@@ -317,15 +279,15 @@ async fn test_user_update_current() -> Result<()> {
         })
         .await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         UPDATE_CURRENT_USER,
         json!({ "input": {
            "isActive": false
         }}),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -335,14 +297,13 @@ async fn test_user_update_current() -> Result<()> {
     let json_roles = &json_user["roles"];
 
     assert_eq!(status, 200);
-    assert_eq!(json_user["username"], username.to_string());
+    assert_eq!(json_user["username"], username);
     assert!(!json_user["isActive"].as_bool().unwrap());
     assert_eq!(json_roles[0]["roleKey"], role_grant.role_key);
 
     Ok(())
 }
 
-/// It requires authentication
 #[tokio::test]
 #[ignore]
 async fn test_user_update_current_requires_authn() -> Result<()> {
@@ -373,31 +334,23 @@ async fn test_user_update_current_requires_authn() -> Result<()> {
     Ok(())
 }
 
-/// It requires a valid user record
 #[tokio::test]
 #[ignore]
 async fn test_user_update_current_requires_user() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ..
-    } = TestUtils::init().await?;
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         UPDATE_CURRENT_USER,
         json!({ "input": {
            "isActive": false
         }}),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;

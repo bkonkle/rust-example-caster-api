@@ -20,9 +20,20 @@ const BEARER: &str = "Bearer ";
 #[derive(Clone)]
 pub struct Subject(pub Option<String>);
 
+/// A Warp Filter to add Authentication context
+#[cfg(not(feature = "integration"))]
+pub fn with_auth(
+    jwks: &'static JWKS,
+) -> impl Filter<Extract = (Subject,), Error = Rejection> + Clone {
+    headers_cloned().and_then(move |headers: HeaderMap<HeaderValue>| authenticate(jwks, headers))
+}
+
+#[cfg(feature = "integration")]
+pub use test::with_test_auth as with_auth;
+
 /// If an authorization header is provided, make sure it's in the expected format, and
 /// return it as a String.
-fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<Option<String>, AuthError> {
+pub fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<Option<String>, AuthError> {
     let header = if let Some(v) = headers.get(AUTHORIZATION) {
         v
     } else {
@@ -45,6 +56,7 @@ fn jwt_from_header(headers: &HeaderMap<HeaderValue>) -> Result<Option<String>, A
     Ok(Some(auth_header.trim_start_matches(BEARER).to_owned()))
 }
 
+#[allow(dead_code)]
 async fn authenticate(
     jwks: &'static JWKS,
     headers: HeaderMap<HeaderValue>,
@@ -88,9 +100,36 @@ async fn authenticate(
     }
 }
 
-/// A Warp Filter to add Authentication context
-pub fn with_auth(
-    jwks: &'static JWKS,
-) -> impl Filter<Extract = (Subject,), Error = Rejection> + Clone {
-    headers_cloned().and_then(move |headers: HeaderMap<HeaderValue>| authenticate(jwks, headers))
+#[cfg(feature = "integration")]
+mod test {
+    #![allow(dead_code)]
+
+    use super::*;
+
+    /// A Warp Filter to add Authentication context
+    pub fn with_test_auth(
+        _jwks: &'static JWKS,
+    ) -> impl Filter<Extract = (Subject,), Error = Rejection> + Clone {
+        headers_cloned().and_then(test_authenticate)
+    }
+
+    async fn test_authenticate(headers: HeaderMap<HeaderValue>) -> Result<Subject, Rejection> {
+        match jwt_from_header(&headers) {
+            Ok(Some(jwt)) => {
+                let token = JWT::<Empty, Empty>::new_encoded(&jwt);
+
+                let payload = token
+                    .unverified_payload()
+                    .map_err(|err| reject::custom(AuthError::JWTTokenError(err)))?;
+
+                // Skip JWKS verification since this is testing
+
+                let subject = payload.registered.subject;
+
+                Ok(Subject(subject))
+            }
+            Ok(None) => Ok(Subject(None)),
+            Err(e) => Err(warp::reject::custom(e)),
+        }
+    }
 }

@@ -100,6 +100,16 @@ impl ShowsService for DefaultShowsService {
             if let Some(title) = condition.title {
                 query = query.filter(model::Column::Title.eq(title));
             }
+
+            if let Some(ids) = condition.ids_in {
+                let mut condition = Condition::any();
+
+                for id in ids {
+                    condition = condition.add(model::Column::Id.eq(id.clone()));
+                }
+
+                query = query.filter(condition);
+            }
         }
 
         if let Some(order_by) = order_by {
