@@ -50,6 +50,9 @@ pub struct EpisodeCondition {
 
     /// The associated Show
     pub show_id: Option<String>,
+
+    /// Filter by IDs
+    pub ids_in: Option<Vec<String>>,
 }
 
 /// The available ordering values

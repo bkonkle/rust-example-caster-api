@@ -4,6 +4,7 @@ use figment::{
     Figment,
 };
 use once_cell::sync::Lazy;
+use serde::Serialize;
 use serde_derive::Deserialize;
 use std::env;
 
@@ -11,7 +12,7 @@ use std::env;
 static CONFIG: Lazy<Config> = Lazy::new(|| Config::new().expect("Unable to retrieve config"));
 
 /// Database pool config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DbPool {
     /// Database pool min
     pub min: Option<i16>,
@@ -20,7 +21,7 @@ pub struct DbPool {
 }
 
 /// Database config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Database {
     /// Database hostname/IP
     pub hostname: String,
@@ -41,14 +42,14 @@ pub struct Database {
 }
 
 /// Redis config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Redis {
     /// Redis url
     pub url: String,
 }
 
 /// Auth client config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthClient {
     /// OAuth2 client id
     pub id: Option<String>,
@@ -57,7 +58,7 @@ pub struct AuthClient {
 }
 
 /// Auth test user config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthTestUser {
     /// Test user username
     pub username: Option<String>,
@@ -66,16 +67,18 @@ pub struct AuthTestUser {
 }
 
 /// Auth test config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthTest {
     /// Auth test user config
     pub user: AuthTestUser,
     /// Auth alt test user config
     pub alt: AuthTestUser,
+    /// Auth anon test user config
+    pub anon: AuthTestUser,
 }
 
 /// Auth config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Auth {
     /// OAuth2 url
     pub url: String,
@@ -88,7 +91,7 @@ pub struct Auth {
 }
 
 /// Application Config
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
     /// The application's run mode (typically "development" or "production")
     pub run_mode: String,
@@ -136,6 +139,11 @@ impl Config {
                     .map(|key| {
                         key.as_str()
                             .replace("AUTH_TEST_ALT_", "AUTH.TEST.ALT.")
+                            .into()
+                    })
+                    .map(|key| {
+                        key.as_str()
+                            .replace("AUTH_TEST_ANON_", "AUTH.TEST.ANON.")
                             .into()
                     })
                     .map(|key| key.as_str().replace("AUTH_CLIENT_", "AUTH.CLIENT.").into())

@@ -1,11 +1,9 @@
 use anyhow::Result;
-use futures::executor::block_on;
+use fake::{faker::internet::en::FreeEmail, Fake};
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
-use std::panic;
-
-use caster_testing::oauth2::{Credentials, User as TestUser};
+use ulid::Ulid;
 
 #[cfg(test)]
 mod test_utils;
@@ -35,25 +33,17 @@ const CREATE_PROFILE: &str = "
 /// It creates a new user profile
 #[tokio::test]
 #[ignore]
-async fn test_create_profile() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+async fn test_profile_create_simple() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and profile with this username
-    let user = ctx.users.create(username).await?;
+    let user = utils.ctx.users.create(&username).await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
@@ -61,10 +51,10 @@ async fn test_create_profile() -> Result<()> {
                 "userId": user.id.clone(),
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -77,35 +67,24 @@ async fn test_create_profile() -> Result<()> {
     assert_eq!(json_profile["email"], email.clone());
     assert_eq!(json_user["id"], user.id.clone());
 
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles
-        .delete(json_profile["id"].as_str().unwrap())
-        .await?;
-
     Ok(())
 }
 
 /// It requires an email address and a userId
 #[tokio::test]
 #[ignore]
-async fn test_create_profile_requires_email_user_id() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ..
-    } = TestUtils::init().await?;
+async fn test_profile_create_requires_email_user_id() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        email,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
-    let req = graphql.query(CREATE_PROFILE, json!({ "input": {}}), Some(token))?;
+    let req = utils
+        .graphql
+        .query(CREATE_PROFILE, json!({ "input": {}}), Some(&token))?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -118,17 +97,17 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
     );
 
     // Now provide the "email" and try again
-    let req = graphql.query(
+    let req = utils.graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
                 "email": email,
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -146,7 +125,7 @@ async fn test_create_profile_requires_email_user_id() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_create_profile_authn() -> Result<()> {
+async fn test_profile_create_authn() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -180,25 +159,17 @@ async fn test_create_profile_authn() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_create_profile_authz() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+async fn test_profile_create_authz() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and profile with this username
-    let user = ctx.users.create(username).await?;
+    let _ = utils.ctx.users.create(&username).await?;
 
-    let req = graphql.query(
+    let req = utils.graphql.query(
         CREATE_PROFILE,
         json!({
             "input": {
@@ -206,32 +177,19 @@ async fn test_create_profile_authz() -> Result<()> {
                 "userId": "dummy-user-id",
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }
@@ -257,51 +215,34 @@ const GET_PROFILE: &str = "
 /// It retrieves an existing user profile
 #[tokio::test]
 #[ignore]
-async fn test_get_profile() -> Result<()> {
+async fn test_profile_get_simple() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (user, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils
         .graphql
-        .query(GET_PROFILE, json!({ "id": profile.id,}), Some(token))?;
+        .query(GET_PROFILE, json!({ "id": profile.id,}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["getProfile"];
-            let json_user = &json_profile["user"];
+    let json_profile = &json["data"]["getProfile"];
+    let json_user = &json_profile["user"];
 
-            assert_eq!(status, 200);
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], email.clone());
-            assert_eq!(json_user["id"], user.id);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], email.clone());
+    assert_eq!(json_user["id"], user.id);
 
     Ok(())
 }
@@ -309,48 +250,28 @@ async fn test_get_profile() -> Result<()> {
 /// It returns nothing when no profile is found
 #[tokio::test]
 #[ignore]
-async fn test_get_profile_empty() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ctx,
-        ..
-    } = TestUtils::init().await?;
+async fn test_profile_get_empty() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let _ = utils.ctx.users.create(&username).await?;
 
-    let req = graphql.query(GET_PROFILE, json!({ "id": "dummy-id",}), Some(token))?;
+    let req = utils
+        .graphql
+        .query(GET_PROFILE, json!({ "id": "dummy-id",}), Some(&token))?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["data"]["getProfile"], Value::Null);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["data"]["getProfile"], Value::Null);
 
     Ok(())
 }
@@ -358,16 +279,14 @@ async fn test_get_profile_empty() -> Result<()> {
 /// It censors responses for anonymous users
 #[tokio::test]
 #[ignore]
-async fn test_get_profile_authn() -> Result<()> {
+async fn test_profile_get_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        username, email, ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (_, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils
         .graphql
@@ -378,28 +297,14 @@ async fn test_get_profile_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["getProfile"];
+    let json_profile = &json["data"]["getProfile"];
 
-            assert_eq!(status, 200);
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], Value::Null);
-            assert_eq!(json_profile["user"], Value::Null);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], Value::Null);
+    assert_eq!(json_profile["user"], Value::Null);
 
     Ok(())
 }
@@ -407,52 +312,37 @@ async fn test_get_profile_authn() -> Result<()> {
 /// It censors responses for unauthorized users
 #[tokio::test]
 #[ignore]
-async fn test_get_profile_authz() -> Result<()> {
+async fn test_profile_get_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        email,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
+
+    let dummy_username = Ulid::new().to_string();
 
     // Create a user with a different username
-    let (user, profile) = utils
-        .create_user_and_profile("dummy-username", email)
+    let (_, profile) = utils
+        .create_user_and_profile(&dummy_username, &email)
         .await?;
 
     let req = utils
         .graphql
-        .query(GET_PROFILE, json!({ "id": profile.id,}), Some(token))?;
+        .query(GET_PROFILE, json!({ "id": profile.id,}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["getProfile"];
+    let json_profile = &json["data"]["getProfile"];
 
-            assert_eq!(status, 200);
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], Value::Null);
-            assert_eq!(json_profile["user"], Value::Null);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], Value::Null);
+    assert_eq!(json_profile["user"], Value::Null);
 
     Ok(())
 }
@@ -494,70 +384,59 @@ const GET_MANY_PROFILES: &str = "
 /// It queries existing profiles and censors responses for unauthorized users
 #[tokio::test]
 #[ignore]
-async fn test_get_many_profiles() -> Result<()> {
+async fn test_profile_get_many_simple() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
+
+    let dummy_username = Ulid::new().to_string();
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (user, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     // Create a user with another username
-    let (other_user, other_profile) = utils
-        .create_user_and_profile("dummy-username", "other@email.address")
+    let (_, other_profile) = utils
+        .create_user_and_profile(&dummy_username, "other@email.address")
         .await?;
 
-    let req = utils
-        .graphql
-        .query(GET_MANY_PROFILES, Value::Null, Some(token))?;
+    let req = utils.graphql.query(
+        GET_MANY_PROFILES,
+        json!({
+            "where": {
+                "idsIn": vec![profile.id.clone(), other_profile.id.clone()],
+            },
+        }),
+        Some(&token),
+    )?;
     let resp = utils.http_client.request(req).await?;
 
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["getManyProfiles"]["data"][0];
-            let json_user = &json_profile["user"];
+    let json_profile = &json["data"]["getManyProfiles"]["data"][0];
+    let json_user = &json_profile["user"];
 
-            let json_other_profile = &json["data"]["getManyProfiles"]["data"][1];
+    let json_other_profile = &json["data"]["getManyProfiles"]["data"][1];
 
-            assert_eq!(status, 200);
+    assert_eq!(status, 200);
 
-            assert_eq!(json["data"]["getManyProfiles"]["count"], 2);
-            assert_eq!(json["data"]["getManyProfiles"]["total"], 2);
-            assert_eq!(json["data"]["getManyProfiles"]["page"], 1);
-            assert_eq!(json["data"]["getManyProfiles"]["pageCount"], 1);
+    assert_eq!(json["data"]["getManyProfiles"]["count"], 2);
+    assert_eq!(json["data"]["getManyProfiles"]["total"], 2);
+    assert_eq!(json["data"]["getManyProfiles"]["page"], 1);
+    assert_eq!(json["data"]["getManyProfiles"]["pageCount"], 1);
 
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], email.clone());
-            assert_eq!(json_user["id"], user.id);
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], email.clone());
+    assert_eq!(json_user["id"], user.id);
 
-            assert_eq!(json_other_profile["id"], other_profile.id);
-            assert_eq!(json_other_profile["email"], Value::Null); // Because of censoring
-            assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-    ctx.users.delete(&other_user.id).await?;
-    ctx.profiles.delete(&other_profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(json_other_profile["id"], other_profile.id);
+    assert_eq!(json_other_profile["email"], Value::Null); // Because of censoring
+    assert_eq!(json_other_profile["user"], Value::Null); // Because of censoring
 
     Ok(())
 }
@@ -565,47 +444,39 @@ async fn test_get_many_profiles() -> Result<()> {
 /// It censors responses for anonymous users
 #[tokio::test]
 #[ignore]
-async fn test_get_many_profiles_anon() -> Result<()> {
+async fn test_profile_get_many_anon() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        username, email, ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (_, profile) = utils.create_user_and_profile(&username, &email).await?;
 
-    let req = utils.graphql.query(GET_MANY_PROFILES, Value::Null, None)?;
+    let req = utils.graphql.query(
+        GET_MANY_PROFILES,
+        json!({
+            "where": {
+                "idsIn": vec![profile.id.clone()],
+            },
+        }),
+        None,
+    )?;
     let resp = utils.http_client.request(req).await?;
 
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["getManyProfiles"]["data"][0];
+    let json_profile = &json["data"]["getManyProfiles"]["data"][0];
 
-            assert_eq!(status, 200);
+    assert_eq!(status, 200);
 
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], Value::Null);
-            assert_eq!(json_profile["user"], Value::Null);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], Value::Null);
+    assert_eq!(json_profile["user"], Value::Null);
 
     Ok(())
 }
@@ -633,18 +504,15 @@ const UPDATE_PROFILE: &str = "
 /// It updates an existing user profile
 #[tokio::test]
 #[ignore]
-async fn test_update_profile() -> Result<()> {
+async fn test_profile_update_simple() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (user, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils.graphql.query(
         UPDATE_PROFILE,
@@ -654,7 +522,7 @@ async fn test_update_profile() -> Result<()> {
                 "displayName": "Test Name"
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
     let resp = utils.http_client.request(req).await?;
 
@@ -662,31 +530,17 @@ async fn test_update_profile() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_profile = &json["data"]["updateProfile"]["profile"];
-            let json_user = &json_profile["user"];
+    let json_profile = &json["data"]["updateProfile"]["profile"];
+    let json_user = &json_profile["user"];
 
-            assert_eq!(status, 200);
+    assert_eq!(status, 200);
 
-            assert_eq!(json_profile["id"], profile.id);
-            assert_eq!(json_profile["email"], email.clone());
-            assert_eq!(json_profile["displayName"], "Test Name");
-            assert_eq!(json_user["id"], user.id);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(json_profile["id"], profile.id);
+    assert_eq!(json_profile["email"], email.clone());
+    assert_eq!(json_profile["displayName"], "Test Name");
+    assert_eq!(json_user["id"], user.id);
 
     Ok(())
 }
@@ -694,16 +548,14 @@ async fn test_update_profile() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_update_profile_authn() -> Result<()> {
+async fn test_profile_update_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        username, email, ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (_, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils.graphql.query(
         UPDATE_PROFILE,
@@ -721,25 +573,11 @@ async fn test_update_profile_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Unauthorized");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }
@@ -747,7 +585,7 @@ async fn test_update_profile_authn() -> Result<()> {
 /// It returns an error if no existing profile was found
 #[tokio::test]
 #[ignore]
-async fn test_update_profile_not_found() -> Result<()> {
+async fn test_profile_update_not_found() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -784,23 +622,22 @@ async fn test_update_profile_not_found() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_update_profile_authz() -> Result<()> {
+async fn test_profile_update_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Alt).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
+
+    let dummy_username = Ulid::new().to_string();
 
     // Create a dummy user and profile
-    let (user, profile) = utils
-        .create_user_and_profile("dummy-username", "other@email.address")
+    let (_, profile) = utils
+        .create_user_and_profile(&dummy_username, "other@email.address")
         .await?;
 
     // Create a user and profile for the Alt user
-    let (other_user, other_profile) = utils.create_user_and_profile(username, email).await?;
+    let _ = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils.graphql.query(
         UPDATE_PROFILE,
@@ -810,7 +647,7 @@ async fn test_update_profile_authz() -> Result<()> {
                 "displayName": "Test Name"
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
     let resp = utils.http_client.request(req).await?;
@@ -818,27 +655,11 @@ async fn test_update_profile_authz() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-    ctx.users.delete(&other_user.id).await?;
-    ctx.profiles.delete(&other_profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }
@@ -856,45 +677,29 @@ const DELETE_PROFILE: &str = "
 /// It deletes an existing user profile
 #[tokio::test]
 #[ignore]
-async fn test_delete_profile() -> Result<()> {
+async fn test_profile_delete_simple() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (_, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils
         .graphql
-        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(token))?;
+        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(&token))?;
     let resp = utils.http_client.request(req).await?;
 
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert!(json["data"]["deleteProfile"].as_bool().unwrap());
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert!(json["data"]["deleteProfile"].as_bool().unwrap());
 
     Ok(())
 }
@@ -902,16 +707,14 @@ async fn test_delete_profile() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_delete_profile_authn() -> Result<()> {
+async fn test_profile_delete_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        username, email, ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
 
     // Create a user and profile with this username
-    let (user, profile) = utils.create_user_and_profile(username, email).await?;
+    let (_, profile) = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils
         .graphql
@@ -922,25 +725,11 @@ async fn test_delete_profile_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Unauthorized");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }
@@ -948,7 +737,7 @@ async fn test_delete_profile_authn() -> Result<()> {
 /// It returns an error if no existing profile was found
 #[tokio::test]
 #[ignore]
-async fn test_delete_profile_not_found() -> Result<()> {
+async fn test_profile_delete_not_found() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -976,54 +765,37 @@ async fn test_delete_profile_not_found() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_delete_profile_authz() -> Result<()> {
+async fn test_profile_delete_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        email,
-    } = utils.oauth.get_credentials(TestUser::Alt).await;
+    let email: String = FreeEmail().fake();
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
+
+    let dummy_username = Ulid::new().to_string();
 
     // Create a dummy user and profile
-    let (user, profile) = utils
-        .create_user_and_profile("dummy-username", "other@email.address")
+    let (_, profile) = utils
+        .create_user_and_profile(&dummy_username, "other@email.address")
         .await?;
 
     // Create a user and profile for the Alt user
-    let (other_user, other_profile) = utils.create_user_and_profile(username, email).await?;
+    let _ = utils.create_user_and_profile(&username, &email).await?;
 
     let req = utils
         .graphql
-        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(token))?;
+        .query(DELETE_PROFILE, json!({"id": profile.id}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.profiles.delete(&profile.id).await?;
-    ctx.users.delete(&other_user.id).await?;
-    ctx.profiles.delete(&other_profile.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }

@@ -9,6 +9,7 @@ use caster_utils::http::http_client;
 
 static TEST_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
 static ALT_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
+static ANON_CREDENTIALS: OnceCell<Credentials> = OnceCell::const_new();
 
 #[derive(Debug, Serialize)]
 struct TokenRequest {
@@ -50,6 +51,8 @@ pub enum User {
     Test,
     /// The alternate test user
     Alt,
+    /// The anonymous test user
+    Anon,
 }
 
 /// Utils for interacting with an `OAuth2` service during integration testing
@@ -129,6 +132,7 @@ impl OAuth2Utils {
         let (test_user, cell) = match user {
             User::Test => (&self.config.auth.test.user, &TEST_CREDENTIALS),
             User::Alt => (&self.config.auth.test.alt, &ALT_CREDENTIALS),
+            User::Anon => (&self.config.auth.test.anon, &ANON_CREDENTIALS),
         };
 
         // Retrieve the requested credentials if not yet present

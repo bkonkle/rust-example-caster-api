@@ -8,6 +8,7 @@ edition = "2021"
 anyhow = "1.0"
 async-graphql = { version = "4.0", features = ["chrono"] }
 async-graphql-warp = "4.0"
+biscuit = "0.6.0-beta1"
 caster-auth = { path = "../../libs/auth" }
 caster-domains = { path = "../../libs/domains" }
 caster-utils = { path = "../../libs/utils" }

@@ -26,3 +26,5 @@ audience = "localhost"
 [auth.test.user]
 
 [auth.test.alt]
+
+[auth.test.anon]

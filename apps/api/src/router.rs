@@ -11,11 +11,10 @@ use crate::{
     graphql::{Mutation, Query},
     Context,
 };
-use caster_auth::{
-    authenticate::{with_auth, Subject},
-    jwks::JWKS,
-};
+use caster_auth::{authenticate::Subject, jwks::JWKS};
 use caster_domains::users::service::UsersServiceTrait;
+
+use caster_auth::authenticate::with_auth;
 
 /// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
 pub fn create_routes(

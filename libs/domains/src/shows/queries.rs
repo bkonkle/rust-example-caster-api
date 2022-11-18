@@ -46,6 +46,9 @@ impl From<ManyResponse<Show>> for ShowsPage {
 pub struct ShowCondition {
     /// The `Show`'s title
     pub title: Option<String>,
+
+    /// Filter by IDs
+    pub ids_in: Option<Vec<String>>,
 }
 
 /// The available ordering values

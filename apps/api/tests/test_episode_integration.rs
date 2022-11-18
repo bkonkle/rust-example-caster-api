@@ -1,13 +1,11 @@
 use anyhow::Result;
 use fake::{Fake, Faker};
-use futures::executor::block_on;
 use hyper::body::to_bytes;
 use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
-use std::panic;
+use ulid::Ulid;
 
 use caster_domains::{role_grants::model::CreateRoleGrantInput, shows::mutations::CreateShowInput};
-use caster_testing::oauth2::{Credentials, User as TestUser};
 
 #[cfg(test)]
 mod test_utils;
@@ -37,18 +35,15 @@ const CREATE_EPISODE: &str = "
 /// It creates a new episode
 #[tokio::test]
 #[ignore]
-async fn test_create_episode() -> Result<()> {
+async fn test_episode_create() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user and a show
-    let user = ctx.users.create(username).await?;
+    let user = ctx.users.create(&username).await?;
 
     let mut show_input: CreateShowInput = Faker.fake();
     show_input.title = "Test Show".to_string();
@@ -73,7 +68,7 @@ async fn test_create_episode() -> Result<()> {
                 "showId": show.id.clone(),
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
     let resp = utils.http_client.request(req).await?;
@@ -89,30 +84,21 @@ async fn test_create_episode() -> Result<()> {
     assert_eq!(json_episode["title"], "Test Episode 1");
     assert_eq!(json_show["id"], show.id.clone());
 
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.episodes
-        .delete(json_episode["id"].as_str().unwrap())
-        .await?;
-    ctx.shows.delete(&show.id).await?;
-
     Ok(())
 }
 
 /// It requires a title and a showId
 #[tokio::test]
 #[ignore]
-async fn test_create_episode_requires_title_show_id() -> Result<()> {
+async fn test_episode_create_requires_title_show_id() -> Result<()> {
     let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     let req = utils
         .graphql
-        .query(CREATE_EPISODE, json!({ "input": {}}), Some(token))?;
+        .query(CREATE_EPISODE, json!({ "input": {}}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
@@ -134,7 +120,7 @@ async fn test_create_episode_requires_title_show_id() -> Result<()> {
                 "title": "Test Episode 1",
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
     let resp = utils.http_client.request(req).await?;
@@ -155,7 +141,7 @@ async fn test_create_episode_requires_title_show_id() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_create_episode_authn() -> Result<()> {
+async fn test_episode_create_authn() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -184,24 +170,11 @@ async fn test_create_episode_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Unauthorized");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }
@@ -209,15 +182,12 @@ async fn test_create_episode_authn() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_create_episode_authz() -> Result<()> {
+async fn test_episode_create_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     let mut show_input: CreateShowInput = Faker.fake();
     show_input.title = "Test Show".to_string();
@@ -225,7 +195,7 @@ async fn test_create_episode_authz() -> Result<()> {
     let show = ctx.shows.create(&show_input).await?;
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let _ = ctx.users.create(&username).await?;
 
     let req = utils.graphql.query(
         CREATE_EPISODE,
@@ -235,7 +205,7 @@ async fn test_create_episode_authz() -> Result<()> {
                 "showId": show.id,
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
     let resp = utils.http_client.request(req).await?;
@@ -243,25 +213,11 @@ async fn test_create_episode_authz() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }
@@ -287,14 +243,11 @@ const GET_EPISODE: &str = "
 /// It retrieves an existing episode
 #[tokio::test]
 #[ignore]
-async fn test_get_episode() -> Result<()> {
+async fn test_episode_get() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -302,36 +255,22 @@ async fn test_get_episode() -> Result<()> {
 
     let req = utils
         .graphql
-        .query(GET_EPISODE, json!({ "id": episode.id,}), Some(token))?;
+        .query(GET_EPISODE, json!({ "id": episode.id,}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_episode = &json["data"]["getEpisode"];
-            let json_show = &json_episode["show"];
+    let json_episode = &json["data"]["getEpisode"];
+    let json_show = &json_episode["show"];
 
-            assert_eq!(status, 200);
-            assert_eq!(json_episode["id"], episode.id);
-            assert_eq!(json_episode["title"], "Test Episode 1");
-            assert_eq!(json_show["id"], show.id);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json_episode["id"], episode.id);
+    assert_eq!(json_episode["title"], "Test Episode 1");
+    assert_eq!(json_show["id"], show.id);
 
     Ok(())
 }
@@ -339,22 +278,17 @@ async fn test_get_episode() -> Result<()> {
 /// It returns nothing when no episode is found
 #[tokio::test]
 #[ignore]
-async fn test_get_episode_empty() -> Result<()> {
-    let TestUtils {
-        http_client,
-        oauth,
-        graphql,
-        ..
-    } = TestUtils::init().await?;
+async fn test_episode_get_empty() -> Result<()> {
+    let utils = TestUtils::init().await?;
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
-    let req = graphql.query(GET_EPISODE, json!({ "id": "dummy-id",}), Some(token))?;
+    let req = utils
+        .graphql
+        .query(GET_EPISODE, json!({ "id": "dummy-id",}), Some(&token))?;
 
-    let resp = http_client.request(req).await?;
+    let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
@@ -403,14 +337,11 @@ const GET_MANY_EPISODES: &str = "
 /// It queries existing episodes
 #[tokio::test]
 #[ignore]
-async fn test_get_many_episodes() -> Result<()> {
+async fn test_episode_get_many() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -420,53 +351,43 @@ async fn test_get_many_episodes() -> Result<()> {
         .create_show_and_episode("Test Show 2", "Test Episode 1")
         .await?;
 
-    let req = utils
-        .graphql
-        .query(GET_MANY_EPISODES, Value::Null, Some(token))?;
+    let req = utils.graphql.query(
+        GET_MANY_EPISODES,
+        json!({
+            "where": {
+                "idsIn": vec![episode.id.clone(), other_episode.id.clone()],
+            }
+        }),
+        Some(&token),
+    )?;
     let resp = utils.http_client.request(req).await?;
 
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_episode = &json["data"]["getManyEpisodes"]["data"][0];
-            let json_show = &json_episode["show"];
+    let json_episode = &json["data"]["getManyEpisodes"]["data"][0];
+    let json_show = &json_episode["show"];
 
-            let json_other_episode = &json["data"]["getManyEpisodes"]["data"][1];
-            let json_other_show = &json_other_episode["show"];
+    let json_other_episode = &json["data"]["getManyEpisodes"]["data"][1];
+    let json_other_show = &json_other_episode["show"];
 
-            assert_eq!(status, 200);
+    assert_eq!(status, 200);
 
-            assert_eq!(json["data"]["getManyEpisodes"]["count"], 2);
-            assert_eq!(json["data"]["getManyEpisodes"]["total"], 2);
-            assert_eq!(json["data"]["getManyEpisodes"]["page"], 1);
-            assert_eq!(json["data"]["getManyEpisodes"]["pageCount"], 1);
+    assert_eq!(json["data"]["getManyEpisodes"]["count"], 2);
+    assert_eq!(json["data"]["getManyEpisodes"]["total"], 2);
+    assert_eq!(json["data"]["getManyEpisodes"]["page"], 1);
+    assert_eq!(json["data"]["getManyEpisodes"]["pageCount"], 1);
 
-            assert_eq!(json_episode["id"], episode.id);
-            assert_eq!(json_episode["title"], "Test Episode 1");
-            assert_eq!(json_show["id"], show.id);
+    assert_eq!(json_episode["id"], episode.id);
+    assert_eq!(json_episode["title"], "Test Episode 1");
+    assert_eq!(json_show["id"], show.id);
 
-            assert_eq!(json_other_episode["id"], other_episode.id);
-            assert_eq!(json_other_episode["title"], "Test Episode 1");
-            assert_eq!(json_other_show["id"], other_show.id);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-    ctx.episodes.delete(&other_episode.id).await?;
-    ctx.shows.delete(&other_show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(json_other_episode["id"], other_episode.id);
+    assert_eq!(json_other_episode["title"], "Test Episode 1");
+    assert_eq!(json_other_show["id"], other_show.id);
 
     Ok(())
 }
@@ -494,18 +415,15 @@ const UPDATE_EPISODE: &str = "
 /// It updates an existing episode
 #[tokio::test]
 #[ignore]
-async fn test_update_episode() -> Result<()> {
+async fn test_episode_update() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let user = ctx.users.create(&username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -529,7 +447,7 @@ async fn test_update_episode() -> Result<()> {
                 "summary": "Test Summary"
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
     let resp = utils.http_client.request(req).await?;
 
@@ -537,32 +455,17 @@ async fn test_update_episode() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            let json_episode = &json["data"]["updateEpisode"]["episode"];
-            let json_show = &json_episode["show"];
+    let json_episode = &json["data"]["updateEpisode"]["episode"];
+    let json_show = &json_episode["show"];
 
-            assert_eq!(status, 200);
+    assert_eq!(status, 200);
 
-            assert_eq!(json_episode["id"], episode.id);
-            assert_eq!(json_episode["title"], "Test Episode 1");
-            assert_eq!(json_episode["summary"], "Test Summary");
-            assert_eq!(json_show["id"], show.id);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(json_episode["id"], episode.id);
+    assert_eq!(json_episode["title"], "Test Episode 1");
+    assert_eq!(json_episode["summary"], "Test Summary");
+    assert_eq!(json_show["id"], show.id);
 
     Ok(())
 }
@@ -570,7 +473,7 @@ async fn test_update_episode() -> Result<()> {
 /// It returns an error if no existing episode was found
 #[tokio::test]
 #[ignore]
-async fn test_update_episode_not_found() -> Result<()> {
+async fn test_episode_update_not_found() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -607,11 +510,10 @@ async fn test_update_episode_not_found() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_update_episode_authn() -> Result<()> {
+async fn test_episode_update_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let (show, episode) = utils
+    let (_, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
         .await?;
 
@@ -631,25 +533,11 @@ async fn test_update_episode_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Unauthorized");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }
@@ -657,20 +545,17 @@ async fn test_update_episode_authn() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_update_episode_authz() -> Result<()> {
+async fn test_episode_update_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Alt).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let _ = ctx.users.create(&username).await?;
 
-    let (show, episode) = utils
+    let (_, episode) = utils
         .create_show_and_episode("Test Show 2", "Test Episode 1")
         .await?;
 
@@ -682,7 +567,7 @@ async fn test_update_episode_authz() -> Result<()> {
                 "summary": "Test Summary"
             }
         }),
-        Some(token),
+        Some(&token),
     )?;
 
     let resp = utils.http_client.request(req).await?;
@@ -690,26 +575,11 @@ async fn test_update_episode_authz() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }
@@ -727,18 +597,15 @@ const DELETE_EPISODE: &str = "
 /// It deletes an existing user episode
 #[tokio::test]
 #[ignore]
-async fn test_delete_episode() -> Result<()> {
+async fn test_episode_delete() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Test).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let user = ctx.users.create(&username).await?;
 
     let (show, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
@@ -756,31 +623,17 @@ async fn test_delete_episode() -> Result<()> {
 
     let req = utils
         .graphql
-        .query(DELETE_EPISODE, json!({"id": episode.id}), Some(token))?;
+        .query(DELETE_EPISODE, json!({"id": episode.id}), Some(&token))?;
     let resp = utils.http_client.request(req).await?;
 
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert!(json["data"]["deleteEpisode"].as_bool().unwrap());
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert!(json["data"]["deleteEpisode"].as_bool().unwrap());
 
     Ok(())
 }
@@ -788,7 +641,7 @@ async fn test_delete_episode() -> Result<()> {
 /// It returns an error if no existing episode was found
 #[tokio::test]
 #[ignore]
-async fn test_delete_episode_not_found() -> Result<()> {
+async fn test_episode_delete_not_found() -> Result<()> {
     let TestUtils {
         http_client,
         graphql,
@@ -816,11 +669,10 @@ async fn test_delete_episode_not_found() -> Result<()> {
 /// It requires authentication
 #[tokio::test]
 #[ignore]
-async fn test_delete_episode_authn() -> Result<()> {
+async fn test_episode_delete_authn() -> Result<()> {
     let utils = TestUtils::init().await?;
-    let ctx = utils.ctx.clone();
 
-    let (show, episode) = utils
+    let (_, episode) = utils
         .create_show_and_episode("Test Show", "Test Episode 1")
         .await?;
 
@@ -833,25 +685,11 @@ async fn test_delete_episode_authn() -> Result<()> {
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Unauthorized");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 401);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Unauthorized");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 401);
 
     Ok(())
 }
@@ -859,52 +697,34 @@ async fn test_delete_episode_authn() -> Result<()> {
 /// It requires authorization
 #[tokio::test]
 #[ignore]
-async fn test_delete_episode_authz() -> Result<()> {
+async fn test_episode_delete_authz() -> Result<()> {
     let utils = TestUtils::init().await?;
     let ctx = utils.ctx.clone();
 
-    let Credentials {
-        access_token: token,
-        username,
-        ..
-    } = utils.oauth.get_credentials(TestUser::Alt).await;
+    let username = Ulid::new().to_string();
+    let token = utils.create_jwt(&username);
 
     // Create a user with this username
-    let user = ctx.users.create(username).await?;
+    let _ = ctx.users.create(&username).await?;
 
-    let (show, episode) = utils
+    let (_, episode) = utils
         .create_show_and_episode("Test Show 2", "Test Episode 1")
         .await?;
 
     let req = utils
         .graphql
-        .query(DELETE_EPISODE, json!({"id": episode.id}), Some(token))?;
+        .query(DELETE_EPISODE, json!({"id": episode.id}), Some(&token))?;
 
     let resp = utils.http_client.request(req).await?;
     let status = resp.status();
 
     let body = to_bytes(resp.into_body()).await?;
 
-    let result = panic::catch_unwind(|| {
-        block_on(async {
-            let json: Value = serde_json::from_slice(&body)?;
+    let json: Value = serde_json::from_slice(&body)?;
 
-            assert_eq!(status, 200);
-            assert_eq!(json["errors"][0]["message"], "Forbidden");
-            assert_eq!(json["errors"][0]["extensions"]["code"], 403);
-
-            Ok(()) as Result<()>
-        })
-    });
-
-    // Clean up
-    ctx.users.delete(&user.id).await?;
-    ctx.episodes.delete(&episode.id).await?;
-    ctx.shows.delete(&show.id).await?;
-
-    if let Err(err) = result {
-        panic::resume_unwind(err);
-    }
+    assert_eq!(status, 200);
+    assert_eq!(json["errors"][0]["message"], "Forbidden");
+    assert_eq!(json["errors"][0]["extensions"]["code"], 403);
 
     Ok(())
 }

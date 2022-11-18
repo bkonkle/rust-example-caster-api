@@ -58,6 +58,9 @@ pub struct ProfileCondition {
 
     /// The `Profile`'s User id
     pub user_id: Option<String>,
+
+    /// Filter by IDs
+    pub ids_in: Option<Vec<String>>,
 }
 
 /// The available ordering values

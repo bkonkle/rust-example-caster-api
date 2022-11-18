@@ -68,6 +68,7 @@ async fn test_shows_service_get_many() -> Result<()> {
         .get_many(
             Some(ShowCondition {
                 title: Some("Test Show".to_string()),
+                ids_in: None,
             }),
             None,
             None,

@@ -21,3 +21,7 @@ password = "test_user_password"
 [auth.test.alt]
 username = "alt@user.com"
 password = "alt_user_password"
+
+[auth.test.anon]
+username = "anon@user.com"
+password = "anon_user_password"

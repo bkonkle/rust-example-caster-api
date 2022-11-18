@@ -28,6 +28,9 @@ pub trait UsersServiceTrait: Sync + Send {
     /// Create a `User` with the given username
     async fn create(&self, username: &str) -> Result<User>;
 
+    /// Get the `User` with the given username, creating one if none are found
+    async fn get_or_create(&self, username: &str) -> Result<User>;
+
     /// Update an existing `User`
     async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User>;
 
@@ -101,6 +104,13 @@ impl UsersServiceTrait for UsersService {
         .await?;
 
         Ok(user)
+    }
+
+    async fn get_or_create(&self, username: &str) -> Result<User> {
+        match self.get_by_username(username, &false).await? {
+            Some(user) => Ok(user),
+            None => self.create(username).await,
+        }
     }
 
     async fn update(&self, id: &str, input: &UpdateUserInput, with_roles: &bool) -> Result<User> {
