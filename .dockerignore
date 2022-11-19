@@ -1,18 +1,8 @@
 # Start by ignoring everything
 *
 
-# Package management
-!Cargo.toml
-!Cargo.lock
-!**/Cargo.toml
-!Makefile.toml
+# Binary
+!target/release/caster-api
 
 # Configs
-!.cargo/
 !config/
-
-# Source
-!apps/
-apps/*/tests/
-!libs/
-!tests/
