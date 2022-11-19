@@ -1,4 +1,4 @@
-FROM rust:1.59 as build
+FROM rust:1.65 as build
 
 WORKDIR /caster-api
 
