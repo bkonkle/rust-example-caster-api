@@ -7,8 +7,7 @@ on:
     pull_request:
 
 jobs:
-    docs:
-        name: Docs
+    build:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
@@ -24,12 +23,8 @@ jobs:
               env:
                   RUSTDOCFLAGS: -D warnings
 
-    build:
-        runs-on: ubuntu-latest
-        needs: docs
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
+            - name: Release build
+              run: cargo build --release
 
             - uses: ./.github/workflows/actions/setup-docker
 
