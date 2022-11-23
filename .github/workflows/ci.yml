@@ -59,7 +59,7 @@ jobs:
     test:
         name: Integration Test
         runs-on: ubuntu-latest
-        needs: test
+        needs: check
         environment: ci
         env:
             DATABASE_HOSTNAME: localhost
