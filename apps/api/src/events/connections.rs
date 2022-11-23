@@ -9,7 +9,7 @@ use ulid::Ulid;
 /// Our state of currently connected users.
 ///
 /// - Key is their connection id
-/// - Value is a sender of `warp::ws::Message`
+/// - Value is a sender of `axum::extract::ws::Message`
 #[derive(Default)]
 pub struct Connections(Arc<RwLock<HashMap<String, mpsc::UnboundedSender<Message>>>>);
 

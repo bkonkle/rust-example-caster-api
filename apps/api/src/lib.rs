@@ -42,7 +42,6 @@ use caster_domains::{
 use caster_utils::config::Config;
 use events::connections::Connections;
 
-mod errors;
 mod router;
 
 /// GraphQL Schema Creation
