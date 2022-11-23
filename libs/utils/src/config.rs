@@ -57,26 +57,6 @@ pub struct AuthClient {
     pub secret: Option<String>,
 }
 
-/// Auth test user config
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AuthTestUser {
-    /// Test user username
-    pub username: Option<String>,
-    /// Test user password
-    pub password: Option<String>,
-}
-
-/// Auth test config
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AuthTest {
-    /// Auth test user config
-    pub user: AuthTestUser,
-    /// Auth alt test user config
-    pub alt: AuthTestUser,
-    /// Auth anon test user config
-    pub anon: AuthTestUser,
-}
-
 /// Auth config
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Auth {
@@ -86,8 +66,6 @@ pub struct Auth {
     pub audience: String,
     /// Auth client config
     pub client: AuthClient,
-    /// Auth test config
-    pub test: AuthTest,
 }
 
 /// Application Config
@@ -131,21 +109,6 @@ impl Config {
                     // Split the Redis variables
                     .map(|key| key.as_str().replace("REDIS_", "REDIS.").into())
                     // Split the Auth variables
-                    .map(|key| {
-                        key.as_str()
-                            .replace("AUTH_TEST_USER_", "AUTH.TEST.USER.")
-                            .into()
-                    })
-                    .map(|key| {
-                        key.as_str()
-                            .replace("AUTH_TEST_ALT_", "AUTH.TEST.ALT.")
-                            .into()
-                    })
-                    .map(|key| {
-                        key.as_str()
-                            .replace("AUTH_TEST_ANON_", "AUTH.TEST.ANON.")
-                            .into()
-                    })
                     .map(|key| key.as_str().replace("AUTH_CLIENT_", "AUTH.CLIENT.").into())
                     .map(|key| key.as_str().replace("AUTH_", "AUTH.").into()),
             )

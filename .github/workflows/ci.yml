@@ -60,7 +60,6 @@ jobs:
         name: Integration Test
         runs-on: ubuntu-latest
         needs: check
-        environment: ci
         env:
             DATABASE_HOSTNAME: localhost
             DATABASE_USERNAME: caster
@@ -99,12 +98,3 @@ jobs:
 
             - name: Run Integration Tests
               run: cargo make integration-ci
-              env:
-                  AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
-                  AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
-                  AUTH_TEST_USER_USERNAME: ${{ secrets.AUTH_TEST_USER_USERNAME }}
-                  AUTH_TEST_USER_PASSWORD: ${{ secrets.AUTH_TEST_USER_PASSWORD }}
-                  AUTH_TEST_ALT_USERNAME: ${{ secrets.AUTH_TEST_ALT_USERNAME }}
-                  AUTH_TEST_ALT_PASSWORD: ${{ secrets.AUTH_TEST_ALT_PASSWORD }}
-                  AUTH_TEST_ANON_USERNAME: ${{ secrets.AUTH_TEST_ANON_USERNAME }}
-                  AUTH_TEST_ANON_PASSWORD: ${{ secrets.AUTH_TEST_ANON_PASSWORD }}

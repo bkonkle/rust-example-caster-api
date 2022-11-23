@@ -13,15 +13,3 @@ url = "localhost:6379"
 [auth.client]
 id = "client_id"
 secret = "client_secret"
-
-[auth.test.user]
-username = "test@user.com"
-password = "test_user_password"
-
-[auth.test.alt]
-username = "alt@user.com"
-password = "alt_user_password"
-
-[auth.test.anon]
-username = "anon@user.com"
-password = "anon_user_password"
