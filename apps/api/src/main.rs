@@ -1,9 +1,9 @@
 //! # A GraphQL server written in Rust
 #![forbid(unsafe_code)]
 
-use std::sync::Arc;
-
 use anyhow::Result;
+use std::sync::Arc;
+use tracing_subscriber::prelude::*;
 
 use caster_api::{run, Context};
 use caster_utils::config::get_config;
@@ -14,8 +14,11 @@ extern crate log;
 /// Run the server and log where to find it
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let config = get_config();

@@ -10,7 +10,7 @@ use axum::{
 use graphql::create_schema;
 use hyper::server::conn::AddrIncoming;
 use oso::{Oso, PolarClass};
-use router::{graphiql, graphql_handler, health_handler};
+use router::{events_handler, graphiql, graphql_handler, health_handler};
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 use tower_http::trace::{self, TraceLayer};
@@ -40,7 +40,7 @@ use caster_domains::{
     },
 };
 use caster_utils::config::Config;
-// use events::connections::Connections;
+use events::connections::Connections;
 
 mod errors;
 mod router;
@@ -49,10 +49,7 @@ mod router;
 pub mod graphql;
 
 /// `WebSocket` Events
-// pub mod events;
-
-// #[macro_use]
-// extern crate log;
+pub mod events;
 
 /// Dependencies needed by the resolvers
 pub struct Context {
@@ -79,8 +76,9 @@ pub struct Context {
 
     /// The `Episode` entity service
     pub episodes: Arc<dyn EpisodesService>,
-    // WebSockets connections currently active on this server
-    // pub connections: Connections,
+
+    /// WebSockets connections currently active on this server
+    pub connections: Connections,
 }
 
 /// Intialize dependencies
@@ -92,7 +90,7 @@ impl Context {
         // Set up authorization
         let mut oso = Oso::new();
 
-        // let connections = Connections::default();
+        let connections = Connections::default();
 
         oso.register_class(User::get_polar_class_builder().name("User").build())?;
         oso.register_class(Profile::get_polar_class_builder().name("Profile").build())?;
@@ -110,7 +108,7 @@ impl Context {
             episodes: Arc::new(DefaultEpisodesService::new(&db)),
             oso,
             db,
-            // connections,
+            connections,
         })
     }
 }
@@ -125,6 +123,7 @@ pub async fn run(ctx: Arc<Context>) -> Result<Server<AddrIncoming, IntoMakeServi
     let app = Router::new()
         .route("/health", get(health_handler))
         .route("/graphql", get(graphiql).post(graphql_handler))
+        .route("/events", get(events_handler))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))

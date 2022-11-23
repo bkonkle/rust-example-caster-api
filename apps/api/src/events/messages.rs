@@ -1,6 +1,6 @@
+use axum::extract::ws::Message;
 use fake::Dummy;
 use serde::{Deserialize, Serialize};
-use warp::ws::Message;
 
 /// Incoming `WebSocket` messages from clients
 #[derive(Clone, Debug, Dummy, Serialize, Deserialize, Eq, PartialEq)]
@@ -13,8 +13,8 @@ pub enum IncomingMessage {
 impl IncomingMessage {
     /// Create a new `IncomingMessage` from a `WebSocket` Message
     pub fn from_message(msg: Message) -> Result<Option<Self>, serde_json::Error> {
-        let msg = if let Ok(s) = msg.to_str() {
-            s
+        let msg = if let Ok(message) = msg.to_text() {
+            message
         } else {
             return Ok(None);
         };
@@ -33,6 +33,6 @@ pub enum OutgoingMessage {
 
 impl From<OutgoingMessage> for Message {
     fn from(msg: OutgoingMessage) -> Message {
-        Message::text(serde_json::to_string(&msg).expect("Unable to serialize OutgointMessage"))
+        Message::Text(serde_json::to_string(&msg).expect("Unable to serialize OutgointMessage"))
     }
 }

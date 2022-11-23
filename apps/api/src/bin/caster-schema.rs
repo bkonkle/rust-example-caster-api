@@ -5,15 +5,18 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tracing_subscriber::prelude::*;
 
 use caster_api::{graphql::create_schema, Context};
 use caster_utils::config::get_config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .with_test_writer()
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new(
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
+        ))
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let config = get_config();
