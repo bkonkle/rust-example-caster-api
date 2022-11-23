@@ -3,17 +3,17 @@
 
 use anyhow::Result;
 use axum::{
-    body::HttpBody,
     extract::Extension,
-    response::{self, IntoResponse},
-    routing::get,
+    routing::{get, IntoMakeService},
     Router, Server,
 };
 use graphql::create_schema;
+use hyper::server::conn::AddrIncoming;
 use oso::{Oso, PolarClass};
-use router::{graphiql, graphql_handler};
+use router::{graphiql, graphql_handler, health_handler};
 use sea_orm::DatabaseConnection;
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
+use tower_http::trace::{self, TraceLayer};
 
 use caster_auth::jwks::get_jwks;
 use caster_domains::{
@@ -40,7 +40,7 @@ use caster_domains::{
     },
 };
 use caster_utils::config::Config;
-use events::connections::Connections;
+// use events::connections::Connections;
 
 mod errors;
 mod router;
@@ -49,10 +49,10 @@ mod router;
 pub mod graphql;
 
 /// `WebSocket` Events
-pub mod events;
+// pub mod events;
 
-#[macro_use]
-extern crate log;
+// #[macro_use]
+// extern crate log;
 
 /// Dependencies needed by the resolvers
 pub struct Context {
@@ -79,9 +79,8 @@ pub struct Context {
 
     /// The `Episode` entity service
     pub episodes: Arc<dyn EpisodesService>,
-
-    /// WebSockets connections currently active on this server
-    pub connections: Connections,
+    // WebSockets connections currently active on this server
+    // pub connections: Connections,
 }
 
 /// Intialize dependencies
@@ -93,7 +92,7 @@ impl Context {
         // Set up authorization
         let mut oso = Oso::new();
 
-        let connections = Connections::default();
+        // let connections = Connections::default();
 
         oso.register_class(User::get_polar_class_builder().name("User").build())?;
         oso.register_class(Profile::get_polar_class_builder().name("Profile").build())?;
@@ -111,29 +110,36 @@ impl Context {
             episodes: Arc::new(DefaultEpisodesService::new(&db)),
             oso,
             db,
-            connections,
+            // connections,
         })
     }
 }
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(ctx: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+pub async fn run(ctx: Arc<Context>) -> Result<Server<AddrIncoming, IntoMakeService<Router>>> {
     let port = ctx.config.port;
     let jwks = get_jwks(ctx.config).await;
 
     let schema = create_schema(ctx.clone())?;
 
     let app = Router::new()
-        .route("/", get(graphiql).post(graphql_handler))
+        .route("/health", get(health_handler))
+        .route("/graphql", get(graphiql).post(graphql_handler))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
+        )
+        .layer(Extension(jwks))
+        .layer(Extension(ctx))
         .layer(Extension(schema));
 
-    Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-    // Ok(warp::serve(
-    //     router
-    //         .with(warp::log("caster_api"))
-    //         .recover(errors::handle_rejection),
-    // )
-    // .bind_ephemeral(([0, 0, 0, 0], port)))
+    let server = Server::bind(
+        &format!("0.0.0.0:{}", port)
+            .parse()
+            .expect("Unable to parse bind address"),
+    )
+    .serve(app.into_make_service());
+
+    Ok(server)
 }

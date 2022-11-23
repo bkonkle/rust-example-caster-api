@@ -11,8 +11,10 @@ use caster_utils::config::get_config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Set RUST_LOG=info (or your desired loglevel) to see logging
-    pretty_env_logger::init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .with_test_writer()
+        .init();
 
     let config = get_config();
     let context = Arc::new(Context::init(config).await?);

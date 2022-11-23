@@ -1,3 +1,4 @@
+use axum::response::{IntoResponse, Response};
 use hyper::StatusCode;
 use thiserror::Error;
 
@@ -17,15 +18,16 @@ pub enum AuthError {
     JWKSError,
 }
 
-/// Get error codes and messages from `AuthError` instances
-pub fn from_auth_error(err: &AuthError) -> (String, hyper::StatusCode) {
-    match err {
-        AuthError::JWKSError => (err.to_string(), StatusCode::UNAUTHORIZED),
-        AuthError::JWTTokenError(err) => {
-            (format!("JWTTokenError: {}", err), StatusCode::BAD_REQUEST)
+impl IntoResponse for AuthError {
+    fn into_response(self) -> Response {
+        match self {
+            AuthError::JWKSError => (StatusCode::UNAUTHORIZED, self.to_string()).into_response(),
+            AuthError::JWTTokenError(err) => {
+                (StatusCode::BAD_REQUEST, format!("JWTTokenError: {}", err)).into_response()
+            }
+            AuthError::InvalidAuthHeaderError => {
+                (StatusCode::BAD_REQUEST, self.to_string()).into_response()
+            }
         }
-        AuthError::InvalidAuthHeaderError => (err.to_string(), StatusCode::BAD_REQUEST),
     }
 }
-
-impl warp::reject::Reject for AuthError {}

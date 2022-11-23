@@ -9,7 +9,6 @@ rustflags = [
     "-Wclippy::debug_assert_with_mut_call",
     "-Wclippy::disallowed_methods",
     "-Wclippy::disallowed_type",
-    "-Wclippy::doc_markdown",
     "-Wclippy::empty_enum",
     "-Wclippy::enum_glob_use",
     "-Wclippy::exit",

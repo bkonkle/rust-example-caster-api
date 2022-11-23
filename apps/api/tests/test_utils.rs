@@ -32,7 +32,8 @@ use caster_utils::{config::get_config, http::http_client};
 static HTTP_CLIENT: Lazy<Client<HttpsConnector<HttpConnector>>> = Lazy::new(http_client);
 
 pub async fn run_server(context: Arc<Context>) -> Result<SocketAddr> {
-    let (addr, server) = run(context).await?;
+    let server = run(context).await?;
+    let addr = server.local_addr();
 
     // Spawn the server in the background
     tokio::spawn(server);
@@ -55,7 +56,10 @@ pub struct TestUtils {
 impl TestUtils {
     /// Initialize a new set of utils
     pub async fn init() -> Result<Self> {
-        pretty_env_logger::try_init()?;
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::INFO)
+            .with_test_writer()
+            .init();
 
         let config = get_config();
 
