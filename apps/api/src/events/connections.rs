@@ -1,15 +1,15 @@
+use axum::extract::ws::Message;
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{
     mpsc::{self, UnboundedSender},
     RwLock,
 };
 use ulid::Ulid;
-use warp::ws::Message;
 
 /// Our state of currently connected users.
 ///
 /// - Key is their connection id
-/// - Value is a sender of `warp::ws::Message`
+/// - Value is a sender of `axum::extract::ws::Message`
 #[derive(Default)]
 pub struct Connections(Arc<RwLock<HashMap<String, mpsc::UnboundedSender<Message>>>>);
 

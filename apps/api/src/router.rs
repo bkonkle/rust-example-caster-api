@@ -1,131 +1,67 @@
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
-use async_graphql::{EmptySubscription, Schema};
-use async_graphql_warp::{graphql, GraphQLResponse};
-use serde_json::json;
-use std::{convert::Infallible, sync::Arc};
-use warp::{http::Response as HttpResponse, Rejection};
-use warp::{ws, Filter, Reply};
+use std::sync::Arc;
 
-use crate::{
-    events,
-    graphql::{Mutation, Query},
-    Context,
+use async_graphql::http::GraphiQLSource;
+use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
+use axum::{
+    extract::{Extension, WebSocketUpgrade},
+    response::{Html, IntoResponse, Response},
 };
-use caster_auth::{authenticate::Subject, jwks::JWKS};
-use caster_domains::users::service::UsersServiceTrait;
+use serde_json::json;
 
-use caster_auth::authenticate::with_auth;
-
-/// Create a Warp filter to handle GraphQL routing based on the given `GraphQLSchema`.
-pub fn create_routes(
-    ctx: &Arc<Context>,
-    schema: Schema<Query, Mutation, EmptySubscription>,
-    jwks: &'static JWKS,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    health().or(events(ctx, jwks)).or(gql(ctx, schema, jwks))
-}
-
-// Add the context to the handler
-fn with_context(
-    ctx: &Arc<Context>,
-) -> impl Filter<Extract = (Arc<Context>,), Error = std::convert::Infallible> + Clone {
-    let context = ctx.clone();
-
-    warp::any().map(move || context.clone())
-}
-
-// Add the Users service to the handler
-fn with_users(
-    ctx: &Arc<Context>,
-) -> impl Filter<Extract = (Arc<dyn UsersServiceTrait>,), Error = std::convert::Infallible> + Clone
-{
-    let context = ctx.clone();
-
-    warp::any().map(move || context.users.clone())
-}
+use crate::{events, graphql::GraphQLSchema, Context};
+use caster_auth::authenticate::Subject;
 
 // Health
 // ------
 
-/// The route for health checking
-pub fn health() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path!("health")
-        .and(warp::get())
-        .and_then(health_handler)
-}
-
-pub async fn health_handler() -> Result<impl Reply, Infallible> {
-    let res = json!({
+/// Handle health check requests
+pub async fn health_handler() -> impl IntoResponse {
+    json!({
         "code": "200",
         "success": true,
-    });
-
-    Ok(warp::reply::json(&res))
+    })
+    .to_string()
 }
 
 // GraphQL
 // -------
 
-pub fn gql(
-    ctx: &Arc<Context>,
-    schema: Schema<Query, Mutation, EmptySubscription>,
-    jwks: &'static JWKS,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
-    let graphql_post = graphql(schema)
-        // Add the context to the handler
-        .and(with_context(ctx))
-        // Add the UsersService to the request handler
-        .and(with_users(ctx))
-        // Add the Subject to the request handler
-        .and(with_auth(jwks))
-        // Execute the GraphQL request
-        .and_then(execute);
-
-    let graphql_playground = warp::path::end().and(warp::get()).map(|| {
-        HttpResponse::builder()
-            .header("content-type", "text/html")
-            .body(playground_source(GraphQLPlaygroundConfig::new("/")))
-    });
-
-    graphql_playground.or(graphql_post)
+/// Handle GraphiQL Requests
+pub async fn graphiql() -> impl IntoResponse {
+    Html(GraphiQLSource::build().endpoint("/graphql").finish())
 }
 
-/// Execute the GraphQL request
-async fn execute(
-    (schema, request): (
-        Schema<Query, Mutation, EmptySubscription>,
-        async_graphql::Request,
-    ),
-    _ctx: Arc<Context>,
-    users: Arc<dyn UsersServiceTrait>,
+/// Handle GraphQL Requests
+pub async fn graphql_handler(
+    Extension(schema): Extension<GraphQLSchema>,
+    Extension(ctx): Extension<Arc<Context>>,
     sub: Subject,
-) -> Result<GraphQLResponse, Infallible> {
+    req: GraphQLRequest,
+) -> GraphQLResponse {
     // Retrieve the request User, if username is present
     let user = if let Subject(Some(ref username)) = sub {
-        users.get_by_username(username, &true).await.unwrap_or(None)
+        ctx.users
+            .get_by_username(username, &true)
+            .await
+            .unwrap_or(None)
     } else {
         None
     };
 
     // Add the Subject and optional User to the context
-    let request = request.data(sub).data(user);
+    let request = req.into_inner().data(sub).data(user);
 
-    let response = schema.execute(request).await;
-
-    Ok::<_, Infallible>(GraphQLResponse::from(response))
+    schema.execute(request).await.into()
 }
 
 // WebSocket
 // ---------
 
-/// The Warp Filter to handle `WebSocket` upgrade requests
-pub fn events(
-    ctx: &Arc<Context>,
-    jwks: &'static JWKS,
-) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    warp::path("events")
-        .and(ws())
-        .and(with_context(ctx))
-        .and(with_auth(jwks))
-        .and_then(events::handler::handle)
+/// Handle WebSocket upgrade requests
+pub async fn events_handler(
+    Extension(ctx): Extension<Arc<Context>>,
+    sub: Subject,
+    ws: WebSocketUpgrade,
+) -> Response {
+    ws.on_upgrade(|socket| events::handler::handle(socket, ctx, sub))
 }

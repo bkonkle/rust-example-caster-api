@@ -7,7 +7,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 async-graphql = { version = "4.0", features = ["chrono"] }
-async-graphql-warp = "4.0"
+async-graphql-axum = "4.0"
+axum = "0.5"
 biscuit = "0.6.0-beta1"
 caster-auth = { path = "../../libs/auth" }
 caster-domains = { path = "../../libs/domains" }
@@ -23,8 +24,7 @@ hyper = "0.14"
 hyper-tls = "0.5"
 log = "0.4"
 once_cell = "1.9"
-oso = "0.26.0"
-pretty_env_logger = "0.4"
+oso = "0.26"
 rand = "0.8"
 sea-orm = { version = "0.10", features = [
     "macros",
@@ -47,10 +47,12 @@ sqlx = { version = "0.6", features = [
     "uuid",
 ] }
 tokio = { version = "1", features = ["full"] }
-tokio-stream = "0.1.1"
-tokio-tungstenite = "0.17.2"
-ulid = "1.0.0"
-warp = "0.3"
+tokio-stream = "0.1"
+tokio-tungstenite = "0.17"
+tower-http = { version = "0.3", features = ["trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+ulid = "1.0"
 
 [dev-dependencies]
 caster-testing = { path = "../../libs/testing" }

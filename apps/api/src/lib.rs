@@ -2,11 +2,18 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
+use axum::{
+    extract::Extension,
+    routing::{get, IntoMakeService},
+    Router, Server,
+};
 use graphql::create_schema;
+use hyper::server::conn::AddrIncoming;
 use oso::{Oso, PolarClass};
+use router::{events_handler, graphiql, graphql_handler, health_handler};
 use sea_orm::DatabaseConnection;
-use std::{net::SocketAddr, sync::Arc};
-use warp::{Filter, Future};
+use std::sync::Arc;
+use tower_http::trace::{self, TraceLayer};
 
 use caster_auth::jwks::get_jwks;
 use caster_domains::{
@@ -34,9 +41,7 @@ use caster_domains::{
 };
 use caster_utils::config::Config;
 use events::connections::Connections;
-use router::create_routes;
 
-mod errors;
 mod router;
 
 /// GraphQL Schema Creation
@@ -44,9 +49,6 @@ pub mod graphql;
 
 /// `WebSocket` Events
 pub mod events;
-
-#[macro_use]
-extern crate log;
 
 /// Dependencies needed by the resolvers
 pub struct Context {
@@ -111,17 +113,31 @@ impl Context {
 }
 
 /// Start the server and return the bound address and a `Future`.
-pub async fn run(ctx: Arc<Context>) -> Result<(SocketAddr, impl Future<Output = ()>)> {
+pub async fn run(ctx: Arc<Context>) -> Result<Server<AddrIncoming, IntoMakeService<Router>>> {
     let port = ctx.config.port;
     let jwks = get_jwks(ctx.config).await;
 
     let schema = create_schema(ctx.clone())?;
-    let router = create_routes(&ctx, schema, jwks);
 
-    Ok(warp::serve(
-        router
-            .with(warp::log("caster_api"))
-            .recover(errors::handle_rejection),
+    let app = Router::new()
+        .route("/health", get(health_handler))
+        .route("/graphql", get(graphiql).post(graphql_handler))
+        .route("/events", get(events_handler))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(tracing::Level::INFO))
+                .on_response(trace::DefaultOnResponse::new().level(tracing::Level::INFO)),
+        )
+        .layer(Extension(jwks))
+        .layer(Extension(ctx))
+        .layer(Extension(schema));
+
+    let server = Server::bind(
+        &format!("0.0.0.0:{}", port)
+            .parse()
+            .expect("Unable to parse bind address"),
     )
-    .bind_ephemeral(([0, 0, 0, 0], port)))
+    .serve(app.into_make_service());
+
+    Ok(server)
 }

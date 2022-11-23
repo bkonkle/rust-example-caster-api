@@ -118,6 +118,7 @@ script = '''
 env = { "RUST_LOG" = "info,sqlx::query=warn" }
 command = "cargo"
 args = ["run", "--bin", "caster-api"]
+watch = true
 
 [tasks.db-create]
 cwd = "./"
