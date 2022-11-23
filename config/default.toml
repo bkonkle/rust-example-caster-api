@@ -22,9 +22,3 @@ url = "https://caster-api-dev.us.auth0.com"
 audience = "localhost"
 
 [auth.client]
-
-[auth.test.user]
-
-[auth.test.alt]
-
-[auth.test.anon]
