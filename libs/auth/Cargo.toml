@@ -10,7 +10,7 @@ integration = []
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1.41"
-axum = "0.5"
+axum = "0.6"
 biscuit = "0.6.0-beta1"
 caster-utils = { path = "../../libs/utils" }
 http = "0.2"
