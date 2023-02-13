@@ -26,7 +26,7 @@ log = "0.4"
 once_cell = "1.9"
 oso = "0.26"
 rand = "0.8"
-sea-orm = { version = "0.10", features = [
+sea-orm = { version = "0.11", features = [
     "macros",
     "mock",
     "runtime-tokio-rustls",

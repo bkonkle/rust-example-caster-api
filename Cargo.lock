@@ -2277,15 +2277,14 @@ dependencies = [
 
 [[package]]
 name = "sea-orm"
-version = "0.10.3"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8744afc95ca462de12c2cea5a56d7e406f3be2b2683d3b05066e1afdba898bc5"
+checksum = "e7a0e3ec90718d849c73b167df7a476672b64c7ee5f3c582179069e63b2451e1"
 dependencies = [
  "async-stream",
  "async-trait",
  "chrono",
  "futures",
- "futures-util",
  "log",
  "ouroboros",
  "sea-orm-macros",
@@ -2299,13 +2298,14 @@ dependencies = [
  "time 0.3.17",
  "tracing",
  "url",
+ "uuid",
 ]
 
 [[package]]
 name = "sea-orm-macros"
-version = "0.10.3"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ca4d01381fdcabc3818b6d39c5f1f0c885900af90da638e4001406907462784"
+checksum = "5d89f7d4d2533c178e08a9e1990619c391e9ca7b402851d02a605938b15e03d9"
 dependencies = [
  "bae",
  "heck 0.3.3",
@@ -2316,9 +2316,9 @@ dependencies = [
 
 [[package]]
 name = "sea-query"
-version = "0.27.2"
+version = "0.28.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4f0fc4d8e44e1d51c739a68d336252a18bc59553778075d5e32649be6ec92ed"
+checksum = "d2fbe015dbdaa7d8829d71c1e14fb6289e928ac256b93dfda543c85cd89d6f03"
 dependencies = [
  "chrono",
  "sea-query-derive",
@@ -2327,9 +2327,9 @@ dependencies = [
 
 [[package]]
 name = "sea-query-binder"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c2585b89c985cfacfe0ec9fc9e7bb055b776c1a2581c4e3c6185af2b8bf8865"
+checksum = "03548c63aec07afd4fd190923e0160d2f2fc92def27470b54154cf232da6203b"
 dependencies = [
  "chrono",
  "sea-query",
@@ -2339,11 +2339,11 @@ dependencies = [
 
 [[package]]
 name = "sea-query-derive"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34cdc022b4f606353fe5dc85b09713a04e433323b70163e81513b141c6ae6eb5"
+checksum = "63f62030c60f3a691f5fe251713b4e220b306e50a71e1d6f9cce1f24bb781978"
 dependencies = [
- "heck 0.3.3",
+ "heck 0.4.0",
  "proc-macro2",
  "quote",
  "syn",
@@ -3210,6 +3210,7 @@ dependencies = [
  "atomic",
  "getrandom",
  "md-5",
+ "serde",
  "sha1_smol",
 ]
 
