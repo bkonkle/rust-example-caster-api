@@ -64,9 +64,6 @@ async fn test_episodes_service_get_with_related() -> Result<()> {
     episode.title = "Test Episode".to_string();
     episode.show = Some(show.clone());
 
-    // let show = show_factory::create_show_with_title("Test Show");
-    // let episode = episode_factory::create_episode_for_show("Test Episode", show.clone());
-
     let db = Arc::new(
         MockDatabase::new(DatabaseBackend::Postgres)
             .append_query_results(vec![vec![(episode.clone(), show.clone())]])
