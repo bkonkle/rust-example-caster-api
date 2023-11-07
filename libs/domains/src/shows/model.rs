@@ -2,7 +2,7 @@
 
 use async_graphql::SimpleObject;
 use chrono::Utc;
-use fake::{Dummy, Fake};
+use fake::Dummy;
 use oso::PolarClass;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};

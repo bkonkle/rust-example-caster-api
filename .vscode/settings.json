@@ -4,6 +4,6 @@
     "files.exclude": {
         "**/.DS_Store": true,
         "**/.git": true
-    },
-    "rust-analyzer.cargo.features": "all"
+    }
+    // "rust-analyzer.cargo.features": "all"
 }

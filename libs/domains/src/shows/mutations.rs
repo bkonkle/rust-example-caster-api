@@ -1,6 +1,6 @@
 use async_graphql::{InputObject, MaybeUndefined, SimpleObject};
 use caster_utils::graphql::dummy_maybe_undef;
-use fake::{Dummy, Fake, Faker};
+use fake::{Dummy, Faker};
 use rand::Rng;
 
 use super::model::Show;

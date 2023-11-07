@@ -6,10 +6,10 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-async-graphql = { version = "4.0", features = ["chrono"] }
-async-graphql-parser = "4.0"
+async-graphql = { version = "6.0", features = ["chrono"] }
+async-graphql-parser = "6.0"
 async-trait = "0.1.41"
-sea-orm = { version = "0.10", features = [
+sea-orm = { version = "0.12", features = [
     "macros",
     "mock",
 ], default-features = false }

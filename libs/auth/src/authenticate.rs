@@ -1,11 +1,8 @@
 #![allow(unused_imports)]
 use async_trait::async_trait;
-use axum::{
-    extract::{FromRequest, RequestParts},
-    Extension,
-};
+use axum::{extract::FromRequestParts, Extension};
 use biscuit::{jwa::SignatureAlgorithm, jws::Header, Empty, JWT};
-use http::{header::AUTHORIZATION, HeaderMap, HeaderValue};
+use http::{header::AUTHORIZATION, request::Parts, HeaderMap, HeaderValue};
 
 use crate::{
     errors::AuthError::{self, InvalidAuthHeaderError},
@@ -20,18 +17,21 @@ pub struct Subject(pub Option<String>);
 
 #[cfg(not(feature = "integration"))]
 #[async_trait]
-impl<B> FromRequest<B> for Subject
+impl<B> FromRequestParts<B> for Subject
 where
-    B: Send,
+    B: Send + Sync,
 {
     type Rejection = AuthError;
 
-    async fn from_request(req: &mut RequestParts<B>) -> std::result::Result<Self, Self::Rejection> {
-        let Extension(jwks): Extension<&'static JWKS> = Extension::from_request(req)
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &B,
+    ) -> std::result::Result<Self, Self::Rejection> {
+        let Extension(jwks): Extension<&'static JWKS> = Extension::from_request_parts(parts, state)
             .await
             .expect("The JWKS layer is missing.");
 
-        match jwt_from_header(req.headers()) {
+        match jwt_from_header(&parts.headers) {
             Ok(Some(jwt)) => {
                 // First extract without verifying the header to locate the key-id (kid)
                 let token = JWT::<Empty, Empty>::new_encoded(jwt);
@@ -98,16 +98,17 @@ mod test {
     use super::*;
 
     #[async_trait]
-    impl<B> FromRequest<B> for Subject
+    impl<B> FromRequestParts<B> for Subject
     where
         B: Send,
     {
         type Rejection = AuthError;
 
-        async fn from_request(
-            req: &mut RequestParts<B>,
+        async fn from_request_parts(
+            parts: &mut Parts,
+            _state: &B,
         ) -> std::result::Result<Self, Self::Rejection> {
-            match jwt_from_header(req.headers()) {
+            match jwt_from_header(&parts.headers) {
                 Ok(Some(jwt)) => {
                     let token = JWT::<Empty, Empty>::new_encoded(jwt);
 
