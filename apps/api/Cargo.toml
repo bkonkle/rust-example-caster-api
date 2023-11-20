@@ -20,7 +20,7 @@ futures-util = { version = "0.3", default-features = false, features = [
     "sink",
     "std",
 ] }
-hyper = "0.14"
+hyper = "1.0"
 hyper-tls = "0.5"
 log = "0.4"
 once_cell = "1.9"
@@ -56,7 +56,7 @@ ulid = "1.0"
 
 [dev-dependencies]
 caster-testing = { path = "../../libs/testing" }
-hyper = "0.14"
+hyper = "1.0"
 hyper-tls = "0.5"
 mockall = "0.11"
 pretty_assertions = { version = "1.2" }
