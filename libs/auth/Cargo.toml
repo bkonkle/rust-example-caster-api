@@ -13,7 +13,7 @@ async-trait = "0.1.41"
 axum = "0.6"
 biscuit = "0.6.0-beta1"
 caster-utils = { path = "../../libs/utils" }
-http = "0.2"
+http = "1.0"
 hyper = "0.14"
 hyper-tls = "0.5"
 jsonwebtoken = "9.1"
