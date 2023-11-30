@@ -6,6 +6,8 @@
 [<img alt="Axum" src="https://img.shields.io/badge/axum-7b5312?logo=rust&style=flat" />](https://crates.io/crates/axum)
 [<img alt="SeaORM" src="https://img.shields.io/badge/SeaORM-032846?logo=postgresql&style=flat" />](https://github.com/SeaQL/sea-orm)
 
+**DEPRECATION WARNING:** This example is a few years old at this point, and will not be actively kept up-to-date. You may want to take a look at my new API framework, [Nakago](https://nakago.dev), which took the approach here and expanded on it with an async-first dependency injection system to make testing a lot easier. There's a version of this project there [in the `examples/async-graphql` folder](https://github.com/bkonkle/nakago/tree/main/examples/async-graphql).
+
 This is an example app for the upcoming Rust video series by [Brandon Konkle](https://github.com/bkonkle). It implements a basic API to support a number of hypothetical frontends for the imaginary "Caster" app, a tool to help podcasters, broadcasters, and streamers coordinate show content with their co-hosts and guests. Limited to just the API to support the front end.
 
 ## Local Development
