@@ -60,4 +60,4 @@ hyper = "0.14"
 hyper-tls = "0.5"
 mockall = "0.11"
 pretty_assertions = { version = "1.2" }
-url = "2.0.0"
+url = "2.5.0"
