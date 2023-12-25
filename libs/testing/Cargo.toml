@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-hyper = "0.14"
+hyper = "1.1"
 hyper-tls = "0.5"
 mockall = "0.11"
 oso = "0.27.0"

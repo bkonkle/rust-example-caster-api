@@ -14,7 +14,7 @@ axum = "0.6"
 biscuit = "0.6.0-beta1"
 caster-utils = { path = "../../libs/utils" }
 http = "0.2"
-hyper = "0.14"
+hyper = "1.1"
 hyper-tls = "0.5"
 jsonwebtoken = "9.1"
 log = "0.4"
