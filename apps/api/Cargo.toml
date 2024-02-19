@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 async-graphql = { version = "6.0", features = ["chrono"] }
-async-graphql-axum = "6.0"
+async-graphql-axum = "7.0"
 axum = "0.6"
 biscuit = "0.6.0-beta1"
 caster-auth = { path = "../../libs/auth" }
