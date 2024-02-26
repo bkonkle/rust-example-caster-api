@@ -15,7 +15,7 @@ sea-orm = { version = "0.12", features = [
 ], default-features = false }
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
 figment = { version = "0.10.6", features = ["env", "toml"] }
-hyper = "0.14"
+hyper = "1.2"
 hyper-tls = "0.5"
 once_cell = "1.9"
 rand = "0.8"
