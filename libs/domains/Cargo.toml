@@ -13,7 +13,7 @@ caster-utils = { path = "../utils" }
 caster-testing = { path = "../testing" }
 chrono = { version = "0.4.19", features = ["serde"] }
 fake = { version = "2.4", features = ['derive', 'chrono', 'http', 'uuid'] }
-hyper = "0.14"
+hyper = "1.2"
 oso = "0.27.0"
 oso-derive = "0.27.0"
 rand = "0.8"
